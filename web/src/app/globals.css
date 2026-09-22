@@ -94,8 +94,10 @@
 .wordmark {
   display: inline-flex;
   align-items: baseline;
-  gap: 10px;
+  gap: 0.4em;
   line-height: 1;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .wordmark-serif {
@@ -109,8 +111,8 @@
 .wordmark-track {
   font-family: var(--font-sans);
   font-weight: 500;
-  font-size: 11px;
-  letter-spacing: 0.34em;
+  font-size: 15px;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--color-navy);
 }

@@ -8,7 +8,7 @@ export function Wordmark({ color = "navy", size = "md" }: Props) {
   const serifSize =
     size === "lg" ? "text-[26px]" : size === "sm" ? "text-[17px]" : "text-[20px]";
   const trackSize =
-    size === "lg" ? "text-[13px]" : size === "sm" ? "text-[10px]" : "text-[11px]";
+    size === "lg" ? "text-[20px]" : size === "sm" ? "text-[13px]" : "text-[15px]";
 
   return (
     <span className={`wordmark ${tone}`} aria-label="Class Act Talent">
