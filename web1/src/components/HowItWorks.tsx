@@ -32,7 +32,7 @@ const CARDS = [
 
 export function HowItWorks() {
   return (
-    <section id="how" className="wrap scroll-mt-24 py-20 md:py-28">
+    <section id="how" className="wrap py-20 md:py-28">
       <div className="mb-16 grid items-end gap-8 md:grid-cols-[1.1fr_1fr]">
         <div>
           <span className="label">How it works</span>

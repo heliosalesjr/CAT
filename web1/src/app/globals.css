@@ -52,6 +52,19 @@
     color: var(--color-navy);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+
+    /* Jumping to a section stops clear of the sticky masthead. Set on
+       the scroller rather than as a margin on each target, so any
+       section added later is handled without remembering to. The nav
+       is 78px; this leaves a little air under it. */
+    scroll-padding-top: 6.5rem;
+  }
+
+  /* Anchor jumps glide instead of cutting. CSS rather than a script:
+     it keeps the browser's own scrolling, which means keyboard
+     navigation, the back button and Find-in-page all still behave. */
+  @media (prefers-reduced-motion: no-preference) {
+    html { scroll-behavior: smooth; }
   }
 
   body {
@@ -254,52 +267,141 @@
 
 .typeface-switch {
   position: fixed;
-  left: 16px;
-  bottom: 16px;
+  left: 14px;
+  bottom: 14px;
   z-index: 60;
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  padding: 8px 10px 8px 12px;
-  background: var(--color-paper);
-  border: 1px solid var(--color-rule);
-  box-shadow: 0 6px 20px -12px rgba(25, 48, 77, 0.4);
-  font-variation-settings: "wdth" 78;
-  font-weight: 600;
-  font-size: 10.5px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--color-navy);
-  opacity: 0.55;
-  transition: opacity 160ms ease, transform 140ms var(--ease-out);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  user-select: none;
 }
 
-.typeface-switch:hover { opacity: 1; }
-.typeface-switch:active { transform: scale(0.97); }
+/* Collapsed: a 22px mark, nearly invisible until looked for. */
+.typeface-dot {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--color-navy-3);
+  opacity: 0.16;
+  transition: opacity 200ms ease, transform 140ms var(--ease-out);
+}
 
-.typeface-switch-dot {
+.typeface-dot span {
   width: 5px;
   height: 5px;
-  flex: none;
   background: var(--color-teal-ink);
   transform: rotate(45deg);
 }
 
-.typeface-switch-note {
-  font-weight: 500;
-  letter-spacing: 0.1em;
-  color: var(--color-navy-3);
+@media (hover: hover) and (pointer: fine) {
+  .typeface-dot:hover { opacity: 0.5; }
 }
 
-@media (max-width: 640px) {
-  .typeface-switch-note { display: none; }
-}
+.typeface-dot:focus-visible { opacity: 0.9; }
+.typeface-dot:active { transform: scale(0.92); }
+.typeface-switch[data-open] .typeface-dot { opacity: 0.75; }
 
-.typeface-switch-key {
-  font: inherit;
-  padding: 2px 5px;
+/* Expanded: grows out of the mark, not from its own middle. */
+.typeface-panel {
+  min-width: 210px;
+  background: var(--color-paper);
   border: 1px solid var(--color-rule);
+  box-shadow: 0 10px 30px -18px rgba(25, 48, 77, 0.55);
+  transform-origin: bottom left;
+  opacity: 0;
+  transform: scale(0.94) translateY(6px);
+  visibility: hidden;
+  transition: opacity 180ms var(--ease-out), transform 180ms var(--ease-out),
+    visibility 0s linear 180ms;
+}
+
+.typeface-switch[data-open] .typeface-panel {
+  opacity: 1;
+  transform: none;
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+.typeface-panel-head,
+.typeface-panel-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 11px;
+  font-variation-settings: "wdth" 76;
+  font-weight: 600;
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
   color: var(--color-navy-3);
+}
+
+.typeface-panel-head { border-bottom: 1px solid var(--color-rule); }
+.typeface-panel-foot {
+  border-top: 1px solid var(--color-rule);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: none;
+}
+
+.typeface-panel-esc {
+  border: 1px solid var(--color-rule);
+  padding: 1px 4px;
+  letter-spacing: 0.1em;
+}
+
+.typeface-list { padding: 5px; }
+
+.typeface-option {
+  display: grid;
+  grid-template-columns: 10px 1fr;
+  align-items: center;
+  gap: 2px 9px;
+  width: 100%;
+  padding: 7px 8px;
+  text-align: left;
+  transition: background-color 140ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .typeface-option:hover { background: var(--color-paper-2); }
+}
+
+.typeface-option-mark {
+  width: 5px;
+  height: 5px;
+  margin-inline: auto;
+  border: 1px solid var(--color-navy-3);
+  transform: rotate(45deg);
+}
+
+.typeface-option[data-active] .typeface-option-mark {
+  background: var(--color-teal-ink);
+  border-color: var(--color-teal-ink);
+}
+
+.typeface-option-name {
+  font-variation-settings: "wdth" 84;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-navy-3);
+}
+
+.typeface-option[data-active] .typeface-option-name { color: var(--color-navy); }
+
+.typeface-option-note {
+  grid-column: 2;
+  font-variation-settings: "wdth" 72;
+  font-weight: 500;
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  color: var(--color-navy-3);
+  opacity: 0.75;
 }
 
 /* ============================================================

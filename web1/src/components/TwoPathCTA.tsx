@@ -7,7 +7,7 @@ export function TwoPathCTA() {
         {/* Teacher path */}
         <div
           id="teachers"
-          className="relative flex scroll-mt-24 flex-col overflow-hidden bg-[color:var(--color-paper)] p-10 md:p-14"
+          className="relative flex flex-col overflow-hidden bg-[color:var(--color-paper)] p-10 md:p-14"
           style={{ minHeight: 360 }}
         >
           <Contours
@@ -39,7 +39,7 @@ export function TwoPathCTA() {
         {/* School path */}
         <div
           id="schools"
-          className="relative flex scroll-mt-24 flex-col overflow-hidden p-10 md:p-14"
+          className="relative flex flex-col overflow-hidden p-10 md:p-14"
           style={
             {
               minHeight: 360,

@@ -27,7 +27,7 @@ export function ProblemBlock() {
   return (
     <section
       id="trust"
-      className="on-navy relative scroll-mt-24 overflow-hidden py-24 md:py-32"
+      className="on-navy relative overflow-hidden py-24 md:py-32"
     >
       <Contours
         className="opacity-80"

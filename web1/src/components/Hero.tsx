@@ -43,7 +43,7 @@ export function Hero() {
         }}
       />
 
-      <div className="wrap relative py-20 md:py-28 lg:py-36">
+      <div className="wrap relative py-12 md:py-16 lg:py-20">
         <div className="flex items-center gap-3">
           <span
             aria-hidden="true"
@@ -55,13 +55,13 @@ export function Hero() {
           </span>
         </div>
 
-        <h1 className="display mt-10 max-w-[16ch]">
+        <h1 className="display mt-8 max-w-[16ch]">
           Teach in
           <Destination />
           without the recruiter roulette.
         </h1>
 
-        <p className="lede mt-9 max-w-[30em]">
+        <p className="lede mt-7 max-w-[30em]">
           Class Act Talent connects international schools with verified,
           safeguarded teachers — and nudges everyone to actually communicate.
           Better filtering for schools. Real feedback for teachers. AI that{" "}
@@ -71,7 +71,7 @@ export function Hero() {
           — humans decide.
         </p>
 
-        <div className="mt-10 flex flex-wrap items-center gap-3">
+        <div className="mt-8 flex flex-wrap items-center gap-3">
           <a href="#teacher-signup" className="btn btn-gold">
             Join as a teacher
           </a>
@@ -80,7 +80,7 @@ export function Hero() {
           </a>
         </div>
 
-        <ul className="mt-16 flex flex-wrap gap-x-10 gap-y-3 border-t border-[color:var(--color-rule)] pt-6">
+        <ul className="mt-10 flex flex-wrap gap-x-10 gap-y-3 border-t border-[color:var(--color-rule)] pt-5">
           {ASSURANCES.map((a) => (
             <li key={a} className="flex items-center gap-2.5">
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true">
