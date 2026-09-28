@@ -18,18 +18,7 @@ export function Stats() {
             key={s.label}
             className="border-t border-[color:var(--color-navy)] pt-6"
           >
-            <span
-              className="flex items-baseline gap-3"
-              style={{
-                fontVariationSettings: '"wdth" 118',
-                fontWeight: 700,
-                fontSize: "clamp(2.6rem, 5vw, 3.9rem)",
-                lineHeight: 0.9,
-                letterSpacing: "-0.022em",
-                fontVariantNumeric: "tabular-nums",
-                color: "var(--color-navy)",
-              }}
-            >
+            <span className="stat-number flex items-baseline gap-3">
               {s.number}
               {s.suffix && (
                 <span

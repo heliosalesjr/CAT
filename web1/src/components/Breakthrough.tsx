@@ -35,16 +35,8 @@ export function Breakthrough() {
             Manifesto · 01
           </span>
           <p
-            className="mt-7"
-            style={{
-              fontVariationSettings: '"wdth" 112',
-              fontWeight: 700,
-              textTransform: "uppercase",
-              fontSize: "clamp(1.5rem, 3vw, 2.5rem)",
-              lineHeight: 1.06,
-              letterSpacing: "-0.012em",
-              color: "var(--color-paper)",
-            }}
+            className="manifesto mt-7"
+            style={{ color: "var(--color-paper)" }}
           >
             A teacher moving countries deserves more than a spreadsheet. A
             school entrusting its students deserves more than a résumé.

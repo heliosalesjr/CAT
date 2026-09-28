@@ -31,6 +31,10 @@
   --color-green: #65b67f;
 
   --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  /* Headings resolve through this so the face can be swapped while we
+     decide. Map furniture — labels, readouts, keys — stays on Archivo,
+     since the condensed width is what makes it read as cartography. */
+  --font-display: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
 
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-travel: cubic-bezier(0.62, 0.02, 0.2, 1);
@@ -80,6 +84,7 @@
    ============================================================ */
 
 .display {
+  font-family: var(--font-display);
   font-variation-settings: "wdth" 116;
   font-weight: 700;
   text-transform: uppercase;
@@ -90,6 +95,7 @@
 }
 
 .display-md {
+  font-family: var(--font-display);
   font-variation-settings: "wdth" 112;
   font-weight: 700;
   text-transform: uppercase;
@@ -99,7 +105,29 @@
   font-size: clamp(1.6rem, 2.9vw, 2.35rem);
 }
 
+.stat-number {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 118;
+  font-weight: 700;
+  font-size: clamp(2.6rem, 5vw, 3.9rem);
+  line-height: 0.9;
+  letter-spacing: -0.022em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-navy);
+}
+
+.manifesto {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 112;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
+  line-height: 1.06;
+  letter-spacing: -0.012em;
+}
+
 .title {
+  font-family: var(--font-display);
   font-variation-settings: "wdth" 106;
   font-weight: 700;
   text-transform: uppercase;
@@ -139,6 +167,140 @@
 }
 
 .measure { max-width: 34em; }
+
+/* ------------------------------------------------------------------
+   Heading typeface alternates (temporary — see app/layout.tsx)
+   ------------------------------------------------------------------ */
+
+:root[data-typeface="cinzel"] {
+  --font-display: var(--font-cinzel), "Trajan Pro", Georgia, serif;
+}
+
+/* Cinzel is drawn as capitals, so it needs none of the coaxing the
+   other serifs do — only tracking, which carved letters always want,
+   and a touch more at small sizes where the chiselled serifs crowd. */
+:root[data-typeface="cinzel"] .display,
+:root[data-typeface="cinzel"] .display-md,
+:root[data-typeface="cinzel"] .stat-number {
+  font-variation-settings: "wght" 700;
+  letter-spacing: 0.02em;
+}
+
+:root[data-typeface="cinzel"] .title {
+  font-variation-settings: "wght" 700;
+  letter-spacing: 0.05em;
+}
+
+:root[data-typeface="cinzel"] .manifesto {
+  font-variation-settings: "wght" 600;
+  letter-spacing: 0.024em;
+  line-height: 1.18;
+}
+
+:root[data-typeface="cinzel"] .display { line-height: 1.08; }
+:root[data-typeface="cinzel"] .display-md { line-height: 1.12; }
+
+
+:root[data-typeface="googlesans"] {
+  --font-display: var(--font-googlesans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* wght tops out at 700, so GRAD carries the rest of the weight. It is
+   dialled back where the type reverses out of navy, since light on
+   dark already reads heavier than it is. */
+:root[data-typeface="googlesans"] .display,
+:root[data-typeface="googlesans"] .display-md,
+:root[data-typeface="googlesans"] .stat-number {
+  font-variation-settings: "wght" 700, "GRAD" 120;
+  letter-spacing: 0.004em;
+}
+
+:root[data-typeface="googlesans"] .title {
+  font-variation-settings: "wght" 700, "GRAD" 80;
+  letter-spacing: 0.012em;
+}
+
+:root[data-typeface="googlesans"] .manifesto {
+  font-variation-settings: "wght" 700, "GRAD" 40;
+  letter-spacing: 0.006em;
+}
+
+:root[data-typeface="roboto"] {
+  --font-display: var(--font-roboto), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* wdth 100 is as wide as Roboto goes — it has no expanded direction,
+   so these headings set narrower than the Archivo originals. */
+:root[data-typeface="roboto"] .display,
+:root[data-typeface="roboto"] .display-md,
+:root[data-typeface="roboto"] .stat-number {
+  font-variation-settings: "wdth" 100, "wght" 800;
+  letter-spacing: 0.006em;
+}
+
+:root[data-typeface="roboto"] .title {
+  font-variation-settings: "wdth" 100, "wght" 700;
+  letter-spacing: 0.014em;
+}
+
+:root[data-typeface="roboto"] .manifesto {
+  font-variation-settings: "wdth" 100, "wght" 700;
+  letter-spacing: 0.008em;
+}
+
+/* ------------------------------------------------------------------
+   The switch itself
+   ------------------------------------------------------------------ */
+
+.typeface-switch {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px 8px 12px;
+  background: var(--color-paper);
+  border: 1px solid var(--color-rule);
+  box-shadow: 0 6px 20px -12px rgba(25, 48, 77, 0.4);
+  font-variation-settings: "wdth" 78;
+  font-weight: 600;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-navy);
+  opacity: 0.55;
+  transition: opacity 160ms ease, transform 140ms var(--ease-out);
+}
+
+.typeface-switch:hover { opacity: 1; }
+.typeface-switch:active { transform: scale(0.97); }
+
+.typeface-switch-dot {
+  width: 5px;
+  height: 5px;
+  flex: none;
+  background: var(--color-teal-ink);
+  transform: rotate(45deg);
+}
+
+.typeface-switch-note {
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: var(--color-navy-3);
+}
+
+@media (max-width: 640px) {
+  .typeface-switch-note { display: none; }
+}
+
+.typeface-switch-key {
+  font: inherit;
+  padding: 2px 5px;
+  border: 1px solid var(--color-rule);
+  color: var(--color-navy-3);
+}
 
 /* ============================================================
    Layout

@@ -89,13 +89,6 @@ export function FeatureGrid() {
           <span className="legend-corner bottom-0 left-0 border-b border-l" aria-hidden="true" />
           <span className="legend-corner bottom-0 right-0 border-b border-r" aria-hidden="true" />
 
-          <div className="flex items-center justify-between gap-6 border-b border-[color:var(--color-rule)] px-7 py-4 md:px-9">
-            <span className="label label-teal">Legend</span>
-            <span className="readout">
-              {FEATURES.length} symbols · sheet 01
-            </span>
-          </div>
-
           <div className="grid gap-px bg-[color:var(--color-rule)] sm:grid-cols-2">
             {FEATURES.map((f, i) => (
               <article key={f.title} className="legend-cell">
