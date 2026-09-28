@@ -1,0 +1,442 @@
+@import "tailwindcss";
+
+/* ============================================================
+   Class Act Talent
+   A survey sheet: warm paper, navy ink, contour lines, and gold
+   kept for the things you are meant to act on. Brand colours are
+   the approved ones sampled from the logo.
+   ============================================================ */
+
+@theme {
+  /* --- Paper --------------------------------------------- */
+  --color-paper: #faf8f3;
+  --color-paper-2: #f3efe5;
+  --color-paper-3: #ece7d9;
+
+  /* --- Ink (navy carries the page; it is not an accent) --- */
+  --color-navy: #19304d;
+  --color-navy-2: #3d557a;
+  --color-navy-3: #6b7f9a;
+  --color-rule: #ded7c6;
+
+  /* --- Contour lines ------------------------------------- */
+  --color-contour: #b9c6d6;
+  --color-contour-2: #9dafc4;
+
+  /* --- Accents ------------------------------------------- */
+  --color-gold: #f1bb4c;
+  --color-gold-deep: #d99f22;
+  --color-teal: #81c4cf;
+  --color-teal-ink: #3e8794;
+  --color-green: #65b67f;
+
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-travel: cubic-bezier(0.62, 0.02, 0.2, 1);
+}
+
+/* Read by the contour SVGs. */
+:root {
+  --contour: var(--color-contour);
+  --signal: var(--color-teal-ink);
+}
+
+@layer base {
+  html {
+    background: var(--color-paper);
+    color: var(--color-navy);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    font-size: 16.5px;
+    line-height: 1.65;
+    background: var(--color-paper);
+    color: var(--color-navy-2);
+  }
+
+  h1, h2, h3, h4 { color: var(--color-navy); font-weight: 700; }
+  p { text-wrap: pretty; }
+
+  ::selection { background: var(--color-gold); color: var(--color-navy); }
+
+  :focus-visible {
+    outline: 2px solid var(--color-gold-deep);
+    outline-offset: 3px;
+  }
+
+  a { color: inherit; }
+}
+
+/* Component classes live in the components layer so Tailwind
+   utilities still win against them. Unlayered rules outrank every
+   @layer, which silently breaks things like `hidden` on a .btn. */
+@layer components {
+/* ============================================================
+   Type — one family, three widths
+   ============================================================ */
+
+.display {
+  font-variation-settings: "wdth" 116;
+  font-weight: 700;
+  text-transform: uppercase;
+  line-height: 0.94;
+  letter-spacing: -0.014em;
+  color: var(--color-navy);
+  font-size: clamp(2rem, 4.2vw, 3.6rem);
+}
+
+.display-md {
+  font-variation-settings: "wdth" 112;
+  font-weight: 700;
+  text-transform: uppercase;
+  line-height: 1;
+  letter-spacing: -0.008em;
+  color: var(--color-navy);
+  font-size: clamp(1.6rem, 2.9vw, 2.35rem);
+}
+
+.title {
+  font-variation-settings: "wdth" 106;
+  font-weight: 700;
+  text-transform: uppercase;
+  line-height: 1.18;
+  font-size: 17.5px;
+  letter-spacing: -0.002em;
+  color: var(--color-navy);
+}
+
+.label {
+  font-variation-settings: "wdth" 76;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-navy-3);
+}
+
+.label-gold { color: var(--color-gold-deep); }
+.label-teal { color: var(--color-teal-ink); }
+
+.lede {
+  font-size: clamp(1.02rem, 1.25vw, 1.15rem);
+  line-height: 1.62;
+  color: var(--color-navy-2);
+}
+
+.body { font-size: 15.5px; line-height: 1.65; color: var(--color-navy-2); }
+
+.readout {
+  font-variation-settings: "wdth" 70;
+  font-weight: 500;
+  font-size: 10.5px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-navy-3);
+}
+
+.measure { max-width: 34em; }
+
+/* ============================================================
+   Layout
+   ============================================================ */
+
+.wrap {
+  width: 100%;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-inline: 22px;
+}
+
+@media (min-width: 768px) { .wrap { padding-inline: 48px; } }
+
+.hair { height: 1px; background: var(--color-rule); border: 0; }
+
+/* ============================================================
+   Controls
+   ============================================================ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-variation-settings: "wdth" 90;
+  font-weight: 600;
+  font-size: 12.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1;
+  padding: 16px 24px;
+  white-space: nowrap;
+  transition: transform 140ms var(--ease-out), background-color 160ms ease,
+    color 160ms ease, border-color 160ms ease;
+}
+
+.btn:active { transform: scale(0.97); }
+
+.btn-gold { background: var(--color-gold); color: var(--color-navy); }
+.btn-gold:hover { background: var(--color-gold-deep); }
+
+.btn-navy { background: var(--color-navy); color: var(--color-paper); }
+.btn-navy:hover { background: #0f2137; }
+
+.btn-outline {
+  border: 1px solid var(--color-navy);
+  color: var(--color-navy);
+}
+.btn-outline:hover { background: var(--color-navy); color: var(--color-paper); }
+
+.link { position: relative; display: inline-block; padding-bottom: 3px; }
+.link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 1px;
+  width: 100%;
+  background: var(--color-gold-deep);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 220ms var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .link:hover::after { transform: scaleX(1); }
+  .link:hover { color: var(--color-navy); }
+}
+
+/* Legend key, not a pill. */
+.key {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-variation-settings: "wdth" 78;
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 6px 11px;
+  border: 1px solid var(--color-rule);
+  color: var(--color-navy-2);
+  background: var(--color-paper);
+}
+
+.key-gold {
+  border-color: color-mix(in srgb, var(--color-gold-deep) 55%, transparent);
+  color: var(--color-gold-deep);
+}
+
+/* ============================================================
+   Terrain
+   ============================================================ */
+
+.contours {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.benchmark { position: absolute; width: 34px; height: 34px; pointer-events: none; }
+
+/* Cursor interaction over the hero terrain. The bands are moved by
+   rAF-written transforms, so nothing here animates them; these rules
+   only set up the stacking and the probe's resting state. */
+.terrain-probe { position: absolute; inset: 0; }
+
+.terrain-band {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+}
+
+
+
+/* The hero's field, moved by the destination rotator. */
+.terrain {
+  position: absolute;
+  inset: -12%;
+  transform: translate3d(var(--pan-x, 0), var(--pan-y, 0), 0)
+    scale(var(--pan-s, 1.1));
+  transform-origin: 50% 46%;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .terrain { transition: transform 2400ms var(--ease-travel); }
+}
+
+/* ============================================================
+   Destination rotator
+   ============================================================ */
+
+.destination {
+  display: block;
+  position: relative;
+  color: var(--color-gold-deep);
+  margin-block: 0.06em 0.34em;
+}
+
+.destination-stack { position: relative; display: block; }
+
+.destination-word {
+  display: block;
+  white-space: nowrap;
+}
+
+.destination-word.is-leaving {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+}
+
+.destination-char { display: inline-block; }
+
+/* Letters leave upward and arrive from below, staggered, so the word
+   assembles instead of cutting. Clipped by the line box above. */
+
+
+
+
+
+
+
+
+@media (prefers-reduced-motion: no-preference) {
+  .is-arriving .destination-char {
+    animation: char-in 620ms var(--ease-out) both;
+    animation-delay: calc(var(--i) * 34ms);
+  }
+
+  .is-leaving .destination-char {
+    animation: char-out 420ms var(--ease-out) both;
+    animation-delay: calc(var(--i) * 22ms);
+  }
+
+  .destination-rule {
+    animation: rule-wipe 2600ms var(--ease-out) 240ms both;
+  }
+
+  .destination-coords { animation: coords-in 620ms var(--ease-out) 340ms both; }
+}
+
+.destination-rule {
+  display: block;
+  height: 1px;
+  width: 100%;
+  max-width: 9em;
+  margin-top: 0.22em;
+  background: var(--color-gold-deep);
+}
+
+.destination-coords {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 0.7em;
+  font-variation-settings: "wdth" 70;
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: var(--color-navy-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.destination-cc {
+  font-variation-settings: "wdth" 84;
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  padding: 3px 7px;
+  color: var(--color-teal-ink);
+  border: 1px solid color-mix(in srgb, var(--color-teal) 60%, transparent);
+}
+
+/* ============================================================
+   Plates
+   ============================================================ */
+
+.plate { position: relative; overflow: hidden; background: var(--color-paper-3); }
+
+/* Photographs are pulled towards the navy so they sit on the sheet
+   rather than on top of it. */
+.plate img { filter: grayscale(1) contrast(1.12) brightness(0.98); }
+
+.plate::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    200deg,
+    color-mix(in srgb, var(--color-navy) 55%, transparent),
+    color-mix(in srgb, var(--color-teal) 26%, transparent)
+  );
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+/* ============================================================
+   Marquee
+   ============================================================ */
+
+
+
+.marquee-track { display: flex; width: max-content; gap: 56px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .marquee-track { animation: marquee 56s linear infinite; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn:active { transform: none; }
+  .link::after { transition: none; }
+}
+
+/* ============================================================
+   Forms
+   ============================================================ */
+
+.field-input {
+  background: var(--color-paper);
+  border: 1px solid var(--color-rule);
+  color: var(--color-navy);
+  padding: 15px 16px;
+  font-size: 14.5px;
+  width: 100%;
+  outline: none;
+  transition: border-color 160ms ease;
+}
+.field-input::placeholder { color: var(--color-navy-3); }
+.field-input:focus { border-color: var(--color-navy-2); }
+}
+
+@keyframes char-in {
+  from { opacity: 0; transform: translate3d(0, 0.9em, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes char-out {
+  from { opacity: 1; transform: translate3d(0, 0, 0); }
+  to   { opacity: 0; transform: translate3d(0, -0.9em, 0); }
+}
+
+@keyframes rule-wipe {
+  0%   { transform: scaleX(0); transform-origin: left; }
+  55%  { transform: scaleX(1); transform-origin: left; }
+  56%  { transform: scaleX(1); transform-origin: right; }
+  100% { transform: scaleX(0); transform-origin: right; }
+}
+
+@keyframes coords-in {
+  from { opacity: 0; transform: translate3d(0, 6px, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes marquee {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
+}

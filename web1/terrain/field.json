@@ -1,0 +1,19 @@
+{
+  "_": "Single source of truth for the terrain. Run `npm run terrain` to bake src/components/terrain-data.ts and terrain-meta.ts from this.",
+  "box": { "width": 1200, "height": 800 },
+  "grid": { "nx": 241, "ny": 161 },
+  "levels": 13,
+  "sheets": 6,
+  "seed": 20260928,
+  "smoothing": { "chaikin": 2, "simplifyEpsilon": 0.45, "minPoints": 12 },
+  "tilt": { "v": 0.22, "u": 0.1 },
+  "peakCount": { "min": 5, "max": 7 },
+  "peakRanges": {
+    "cx": [0.12, 0.9],
+    "cy": [0.14, 0.86],
+    "sigma": [0.09, 0.26],
+    "aspect": [0.45, 1.0],
+    "rot": [-60, 60],
+    "amp": [0.38, 1.0]
+  }
+}
