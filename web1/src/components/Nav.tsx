@@ -4,7 +4,6 @@ import { Wordmark } from "./Wordmark";
 const links = [
   { href: "#teachers", label: "For teachers" },
   { href: "#schools", label: "For schools" },
-  { href: "#how", label: "How it works" },
   { href: "#trust", label: "Trust & safety" },
 ];
 

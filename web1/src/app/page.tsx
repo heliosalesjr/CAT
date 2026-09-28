@@ -2,7 +2,6 @@ import { Nav } from "@/components/Nav";
 import { Hero } from "@/components/Hero";
 import { TrustBar } from "@/components/TrustBar";
 import { ProblemBlock } from "@/components/ProblemBlock";
-import { HowItWorks } from "@/components/HowItWorks";
 import { FeatureGrid } from "@/components/FeatureGrid";
 import { Stats } from "@/components/Stats";
 import { Breakthrough } from "@/components/Breakthrough";
@@ -17,6 +16,13 @@ import { Footer } from "@/components/Footer";
  */
 export const dynamic = "force-dynamic";
 
+/*
+ * Parked, not deleted: src/components/HowItWorks.tsx is intact and
+ * still builds. Re-add the import and drop <HowItWorks /> back in
+ * after <ProblemBlock /> to bring the three plates back. Its nav entry
+ * was removed too, since #how no longer exists on the page.
+ */
+
 export default function Home() {
   return (
     <>
@@ -25,7 +31,6 @@ export default function Home() {
         <Hero />
         <TrustBar />
         <ProblemBlock />
-        <HowItWorks />
         <FeatureGrid />
         <Stats />
         <Breakthrough />

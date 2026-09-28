@@ -25,10 +25,13 @@ const PAINS = [
 
 export function ProblemBlock() {
   return (
-    <section id="trust" className="relative scroll-mt-24 overflow-hidden py-24 md:py-32">
+    <section
+      id="trust"
+      className="on-navy relative scroll-mt-24 overflow-hidden py-24 md:py-32"
+    >
       <Contours
-        className="opacity-55"
-        viewBox="640 80 560 700"
+        className="opacity-80"
+        viewBox="120 100 940 620"
         strokeWidth={1}
         levels={[1, 4, 7, 10]}
       />
@@ -39,7 +42,7 @@ export function ProblemBlock() {
           <h2 className="display-md mt-6 max-w-[17em]">
             International recruitment
             <br />
-            <span style={{ color: "var(--color-teal-ink)" }}>
+            <span style={{ color: "var(--color-teal)" }}>
               shouldn’t feel this broken.
             </span>
           </h2>
@@ -63,11 +66,11 @@ export function ProblemBlock() {
               key={p.title}
               className="border-t border-[color:var(--color-rule)] pt-6"
             >
-              <span className="readout !text-[color:var(--color-gold-deep)]">
+              <span className="readout !text-[color:var(--color-gold)]">
                 {String(i + 1).padStart(2, "0")}
               </span>
               <h3 className="title mt-4">{p.title}</h3>
-              <p className="body mt-3 max-w-[34em] !text-[color:var(--color-navy-3)]">
+              <p className="body mt-3 max-w-[34em]">
                 {p.detail}
               </p>
             </li>

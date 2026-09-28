@@ -155,6 +155,48 @@
 
 .hair { height: 1px; background: var(--color-rule); border: 0; }
 
+/* ------------------------------------------------------------------
+   A navy ground.
+
+   Rather than restating every colour inline, this rescopes the tokens
+   that mean "a rule on the current ground" and "the lit contour", so
+   anything inside — hairlines, labels, legend keys — adapts on its
+   own. It only redefines tokens whose meaning is relative to the
+   ground; --color-navy and --color-paper keep meaning what they say.
+   ------------------------------------------------------------------ */
+.on-navy {
+  background: var(--color-navy);
+  color: rgba(250, 248, 243, 0.68);
+
+  --contour: #27436a;
+  --signal: var(--color-teal);
+  --color-rule: rgba(250, 248, 243, 0.16);
+}
+
+.on-navy h1,
+.on-navy h2,
+.on-navy h3 { color: var(--color-paper); }
+
+.on-navy .label { color: rgba(250, 248, 243, 0.55); }
+.on-navy .label-gold { color: var(--color-gold); }
+.on-navy .label-teal { color: var(--color-teal); }
+.on-navy .body { color: rgba(250, 248, 243, 0.62); }
+.on-navy .readout { color: rgba(250, 248, 243, 0.5); }
+
+.on-navy .key {
+  background: transparent;
+  border-color: rgba(250, 248, 243, 0.24);
+  color: rgba(250, 248, 243, 0.8);
+}
+
+.on-navy .key-gold {
+  border-color: color-mix(in srgb, var(--color-gold) 55%, transparent);
+  color: var(--color-gold);
+}
+
+.on-navy .link::after { background: var(--color-gold); }
+.on-navy .link:hover { color: var(--color-paper); }
+
 /* ============================================================
    Controls
    ============================================================ */
@@ -226,6 +268,61 @@
 .key-gold {
   border-color: color-mix(in srgb, var(--color-gold-deep) 55%, transparent);
   color: var(--color-gold-deep);
+}
+
+/* ------------------------------------------------------------------
+   Legend sheet
+
+   The box in the corner of a survey map that says what the symbols
+   mean. Squared off, hairline-ruled, with trimmed corners — the same
+   furniture a printed sheet carries.
+   ------------------------------------------------------------------ */
+.legend {
+  position: relative;
+  background: var(--color-paper-2);
+  border: 1px solid var(--color-rule);
+}
+
+.legend-corner {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-color: var(--color-teal-ink);
+  opacity: 0.55;
+}
+
+.legend-cell {
+  display: flex;
+  gap: 20px;
+  padding: 28px;
+  background: var(--color-paper-2);
+  transition: background-color 180ms ease;
+}
+
+@media (min-width: 768px) {
+  .legend-cell { padding: 34px; }
+}
+
+.legend-symbol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  flex: none;
+  color: var(--color-teal-ink);
+  border: 1px solid color-mix(in srgb, var(--color-teal) 55%, transparent);
+  transition: background-color 180ms ease, color 180ms ease,
+    border-color 180ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .legend-cell:hover { background: var(--color-paper); }
+  .legend-cell:hover .legend-symbol {
+    background: var(--color-teal-ink);
+    border-color: var(--color-teal-ink);
+    color: var(--color-paper);
+  }
 }
 
 /* ============================================================
