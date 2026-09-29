@@ -1,0 +1,752 @@
+@import "tailwindcss";
+
+/* ============================================================
+   Class Act Talent — lean landing page
+   Built to LP_SKILL.md. Brand blue and gold, pushed a little
+   deeper and warmer than the v1 spec. Flat backgrounds; the one
+   gradient on the page is the hero heading text (B5).
+   ============================================================ */
+
+@theme {
+  /* Blue, deeper than the v1 navy */
+  --color-ink: #0e1e36;
+  --color-ink-2: #16294a;
+  --color-ink-3: #35507a;
+  --color-mute: #6d82a1;
+  --color-mute-2: #93a3bb;
+
+  /* Paper and rules */
+  --color-paper: #fbfaf7;
+  --color-paper-2: #f3f1ea;
+  --color-line: #e4e2dc;
+  --color-line-dark: #24375a;
+
+  /* Gold, warmer than the v1 spec */
+  --color-gold: #e8b33c;
+  --color-gold-deep: #c9912a;
+
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+
+  /* B7: every transition rides this curve. Nothing uses a default. */
+  --ease-fluid: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@layer base {
+  html {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-padding-top: 96px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html { scroll-behavior: smooth; }
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--color-paper);
+    color: var(--color-ink-3);
+    text-wrap: pretty;
+  }
+
+  h1, h2, h3 {
+    color: var(--color-ink);
+    text-wrap: balance;
+  }
+
+  ::selection { background: var(--color-gold); color: var(--color-ink); }
+
+  :focus-visible {
+    outline: 2px solid var(--color-gold-deep);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* --- B5: the one gradient, and only on heading text ------------ */
+  .hero-heading {
+    background-image: linear-gradient(
+      to right,
+      var(--color-ink) 0%,
+      #4a668f 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* --- Shell ----------------------------------------------------- */
+  .shell {
+    width: 100%;
+    max-width: 1200px;
+    margin-inline: auto;
+    padding-inline: 24px;
+  }
+
+  /* B5: hero heading and subheading capped at 680px */
+  .measure-hero { max-width: 680px; }
+
+  /* --- Buttons: B2 sizing, B9 full state set --------------------- */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 12px;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    transition: background-color 700ms var(--ease-fluid),
+      color 700ms var(--ease-fluid), transform 250ms var(--ease-fluid),
+      box-shadow 700ms var(--ease-fluid);
+  }
+
+  .btn-sm { font-size: 0.875rem; line-height: 1.25rem; }
+
+  .btn:active { transform: scale(0.98); }
+
+  .btn-gold { background: var(--color-gold); color: var(--color-ink); }
+  .btn-gold:hover { background: var(--color-gold-deep); }
+
+  .btn-ink { background: var(--color-ink); color: var(--color-paper); }
+  .btn-ink:hover { background: var(--color-ink-2); }
+
+  .btn-outline {
+    border: 1px solid var(--color-ink);
+    color: var(--color-ink);
+  }
+  .btn-outline:hover { background: var(--color-ink); color: var(--color-paper); }
+
+  .btn-ghost-light {
+    border: 1px solid rgba(251, 250, 247, 0.4);
+    color: var(--color-paper);
+  }
+  .btn-ghost-light:hover {
+    background: var(--color-paper);
+    color: var(--color-ink);
+  }
+
+  /* --- Plates: one filter for every photograph ------------------- */
+  /* The whole point of the imagery is that the set reads as one set,
+     so the treatment lives here rather than per image. */
+  .plate {
+    position: relative;
+    overflow: hidden;
+    background: var(--color-ink);
+    isolation: isolate;
+  }
+
+  .plate img {
+    filter: grayscale(1) contrast(1.15) brightness(0.92);
+    transition: transform 700ms var(--ease-fluid),
+      filter 700ms var(--ease-fluid);
+  }
+
+  /* Blue cast over the greyscale: a duotone without a background
+     gradient, since B4 forbids those. */
+  .plate::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--color-ink);
+    opacity: 0.52;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+    transition: opacity 700ms var(--ease-fluid);
+  }
+
+  /* Grain, so the flat fill does not look like a coloured rectangle. */
+  .plate::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0.16;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .plate-link:hover img { transform: scale(1.04); }
+    .plate-link:hover .plate::after { opacity: 0.34; }
+  }
+
+  /* --- Eyebrow --------------------------------------------------- */
+  .eyebrow {
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-mute);
+  }
+}
+
+/* ============================================================
+   B7 scroll interpolation
+
+   Hidden only once the inline boot script confirms scripting is
+   live, so the page still reads with JavaScript off or broken.
+   The same script disarms itself after 3s if the observer never
+   installs, which is the failure that would otherwise leave the
+   page blank.
+   ============================================================ */
+
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-anim] .reveal {
+    opacity: 0;
+    transform: translateY(64px);
+    filter: blur(12px);
+  }
+
+  :root[data-anim] .reveal-in {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+    transition: opacity 800ms var(--ease-fluid),
+      transform 800ms var(--ease-fluid), filter 800ms var(--ease-fluid);
+    transition-delay: var(--reveal-delay, 0ms);
+  }
+}
+
+/* B10: keyboard users get a way past the navigation. */
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 100;
+  padding: 8px 12px;
+  border-radius: 0.5rem;
+  background: var(--color-ink);
+  color: var(--color-paper);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 600;
+  transform: translateY(-200%);
+  transition: transform 700ms var(--ease-fluid);
+}
+
+.skip-link:focus-visible { transform: translateY(0); }
+
+/* ============================================================
+   B7 fluid island nav
+   ============================================================ */
+
+@layer components {
+  .island {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 8px 8px 8px 24px;
+    border-radius: 9999px;
+    border: 1px solid var(--color-line);
+    background: rgba(251, 250, 247, 0.72);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 8px 32px -24px rgba(14, 30, 54, 0.5);
+    transition: background-color 700ms var(--ease-fluid);
+  }
+
+  .island-brand {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--color-ink);
+    white-space: nowrap;
+  }
+
+  .island-brand-light { color: var(--color-mute); }
+
+  .island-burger {
+    position: relative;
+    width: 32px;
+    height: 32px;
+    border-radius: 9999px;
+    display: grid;
+    place-items: center;
+    transition: background-color 700ms var(--ease-fluid);
+  }
+
+  .island-burger:hover { background: var(--color-paper-2); }
+  .island-burger:active { transform: scale(0.98); }
+
+  /* Two lines that rotate into an X. Never hidden, only moved, so the
+     shape morphs instead of swapping. */
+  .island-burger-lines {
+    position: relative;
+    display: block;
+    width: 16px;
+    height: 12px;
+  }
+
+  .island-burger-lines span {
+    position: absolute;
+    left: 0;
+    width: 16px;
+    height: 1.5px;
+    border-radius: 9999px;
+    background: var(--color-ink);
+    transition: transform 700ms var(--ease-fluid);
+  }
+
+  .island-burger-lines span:first-child { top: 3px; }
+  .island-burger-lines span:last-child { top: 8px; }
+
+  .island-burger-lines[data-open] span:first-child {
+    transform: translateY(2.5px) rotate(45deg);
+  }
+  .island-burger-lines[data-open] span:last-child {
+    transform: translateY(-2.5px) rotate(-45deg);
+  }
+
+  /* Screen filling overlay with heavy glass. */
+  .island-menu {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    display: grid;
+    place-items: center;
+    background: rgba(251, 250, 247, 0.8);
+    backdrop-filter: blur(48px);
+    -webkit-backdrop-filter: blur(48px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 700ms var(--ease-fluid),
+      visibility 0s linear 700ms;
+  }
+
+  .island-menu[data-open] {
+    opacity: 1;
+    visibility: visible;
+    transition-delay: 0s;
+  }
+
+  .island-menu ul {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+
+  /* Staggered mask reveal: each item rises out of an invisible box. */
+  .island-menu li {
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(48px);
+    transition: opacity 700ms var(--ease-fluid),
+      transform 700ms var(--ease-fluid);
+  }
+
+  .island-menu[data-open] li {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: calc(100ms + var(--i) * 50ms);
+  }
+
+  .island-menu a {
+    display: block;
+    font-size: 2.25rem;
+    line-height: 2.5rem;
+    font-weight: 600;
+    color: var(--color-ink);
+    padding: 4px 8px;
+    transition: color 700ms var(--ease-fluid);
+  }
+
+  .island-menu a:hover { color: var(--color-gold-deep); }
+
+  @media (min-width: 768px) {
+    .island-menu a { font-size: 3rem; line-height: 1; }
+  }
+}
+
+/* ============================================================
+   B11 tagline reveal
+   ============================================================ */
+
+@layer components {
+  .tagline { color: var(--color-ink); }
+
+  .tagline-word {
+    display: inline;
+    /* Starts muted, per B11, and never below readable contrast. */
+    color: color-mix(in srgb, var(--color-ink) 30%, var(--color-paper));
+    transition: color 700ms var(--ease-fluid);
+  }
+
+  .tagline-word.is-lit { color: var(--color-ink); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tagline-word { color: var(--color-ink); transition: none; }
+}
+
+/* ============================================================
+   FAQ accordion
+   ============================================================ */
+
+@layer components {
+  .faq-trigger {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-block: 24px;
+    text-align: left;
+    transition: color 700ms var(--ease-fluid);
+  }
+
+  .faq-trigger:hover { color: var(--color-gold-deep); }
+  .faq-trigger:active { transform: translateY(1px); }
+
+  .faq-caret {
+    flex: none;
+    color: var(--color-mute);
+    transition: transform 700ms var(--ease-fluid),
+      color 700ms var(--ease-fluid);
+  }
+
+  .faq-caret[data-open] {
+    transform: rotate(180deg);
+    color: var(--color-gold-deep);
+  }
+
+  /* Animating grid rows rather than height: it needs no measured
+     pixel value and still transitions. */
+  .faq-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 700ms var(--ease-fluid);
+  }
+
+  .faq-panel[data-open] { grid-template-rows: 1fr; }
+}
+
+/* ============================================================
+   Form field
+   ============================================================ */
+
+@layer components {
+  .field {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 12px;
+    border-radius: 0.5rem;
+    border: 1px solid var(--color-line-dark);
+    background: transparent;
+    color: var(--color-paper);
+    font-size: 1rem;
+    line-height: 1.5rem;
+    transition: border-color 700ms var(--ease-fluid);
+  }
+
+  .field::placeholder { color: var(--color-mute); }
+  .field:hover { border-color: var(--color-ink-3); }
+  .field:focus { outline: none; border-color: var(--color-gold); }
+  .field[aria-invalid="true"] { border-color: var(--color-gold); }
+
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+
+@layer components {
+  .footer-link {
+    color: var(--color-ink-3);
+    transition: color 700ms var(--ease-fluid);
+  }
+  .footer-link:hover { color: var(--color-gold-deep); }
+}
+
+/* ============================================================
+   Hero
+   ============================================================ */
+
+@layer components {
+  .hero {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    min-height: 84svh;
+    overflow: hidden;
+    background: var(--color-ink);
+  }
+
+  .hero-bg { position: absolute; inset: 0; }
+
+  /* All frames stacked; only opacity moves, so the crossfade is
+     composited and nothing loads mid transition. */
+  .hero-frame {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 1400ms var(--ease-fluid);
+  }
+
+  .hero-frame[data-on] { opacity: 1; }
+
+  /* Light enough that the photograph keeps its colour, which was the
+     whole point of using them. Legibility is handled by the solid
+     block below rather than by draining the image. */
+  .hero-scrim {
+    position: absolute;
+    inset: 0;
+    background: var(--color-ink);
+    opacity: 0.34;
+  }
+
+  .hero-body {
+    position: relative;
+    padding-block: 96px 64px;
+  }
+
+  /* A flat colour block over photography: no gradient, per B4, and
+     full contrast for the type whichever frame sits behind it. */
+  .hero-panel {
+    max-width: 680px;
+    padding: 32px;
+    border-radius: 1rem;
+    background: color-mix(in srgb, var(--color-ink) 92%, transparent);
+  }
+
+  @media (min-width: 768px) {
+    .hero-panel { padding: 40px; }
+  }
+
+  .hero-credit {
+    position: absolute;
+    left: 24px;
+    bottom: 16px;
+    z-index: 2;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    color: color-mix(in srgb, var(--color-paper) 72%, transparent);
+    animation: credit-in 700ms var(--ease-fluid);
+  }
+
+  .hero-credit-city { font-weight: 600; color: var(--color-paper); }
+}
+
+/* ============================================================
+   The one section: voice, the primary action, and the doors
+   ============================================================ */
+
+@layer components {
+  .door {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 24px 0;
+    border-top: 1px solid var(--color-line);
+    transition: color 700ms var(--ease-fluid),
+      padding-left 700ms var(--ease-fluid);
+  }
+
+  .door:hover {
+    color: var(--color-gold-deep);
+    padding-left: 8px;
+  }
+
+  .door:active { transform: translateY(1px); }
+}
+
+@layer components {
+  /* The form sits on paper here rather than on the navy panel. */
+  .field-light {
+    border-color: var(--color-line);
+    color: var(--color-ink);
+  }
+  .field-light:hover { border-color: var(--color-mute); }
+  .field-light:focus { border-color: var(--color-gold-deep); }
+}
+
+@layer components {
+  /* B9: the current page is indicated, not just linked. */
+  .island-menu a[aria-current="page"] { color: var(--color-gold-deep); }
+}
+
+@layer components {
+  .door-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    color: var(--color-mute);
+    transition: color 700ms var(--ease-fluid);
+  }
+  .door-back:hover { color: var(--color-gold-deep); }
+}
+
+@keyframes credit-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ============================================================
+   Panels
+
+   Native <dialog>, so the focus trap, Escape and page inertness come
+   from the platform. Sized to sit over the page rather than replace
+   it, with the close control at the top left as asked.
+   ============================================================ */
+
+.panel {
+  /* Tailwind's reset zeroes the margin a dialog relies on to centre
+     itself, so it has to be put back explicitly. */
+  margin: auto;
+  width: min(720px, calc(100vw - 32px));
+  max-height: 76vh;
+  padding: 0;
+  /* The dialog itself must never scroll. With a border and a body both
+     capped at 76vh it overflowed by exactly the border width, which is
+     enough for the browser to add a second scrollbar. */
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: 1rem;
+  background: var(--color-paper);
+  color: var(--color-ink-3);
+  box-shadow: 0 32px 80px -40px rgba(14, 30, 54, 0.6);
+  opacity: 0;
+  transform: translateY(16px) scale(0.98);
+  transition:
+    opacity 700ms var(--ease-fluid),
+    transform 700ms var(--ease-fluid),
+    display 700ms allow-discrete,
+    overlay 700ms allow-discrete;
+}
+
+.panel[open] {
+  opacity: 1;
+  transform: none;
+  /* Scoped to [open] so the UA rule that hides a closed dialog still
+     wins. */
+  display: flex;
+  flex-direction: column;
+}
+
+@starting-style {
+  .panel[open] { opacity: 0; transform: translateY(16px) scale(0.98); }
+}
+
+.panel::backdrop {
+  background: rgba(14, 30, 54, 0.52);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  transition: opacity 700ms var(--ease-fluid), display 700ms allow-discrete,
+    overlay 700ms allow-discrete;
+}
+
+.panel[open]::backdrop { opacity: 1; }
+
+@starting-style {
+  .panel[open]::backdrop { opacity: 0; }
+}
+
+.panel-inner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.panel-close {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  border: 1px solid var(--color-line);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  transition: background-color 700ms var(--ease-fluid),
+    transform 250ms var(--ease-fluid);
+}
+
+.panel-close:hover { background: var(--color-paper-2); }
+.panel-close:active { transform: scale(0.94); }
+
+.panel-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 64px 24px 24px;
+}
+
+@media (min-width: 640px) {
+  .panel-body { padding: 64px 32px 32px; }
+}
+
+.panel-title {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  max-width: 34ch;
+}
+
+.panel-lede {
+  margin-top: 8px;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: var(--color-ink-3);
+}
+
+.panel-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-line);
+  color: var(--color-gold-deep);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel, .panel::backdrop { transition: none; }
+}
+
+@layer components {
+  /* Menu entries are buttons now, since they open panels. */
+  .island-menu-item {
+    display: block;
+    width: 100%;
+    font-size: 2.25rem;
+    line-height: 2.5rem;
+    font-weight: 600;
+    color: var(--color-ink);
+    padding: 4px 8px;
+    transition: color 700ms var(--ease-fluid);
+  }
+
+  .island-menu-item:hover { color: var(--color-gold-deep); }
+
+  @media (min-width: 768px) {
+    .island-menu-item { font-size: 3rem; line-height: 1; }
+  }
+
+  .door { width: 100%; text-align: left; }
+}
