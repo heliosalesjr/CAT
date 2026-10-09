@@ -67,7 +67,7 @@
 
 .lab-letter {
   font-family: var(--font-display);
-  font-variation-settings: "wdth" 116;
+  font-variation-settings: "wght" 700, "GRAD" 120;
   font-weight: 700;
   font-size: 26px;
   line-height: 1;

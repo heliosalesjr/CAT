@@ -31,10 +31,7 @@
   --color-green: #65b67f;
 
   --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
-  /* Headings resolve through this so the face can be swapped while we
-     decide. Map furniture — labels, readouts, keys — stays on Archivo,
-     since the condensed width is what makes it read as cartography. */
-  --font-display: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-googlesans), ui-sans-serif, system-ui, sans-serif;
 
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-travel: cubic-bezier(0.62, 0.02, 0.2, 1);
@@ -93,60 +90,72 @@
    @layer, which silently breaks things like `hidden` on a .btn. */
 @layer components {
 /* ============================================================
-   Type — one family, three widths
+   Type — two families, split by job
+
+   Google Sans sets the headings. Its weight axis stops at 700, so
+   the extra mass comes from GRAD: a grade axis thickens strokes
+   without changing advance widths, which means a heading can gain
+   weight without its line breaks moving. The grade is dialled back
+   as the type gets smaller, since the same grade reads heavier at
+   17px than at 56px.
+
+   Archivo keeps the map furniture below — labels, readouts, keys.
+   Its width axis is the point: the condensed widths are what make
+   those read as cartography, and Google Sans has no wdth axis to
+   reach them with.
    ============================================================ */
 
 .display {
   font-family: var(--font-display);
-  font-variation-settings: "wdth" 116;
+  font-variation-settings: "wght" 700, "GRAD" 120;
   font-weight: 700;
   text-transform: uppercase;
   line-height: 0.94;
-  letter-spacing: -0.014em;
+  letter-spacing: 0.004em;
   color: var(--color-navy);
   font-size: clamp(2rem, 4.2vw, 3.6rem);
 }
 
 .display-md {
   font-family: var(--font-display);
-  font-variation-settings: "wdth" 112;
+  font-variation-settings: "wght" 700, "GRAD" 120;
   font-weight: 700;
   text-transform: uppercase;
   line-height: 1;
-  letter-spacing: -0.008em;
+  letter-spacing: 0.004em;
   color: var(--color-navy);
   font-size: clamp(1.6rem, 2.9vw, 2.35rem);
 }
 
 .stat-number {
   font-family: var(--font-display);
-  font-variation-settings: "wdth" 118;
+  font-variation-settings: "wght" 700, "GRAD" 120;
   font-weight: 700;
   font-size: clamp(2.6rem, 5vw, 3.9rem);
   line-height: 0.9;
-  letter-spacing: -0.022em;
+  letter-spacing: 0.004em;
   font-variant-numeric: tabular-nums;
   color: var(--color-navy);
 }
 
 .manifesto {
   font-family: var(--font-display);
-  font-variation-settings: "wdth" 112;
+  font-variation-settings: "wght" 700, "GRAD" 40;
   font-weight: 700;
   text-transform: uppercase;
   font-size: clamp(1.5rem, 3vw, 2.5rem);
   line-height: 1.06;
-  letter-spacing: -0.012em;
+  letter-spacing: 0.006em;
 }
 
 .title {
   font-family: var(--font-display);
-  font-variation-settings: "wdth" 106;
+  font-variation-settings: "wght" 700, "GRAD" 80;
   font-weight: 700;
   text-transform: uppercase;
   line-height: 1.18;
   font-size: 17.5px;
-  letter-spacing: -0.002em;
+  letter-spacing: 0.012em;
   color: var(--color-navy);
 }
 
@@ -180,232 +189,6 @@
 }
 
 .measure { max-width: 34em; }
-
-/* ------------------------------------------------------------------
-   Heading typeface alternates (temporary — see app/layout.tsx)
-   ------------------------------------------------------------------ */
-
-:root[data-typeface="cinzel"] {
-  --font-display: var(--font-cinzel), "Trajan Pro", Georgia, serif;
-}
-
-/* Cinzel is drawn as capitals, so it needs none of the coaxing the
-   other serifs do — only tracking, which carved letters always want,
-   and a touch more at small sizes where the chiselled serifs crowd. */
-:root[data-typeface="cinzel"] .display,
-:root[data-typeface="cinzel"] .display-md,
-:root[data-typeface="cinzel"] .stat-number {
-  font-variation-settings: "wght" 700;
-  letter-spacing: 0.02em;
-}
-
-:root[data-typeface="cinzel"] .title {
-  font-variation-settings: "wght" 700;
-  letter-spacing: 0.05em;
-}
-
-:root[data-typeface="cinzel"] .manifesto {
-  font-variation-settings: "wght" 600;
-  letter-spacing: 0.024em;
-  line-height: 1.18;
-}
-
-:root[data-typeface="cinzel"] .display { line-height: 1.08; }
-:root[data-typeface="cinzel"] .display-md { line-height: 1.12; }
-
-
-/* Named directly rather than through a --font-googlesans variable:
-   this face is loaded by a <link> in app/layout.tsx, not by
-   next/font, so no such variable exists. */
-:root[data-typeface="googlesans"] {
-  --font-display: "Google Sans", ui-sans-serif, system-ui, sans-serif;
-}
-
-/* wght tops out at 700, so GRAD carries the rest of the weight. It is
-   dialled back where the type reverses out of navy, since light on
-   dark already reads heavier than it is. */
-:root[data-typeface="googlesans"] .display,
-:root[data-typeface="googlesans"] .display-md,
-:root[data-typeface="googlesans"] .stat-number {
-  font-variation-settings: "wght" 700, "GRAD" 120;
-  letter-spacing: 0.004em;
-}
-
-:root[data-typeface="googlesans"] .title {
-  font-variation-settings: "wght" 700, "GRAD" 80;
-  letter-spacing: 0.012em;
-}
-
-:root[data-typeface="googlesans"] .manifesto {
-  font-variation-settings: "wght" 700, "GRAD" 40;
-  letter-spacing: 0.006em;
-}
-
-:root[data-typeface="roboto"] {
-  --font-display: var(--font-roboto), ui-sans-serif, system-ui, sans-serif;
-}
-
-/* wdth 100 is as wide as Roboto goes — it has no expanded direction,
-   so these headings set narrower than the Archivo originals. */
-:root[data-typeface="roboto"] .display,
-:root[data-typeface="roboto"] .display-md,
-:root[data-typeface="roboto"] .stat-number {
-  font-variation-settings: "wdth" 100, "wght" 800;
-  letter-spacing: 0.006em;
-}
-
-:root[data-typeface="roboto"] .title {
-  font-variation-settings: "wdth" 100, "wght" 700;
-  letter-spacing: 0.014em;
-}
-
-:root[data-typeface="roboto"] .manifesto {
-  font-variation-settings: "wdth" 100, "wght" 700;
-  letter-spacing: 0.008em;
-}
-
-/* ------------------------------------------------------------------
-   The switch itself
-   ------------------------------------------------------------------ */
-
-.typeface-switch {
-  position: fixed;
-  left: 14px;
-  bottom: 14px;
-  z-index: 60;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  user-select: none;
-}
-
-/* Collapsed: a 22px mark, nearly invisible until looked for. */
-.typeface-dot {
-  width: 22px;
-  height: 22px;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--color-navy-3);
-  opacity: 0.16;
-  transition: opacity 200ms ease, transform 140ms var(--ease-out);
-}
-
-.typeface-dot span {
-  width: 5px;
-  height: 5px;
-  background: var(--color-teal-ink);
-  transform: rotate(45deg);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .typeface-dot:hover { opacity: 0.5; }
-}
-
-.typeface-dot:focus-visible { opacity: 0.9; }
-.typeface-dot:active { transform: scale(0.92); }
-.typeface-switch[data-open] .typeface-dot { opacity: 0.75; }
-
-/* Expanded: grows out of the mark, not from its own middle. */
-.typeface-panel {
-  min-width: 210px;
-  background: var(--color-paper);
-  border: 1px solid var(--color-rule);
-  box-shadow: 0 10px 30px -18px rgba(25, 48, 77, 0.55);
-  transform-origin: bottom left;
-  opacity: 0;
-  transform: scale(0.94) translateY(6px);
-  visibility: hidden;
-  transition: opacity 180ms var(--ease-out), transform 180ms var(--ease-out),
-    visibility 0s linear 180ms;
-}
-
-.typeface-switch[data-open] .typeface-panel {
-  opacity: 1;
-  transform: none;
-  visibility: visible;
-  transition-delay: 0s;
-}
-
-.typeface-panel-head,
-.typeface-panel-foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 9px 11px;
-  font-variation-settings: "wdth" 76;
-  font-weight: 600;
-  font-size: 9.5px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--color-navy-3);
-}
-
-.typeface-panel-head { border-bottom: 1px solid var(--color-rule); }
-.typeface-panel-foot {
-  border-top: 1px solid var(--color-rule);
-  font-weight: 500;
-  letter-spacing: 0.12em;
-  text-transform: none;
-}
-
-.typeface-panel-esc {
-  border: 1px solid var(--color-rule);
-  padding: 1px 4px;
-  letter-spacing: 0.1em;
-}
-
-.typeface-list { padding: 5px; }
-
-.typeface-option {
-  display: grid;
-  grid-template-columns: 10px 1fr;
-  align-items: center;
-  gap: 2px 9px;
-  width: 100%;
-  padding: 7px 8px;
-  text-align: left;
-  transition: background-color 140ms ease;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .typeface-option:hover { background: var(--color-paper-2); }
-}
-
-.typeface-option-mark {
-  width: 5px;
-  height: 5px;
-  margin-inline: auto;
-  border: 1px solid var(--color-navy-3);
-  transform: rotate(45deg);
-}
-
-.typeface-option[data-active] .typeface-option-mark {
-  background: var(--color-teal-ink);
-  border-color: var(--color-teal-ink);
-}
-
-.typeface-option-name {
-  font-variation-settings: "wdth" 84;
-  font-weight: 600;
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--color-navy-3);
-}
-
-.typeface-option[data-active] .typeface-option-name { color: var(--color-navy); }
-
-.typeface-option-note {
-  grid-column: 2;
-  font-variation-settings: "wdth" 72;
-  font-weight: 500;
-  font-size: 9.5px;
-  letter-spacing: 0.08em;
-  color: var(--color-navy-3);
-  opacity: 0.75;
-}
 
 /* ============================================================
    Layout

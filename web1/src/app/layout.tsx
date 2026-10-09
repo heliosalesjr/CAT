@@ -1,72 +1,46 @@
 import type { Metadata } from "next";
-import { Archivo, Cinzel, Roboto } from "next/font/google";
-import Script from "next/script";
-import { TypefaceSwitch } from "@/components/TypefaceSwitch";
+import { Archivo, Google_Sans } from "next/font/google";
 import "./globals.css";
 
 /**
- * One family, three widths. The width axis is what makes the
- * cartographic voice possible: expanded for the display, normal for
- * reading, condensed for the map labels.
+ * Two families, split by job.
+ *
+ * Google Sans sets the headings. Archivo keeps the map furniture —
+ * labels, readouts, legend keys — because its width axis condenses
+ * and Google Sans has none; those narrow widths are what make the
+ * small type read as cartography rather than as UI chrome.
  */
+
+/* Loaded through next/font, which self-hosts the files from this
+   origin. That matters now that it is the shipping heading face:
+   no DNS and TLS round trip to fonts.gstatic.com before the hero can
+   paint, and no third-party request at all — this site serves
+   international schools, so European visitors are the norm and
+   Google Fonts CDN calls are the kind of thing their data officers
+   ask about.
+
+   The cost is one line on every compile: "Failed to find font
+   override values for font `Google Sans`". Next has no metrics for
+   this family, so it cannot build the fallback face that masks
+   layout shift while the real one loads. It is a warning, not an
+   error, and `adjustFontFallback: false` does not silence it under
+   Turbopack. To trade self-hosting for a quiet terminal, drop this
+   and load the family with a <link> to fonts.googleapis.com. */
+const googleSans = Google_Sans({
+  variable: "--font-googlesans",
+  subsets: ["latin"],
+  display: "swap",
+  /* Weight stops at 700, so headings get their extra mass from GRAD
+     instead; see the type scale in globals.css. */
+  axes: ["GRAD"],
+});
+
 const archivo = Archivo({
   variable: "--font-archivo",
   subsets: ["latin"],
   display: "swap",
   axes: ["wdth"],
 });
-
-/* --- Typeface preview -------------------------------------------
- * Two alternates for the headings, switchable in the browser while we
- * decide. To ship one of them: set it as --font-display in
- * globals.css, then delete the other two font imports, the
- * TYPEFACE_PREVIEW block below, and src/components/TypefaceSwitch.tsx.
- * ---------------------------------------------------------------- */
-const TYPEFACE_PREVIEW = true;
-
-/* Roman inscriptional capitals — the lettering carved on monuments and
-   engraved into map cartouches. A capitals face by design, which is
-   why it is the one that thrives in an all-caps system. */
-const cinzel = Cinzel({
-  variable: "--font-cinzel",
-  subsets: ["latin"],
-  display: "swap",
-  preload: false,
-});
-
-/* Google Sans is loaded by <link> below rather than through
-   next/font, which is the one thing that silences the "Failed to
-   find font override values" error it logged on every single
-   compile. Next has no metrics for this family, so it could not
-   build the fallback face that masks layout shift — and
-   `adjustFontFallback: false`, the documented escape hatch, is
-   ignored under Turbopack because Next 16 resolves fonts outside
-   the JS loader that reads the flag.
-
-   What this costs: the face is fetched from fonts.gstatic.com
-   instead of being self-hosted, and it has no metric-matched
-   fallback. Both are irrelevant here — it is a preview candidate,
-   loaded lazily, that disappears with TYPEFACE_PREVIEW. If Google
-   Sans is the face we ship, move it back to next/font and accept
-   the log line, because self-hosting matters then and the warning
-   still does not. */
-const GOOGLE_SANS_HREF =
-  "https://fonts.googleapis.com/css2?family=Google+Sans:GRAD,wght@-50..150,400..700&display=swap";
-
-/* Roboto's width axis runs 75-100: it condenses but does not expand,
-   so it cannot reach the 116 the headings use in Archivo and will set
-   noticeably narrower. */
-const roboto = Roboto({
-  variable: "--font-roboto",
-  subsets: ["latin"],
-  display: "swap",
-  axes: ["wdth"],
-  preload: false,
-});
-
-/* Applies the stored choice before first paint, so switching and then
-   reloading never flashes the previous face. */
-const RESTORE_TYPEFACE = `try{var t=localStorage.getItem("cat-typeface");if(t&&t!=="archivo")document.documentElement.dataset.typeface=t}catch(e){}`;
 
 export const metadata: Metadata = {
   title: "Class Act Talent — Ethical recruitment for international schools",
@@ -91,49 +65,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      /* The inline script below writes data-typeface onto this element
-         before React hydrates, and the server cannot know which face a
-         given browser has stored. That is a legitimate mismatch on this
-         one element, not a bug to chase — React is told to leave it
-         alone. Tied to the preview flag so the suppression disappears
-         together with the scaffolding. */
-      suppressHydrationWarning={TYPEFACE_PREVIEW}
-      className={`${archivo.variable} ${
-        TYPEFACE_PREVIEW ? `${cinzel.variable} ${roboto.variable}` : ""
-      } h-full`}
+      className={`${googleSans.variable} ${archivo.variable} h-full`}
     >
-      {TYPEFACE_PREVIEW && (
-        <head>
-          <link rel="preconnect" href="https://fonts.googleapis.com" />
-          <link
-            rel="preconnect"
-            href="https://fonts.gstatic.com"
-            crossOrigin=""
-          />
-          <link rel="stylesheet" href={GOOGLE_SANS_HREF} />
-        </head>
-      )}
-      <body className="min-h-full flex flex-col">
-        {/* next/script, not a bare <script>. A raw script element here
-            renders fine on the server but React meets it again while
-            hydrating, logs "Encountered a script tag while rendering
-            React component", and stops hydrating the tree at that
-            point — which left every client component below it,
-            TypefaceSwitch included, as dead markup that ignored
-            clicks. beforeInteractive hands the script to Next, which
-            injects it into the initial HTML and keeps it out of the
-            React tree entirely, so it still runs before first paint
-            and hydration is never interrupted. */}
-        {TYPEFACE_PREVIEW && (
-          <Script
-            id="restore-typeface"
-            strategy="beforeInteractive"
-            dangerouslySetInnerHTML={{ __html: RESTORE_TYPEFACE }}
-          />
-        )}
-        {children}
-        {TYPEFACE_PREVIEW && <TypefaceSwitch />}
-      </body>
+      <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
 }
