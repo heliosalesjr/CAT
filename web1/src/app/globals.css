@@ -214,8 +214,11 @@
 :root[data-typeface="cinzel"] .display-md { line-height: 1.12; }
 
 
+/* Named directly rather than through a --font-googlesans variable:
+   this face is loaded by a <link> in app/layout.tsx, not by
+   next/font, so no such variable exists. */
 :root[data-typeface="googlesans"] {
-  --font-display: var(--font-googlesans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Google Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
 /* wght tops out at 700, so GRAD carries the rest of the weight. It is

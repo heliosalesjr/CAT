@@ -18,13 +18,15 @@ const KEY = "cat-typeface";
  *
  * Collapsed it is a 22px mark in the corner at very low opacity —
  * present if you know it is there, invisible in a screen share.
- * Double-click opens it; double-click the mark again, or Escape,
- * closes it. F cycles at any time, which is the path to use while
- * presenting, since it needs no pointer at all.
+ * A click opens it; clicking the mark again, or Escape, closes it.
+ * F cycles at any time, which is the path to use while presenting,
+ * since it needs no pointer at all.
  *
- * Only the collapsed mark listens for double-click, and it has no
- * single-click handler: if clicking also cycled, a double-click would
- * fire two cycles on its way to opening the panel.
+ * The mark used to require a double-click, which read as a dead
+ * button: a single click did nothing at all and gave no hint that
+ * a second was wanted. It opens on one click now. The guard below
+ * keeps a fast double-click from toggling twice and landing back
+ * where it started.
  *
  * This is scaffolding for a decision, not a feature: see the
  * TYPEFACE_PREVIEW block in app/layout.tsx for how to strip it.
@@ -110,23 +112,28 @@ export function TypefaceSwitch() {
           ))}
         </ul>
 
-        <p className="typeface-panel-foot">F cycles · double-click to close</p>
+        <p className="typeface-panel-foot">F cycles · click the mark to close</p>
       </div>
 
       <button
         type="button"
         className="typeface-dot"
-        onDoubleClick={() => setOpen((v) => !v)}
-        onKeyDown={(e) => {
-          if (e.key !== "Enter" && e.key !== " ") return;
-          // Stop the browser synthesising a click, which would make a
-          // single mouse click open it too.
-          e.preventDefault();
+        onClick={(e) => {
+          // detail counts clicks in a burst; 2+ is the second half of
+          // a double-click, which would otherwise close what the
+          // first click just opened.
+          if (e.detail > 1) return;
           setOpen((v) => !v);
         }}
+        onKeyDown={(e) => {
+          // Enter and Space already synthesise a click, which the
+          // handler above answers; intercepting here would toggle
+          // twice.
+          if (e.key === "Escape" && open) setOpen(false);
+        }}
         aria-expanded={open}
-        aria-label={`Heading typeface: ${face.name}. Double-click to open the picker, or press F to cycle.`}
-        title={`${face.name} — double-click`}
+        aria-label={`Heading typeface: ${face.name}. Open the picker, or press F to cycle.`}
+        title={`${face.name} — click to change`}
       >
         <span aria-hidden="true" />
       </button>

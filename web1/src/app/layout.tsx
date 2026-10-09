@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Archivo, Cinzel, Google_Sans, Roboto } from "next/font/google";
+import { Archivo, Cinzel, Roboto } from "next/font/google";
+import Script from "next/script";
 import { TypefaceSwitch } from "@/components/TypefaceSwitch";
 import "./globals.css";
 
@@ -33,17 +34,24 @@ const cinzel = Cinzel({
   preload: false,
 });
 
-/* Google's own brand sans, published to Google Fonts. Its weight axis
-   stops at 700, so the extra mass for headings comes from GRAD — a
-   grade axis thickens strokes without changing the width, which is
-   what keeps line breaks stable. */
-const googleSans = Google_Sans({
-  variable: "--font-googlesans",
-  subsets: ["latin"],
-  display: "swap",
-  axes: ["GRAD"],
-  preload: false,
-});
+/* Google Sans is loaded by <link> below rather than through
+   next/font, which is the one thing that silences the "Failed to
+   find font override values" error it logged on every single
+   compile. Next has no metrics for this family, so it could not
+   build the fallback face that masks layout shift — and
+   `adjustFontFallback: false`, the documented escape hatch, is
+   ignored under Turbopack because Next 16 resolves fonts outside
+   the JS loader that reads the flag.
+
+   What this costs: the face is fetched from fonts.gstatic.com
+   instead of being self-hosted, and it has no metric-matched
+   fallback. Both are irrelevant here — it is a preview candidate,
+   loaded lazily, that disappears with TYPEFACE_PREVIEW. If Google
+   Sans is the face we ship, move it back to next/font and accept
+   the log line, because self-hosting matters then and the warning
+   still does not. */
+const GOOGLE_SANS_HREF =
+  "https://fonts.googleapis.com/css2?family=Google+Sans:GRAD,wght@-50..150,400..700&display=swap";
 
 /* Roboto's width axis runs 75-100: it condenses but does not expand,
    so it cannot reach the 116 the headings use in Archivo and will set
@@ -91,15 +99,38 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
          together with the scaffolding. */
       suppressHydrationWarning={TYPEFACE_PREVIEW}
       className={`${archivo.variable} ${
-        TYPEFACE_PREVIEW ? `${cinzel.variable} ${googleSans.variable} ${roboto.variable}` : ""
+        TYPEFACE_PREVIEW ? `${cinzel.variable} ${roboto.variable}` : ""
       } h-full`}
     >
       {TYPEFACE_PREVIEW && (
         <head>
-          <script dangerouslySetInnerHTML={{ __html: RESTORE_TYPEFACE }} />
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link
+            rel="preconnect"
+            href="https://fonts.gstatic.com"
+            crossOrigin=""
+          />
+          <link rel="stylesheet" href={GOOGLE_SANS_HREF} />
         </head>
       )}
       <body className="min-h-full flex flex-col">
+        {/* next/script, not a bare <script>. A raw script element here
+            renders fine on the server but React meets it again while
+            hydrating, logs "Encountered a script tag while rendering
+            React component", and stops hydrating the tree at that
+            point — which left every client component below it,
+            TypefaceSwitch included, as dead markup that ignored
+            clicks. beforeInteractive hands the script to Next, which
+            injects it into the initial HTML and keeps it out of the
+            React tree entirely, so it still runs before first paint
+            and hydration is never interrupted. */}
+        {TYPEFACE_PREVIEW && (
+          <Script
+            id="restore-typeface"
+            strategy="beforeInteractive"
+            dangerouslySetInnerHTML={{ __html: RESTORE_TYPEFACE }}
+          />
+        )}
         {children}
         {TYPEFACE_PREVIEW && <TypefaceSwitch />}
       </body>
