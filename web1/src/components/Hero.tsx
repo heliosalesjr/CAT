@@ -38,8 +38,12 @@ export function Hero() {
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
         style={{
+          /* The lift is the paper coming up under the type. Written as
+             a channel triplet so a variant can retheme it — a dark
+             hero needs this glow to be navy, not cream. The fallback
+             is the paper's own value, so the default is unchanged. */
           background:
-            "radial-gradient(820px 520px at 14% 46%, rgba(250,248,243,0.97), rgba(250,248,243,0.72) 46%, rgba(250,248,243,0) 74%)",
+            "radial-gradient(820px 520px at 14% 46%, rgb(var(--hero-lift, 250 248 243) / 0.97), rgb(var(--hero-lift, 250 248 243) / 0.72) 46%, rgb(var(--hero-lift, 250 248 243) / 0) 74%)",
         }}
       />
 

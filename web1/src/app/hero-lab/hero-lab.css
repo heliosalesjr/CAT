@@ -1,0 +1,372 @@
+/* ============================================================
+   Hero lab — five colour treatments of the same hero
+
+   Scratch work, not part of the site. Nothing here is imported by
+   app/page.tsx, and globals.css is untouched: each variant is a
+   wrapper that re-points brand tokens for the subtree inside it.
+   That is deliberate — whatever wins ships as those token values,
+   so what you see is what you would get.
+
+   These rules sit outside @layer on purpose. Unlayered CSS outranks
+   every layer, which is what lets a variant beat both the component
+   classes and Tailwind's utilities without a single !important.
+   ============================================================ */
+
+.lab-strip {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 18px;
+  padding: 10px 22px;
+  background: var(--color-navy);
+  color: rgba(250, 248, 243, 0.65);
+}
+
+.lab-strip a {
+  font-variation-settings: "wdth" 78;
+  font-weight: 600;
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding-bottom: 2px;
+  border-bottom: 1px solid transparent;
+}
+
+.lab-strip a:hover {
+  color: var(--color-paper);
+  border-bottom-color: var(--color-gold);
+}
+
+.lab-strip strong {
+  font-variation-settings: "wdth" 78;
+  font-weight: 700;
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-paper);
+}
+
+/* --- The caption above each hero ------------------------------ */
+
+.lab-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 16px;
+  padding: 26px 22px 16px;
+  border-top: 1px solid var(--color-rule);
+  background: var(--color-paper-2);
+}
+
+@media (min-width: 768px) {
+  .lab-head { padding-inline: 48px; }
+}
+
+.lab-letter {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 116;
+  font-weight: 700;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--color-navy);
+}
+
+.lab-name {
+  font-variation-settings: "wdth" 88;
+  font-weight: 700;
+  font-size: 12.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-navy);
+}
+
+.lab-thesis {
+  flex: 1 1 22em;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--color-navy-2);
+}
+
+.lab-note {
+  flex-basis: 100%;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--color-navy-3);
+  font-style: italic;
+}
+
+.lab-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 0 22px 20px;
+  background: var(--color-paper-2);
+  border-bottom: 1px solid var(--color-rule);
+}
+
+@media (min-width: 768px) {
+  .lab-swatches { padding-inline: 48px; }
+}
+
+.lab-swatch {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-variation-settings: "wdth" 70;
+  font-weight: 500;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-navy-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.lab-chip {
+  width: 15px;
+  height: 15px;
+  border: 1px solid rgba(25, 48, 77, 0.22);
+}
+
+/* ============================================================
+   A — Gold where it works: the hero goes dark
+
+   Your own read, applied literally. Gold on cream is two warm pale
+   things cancelling out; on navy it is 7.6:1 and finally reads as
+   metal. Nothing about the gold changes here — only the ground
+   under it. The terrain gets to glow, which it cannot do on paper.
+   ============================================================ */
+
+[data-hero="a"] {
+  background: var(--color-navy);
+  --hero-lift: 25 48 77;
+  --contour: #27436a;
+  --signal: var(--color-teal);
+  --color-rule: rgba(250, 248, 243, 0.16);
+
+  /* The assurance row sets its colour with a Tailwind `!` utility,
+     which no selector here can outrank. Retoning the two ink tokens
+     it resolves through reaches it anyway — and catches the lede and
+     the coordinates in the same move. --color-navy itself is left
+     alone: the gold button and the outline button read their text
+     colour from it and need it to stay dark. */
+  --color-navy-2: rgba(250, 248, 243, 0.68);
+  --color-navy-3: rgba(250, 248, 243, 0.55);
+}
+
+[data-hero="a"] .display { color: var(--color-paper); }
+[data-hero="a"] .lede em { color: var(--color-paper); }
+[data-hero="a"] .label { color: rgba(250, 248, 243, 0.55); }
+[data-hero="a"] .destination { color: var(--color-gold); }
+[data-hero="a"] .destination-rule { background: var(--color-gold); }
+[data-hero="a"] .destination-coords { color: rgba(250, 248, 243, 0.5); }
+
+[data-hero="a"] .destination-cc {
+  color: var(--color-teal);
+  border-color: rgba(129, 196, 207, 0.5);
+}
+
+/* The eyebrow hairline is an inline style reading --color-gold-deep,
+   so it retones with the token rather than needing its own rule. */
+[data-hero="a"] { --color-gold-deep: var(--color-gold); }
+
+[data-hero="a"] .btn-outline {
+  border-color: rgba(250, 248, 243, 0.42);
+  color: var(--color-paper);
+}
+
+[data-hero="a"] .btn-outline:hover {
+  background: var(--color-paper);
+  color: var(--color-navy);
+}
+
+/* ============================================================
+   B — Neutral sheet, gold kept
+
+   Tests the other half of the question: was it the gold, or the
+   cream under it? Only the paper and the hairlines move — every
+   accent is untouched.
+
+   Honest caveat, measured: cooling the sheet moves gold's contrast
+   from 1.66:1 to 1.64:1, i.e. not at all. Gold on any pale ground
+   is low-contrast and always will be. What this buys is hue
+   separation — the gold stops being the same colour family as the
+   paper. Judge it on whether it looks less muddy, not clearer.
+   ============================================================ */
+
+[data-hero="b"] {
+  --color-paper: #f7f7f4;
+  --color-paper-2: #efefe9;
+  --color-paper-3: #e5e5dd;
+  --color-rule: #d8d8d0;
+  --hero-lift: 247 247 244;
+  background: var(--color-paper);
+}
+
+/* ============================================================
+   C — Green leads, vivid yellow punctuates
+
+   On B's lighter, de-yellowed sheet now, so the green has a neutral
+   ground instead of a warm one. Green still takes the two things
+   that carry meaning — where you'd teach, and the button.
+
+   The yellow is the live one, #ffc107 at 100% saturation against
+   the old gold's 85%, and it appears as a filled chip rather than
+   as a line or a letter. That is forced by the measurement, not a
+   preference: on this sheet #ffc107 is 1.5:1, so as thin type or a
+   hairline it would simply not be visible. Turned into a field with
+   navy on it, the same colour is 8.2:1 — the strongest contrast in
+   the whole lab. Vivid yellow has to be filled to exist.
+
+   The eyebrow hairline moves to #f5a623, more saturated than the
+   old #d99f22 but deep enough to still register as a line.
+   ============================================================ */
+
+[data-hero="c"] {
+  /* B's sheet: the beige is out, the green gets a neutral ground. */
+  --color-paper: #f7f7f4;
+  --color-paper-2: #efefe9;
+  --color-paper-3: #e5e5dd;
+  --color-rule: #d8d8d0;
+  --hero-lift: 247 247 244;
+
+  --color-green: #2f8f58;
+  --color-gold-deep: #f5a623;
+  background: var(--color-paper);
+}
+
+[data-hero="c"] .destination { color: #1f8a52; }
+[data-hero="c"] .destination-rule { background: #1f8a52; }
+
+/* The country code becomes the vivid detail: a filled chip, 8.2:1. */
+[data-hero="c"] .destination-cc {
+  background: #ffc107;
+  color: var(--color-navy);
+  border-color: #ffc107;
+}
+
+/* 5.1:1 with paper on it — a green field, not a green outline. */
+[data-hero="c"] .btn-gold {
+  background: #177a47;
+  color: var(--color-paper);
+}
+
+[data-hero="c"] .btn-gold:hover { background: #11653c; }
+
+/* ============================================================
+   D — Vibrant orange: the complement of the navy
+
+   The measurement that explains the whole problem: today's gold is
+   40deg and the cream sheet is 43deg. They are the same hue, three
+   degrees apart, differing only in lightness — which is exactly what
+   "muddy" means. There is no hue contrast to see, so the eye reads
+   the gold as dirty paper rather than as metal.
+
+   Orange sits at 20deg: 22deg clear of the sheet, and close to the
+   true complement of the navy (213deg). That is why it reads as
+   deliberate contrast instead of as a cousin of the paper. It is
+   also dark enough to do work gold never could — 4.3:1 as type on
+   the sheet, so the destination word is legible for the first time.
+
+   One orange does both jobs: 4.3:1 as ink, 4.5:1 carrying white on
+   a button.
+   ============================================================ */
+
+[data-hero="d"] {
+  --color-gold-deep: #cf4a02;
+  background: var(--color-paper);
+}
+
+[data-hero="d"] .btn-gold {
+  background: #cf4a02;
+  color: #fff;
+}
+
+[data-hero="d"] .btn-gold:hover { background: #b03e02; }
+
+[data-hero="d"] .destination-cc {
+  color: #cf4a02;
+  border-color: rgba(207, 74, 2, 0.45);
+}
+
+/* ============================================================
+   E — Green and vivid yellow on a near-white sheet
+
+   The only variant that moves the sheet to near-white rather than
+   arguing about an accent on cream, and the only one running two
+   full-chroma colours at once.
+
+   Three things change together:
+
+   The sheet goes to #fbfcfd — white with a breath of blue in it,
+   not cream. The warmth that made gold go muddy is simply not
+   there to fight.
+
+   The terrain stops being grey. Those contour lines are #b9c6d6 at
+   26% saturation; here they are #9dc4f0 at 73%, at the same
+   lightness — same weight on the page, far more blue. This is the
+   change that is easiest to miss in a swatch list and largest on
+   screen, since the lines cover the entire hero.
+
+   Two saturated hues, each owning a job and never crossing into
+   the other's:
+
+     green    where — the lit ridge, the destination, the checks
+     yellow   what you do — the button, and only ever as a field
+     navy     the type
+
+   The green is matched to the cobalt it replaces rather than picked
+   by eye: #009a4e is 100% saturated, exactly like #0b5fff, and
+   lands at 3.6:1 against the cobalt's 5.0:1 — the same chroma, one
+   step brighter. The lit ridge runs #00a651, brighter still, since
+   a one-pixel line can afford it.
+
+   The yellow never becomes a line or a letter, and that is the one
+   rule this variant turns on. #ffc107 on this sheet is 1.5:1: as
+   type it would be unreadable, as a hairline invisible. Filled,
+   with navy on it, the identical colour is 8.2:1 — the loudest
+   thing in the lab. So the button is a yellow field and the eyebrow
+   mark stays green, because a hairline is the one shape vivid
+   yellow cannot hold.
+
+   The terrain keeps its blue. Green took the cobalt's job, not the
+   map's.
+   ============================================================ */
+
+[data-hero="e"] {
+  --color-paper: #fbfcfd;
+  --color-paper-2: #f3f6fa;
+  --color-paper-3: #e8eef6;
+  --color-rule: #dde5ee;
+
+  --color-contour: #9dc4f0;
+  --color-contour-2: #7fb0e8;
+  --contour: #9dc4f0;
+  --signal: #00a651;
+
+  /* Drives the eyebrow hairline, which is an inline style. Green,
+     not yellow — see the note on hairlines above. */
+  --color-gold-deep: #009a4e;
+  --color-green: #009a4e;
+
+  --hero-lift: 251 252 253;
+  background: var(--color-paper);
+}
+
+[data-hero="e"] .destination { color: #009a4e; }
+[data-hero="e"] .destination-rule { background: #009a4e; }
+
+/* Navy on vivid yellow: 8.2:1, and the only place yellow appears. */
+[data-hero="e"] .btn-gold {
+  background: #ffc107;
+  color: var(--color-navy);
+}
+
+[data-hero="e"] .btn-gold:hover { background: #e0a800; }
+
+[data-hero="e"] .destination-cc {
+  color: #007a43;
+  border-color: rgba(0, 154, 78, 0.5);
+}
