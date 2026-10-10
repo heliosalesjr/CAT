@@ -69,28 +69,29 @@ const VARIANTS: Variant[] = [
   },
   {
     id: "d",
-    name: "Vibrant orange",
+    name: "B on the near-white sheet",
     thesis:
-      "The number that explains everything: today's gold is 40\u00b0 and the cream sheet is 43\u00b0 — the same hue, three degrees apart, differing only in lightness. That is what \u201cmuddy\u201d means. Orange sits at 20\u00b0, clear of the sheet and near the true complement of the navy, so it reads as deliberate contrast. Dark enough to be ink: the destination word is legible here for the first time.",
+      "B's gold, untouched, on the lightest ground in the lab \u2014 #fbfcfd, white with a breath of blue in it. Only the sheet moves; the contours stay as they are in A through C, so this is B with exactly one variable changed.",
+    note:
+      "The lighter sheet barely touches the gold: 1.64:1 on B's sheet, 1.71:1 here. Gold on any light ground stays low-contrast. What changes is hue separation \u2014 the sheet is cool and the gold is warm, with nothing left in the paper for it to blend into. Judge it on whether the gold looks like gold rather than like a stain.",
     swatches: [
-      { hex: "#faf8f3", role: "sheet \u00b7 unchanged" },
-      { hex: "#cf4a02", role: "orange \u00b7 4.3:1 as ink" },
-      { hex: "#b03e02", role: "pressed" },
-      { hex: "#65b67f", role: "verified" },
+      { hex: "#fbfcfd", role: "near-white sheet" },
+      { hex: "#dde5ee", role: "hairline" },
+      { hex: "#f1bb4c", role: "gold \u00b7 unchanged" },
     ],
   },
   {
     id: "e",
-    name: "Green + vivid yellow, near-white",
+    name: "C on the near-white sheet",
     thesis:
-      "The only one that moves the sheet instead of arguing about an accent on cream. White with a breath of blue in it, so the warmth that made gold go muddy is simply not there to fight \u2014 and the terrain stops being grey: those contour lines go from 26% saturation to 73% at the same lightness. Same weight on the page, far more blue. Then two full-chroma hues, each owning a job: green is where (lit ridge, destination, checks), yellow is what you do (the button), navy is the type. The terrain keeps its blue \u2014 green took the cobalt's job, not the map's.",
+      "C's green leading and vivid yellow punctuating, on the same lighter ground as D. Where the gold gained nothing, the green gains: it is a dark accent, so a lighter sheet widens the tonal gap instead of closing it.",
     note:
-      "The green is matched to the cobalt it replaces rather than picked by eye: #009a4e is 100% saturated, exactly like #0b5fff was, one step brighter. And yellow never becomes a line or a letter here \u2014 #ffc107 is 1.5:1 on this sheet, invisible as a hairline. Filled with navy on it, the same colour is 8.2:1. That constraint is the rule this variant turns on.",
+      "The destination goes from 4.06:1 on B's sheet to 4.25:1, the button from 5.00:1 to 5.23:1. The yellow chip is identical either way \u2014 it carries navy on a filled field, so the sheet behind it never enters the sum.",
     swatches: [
       { hex: "#fbfcfd", role: "near-white sheet" },
-      { hex: "#9dc4f0", role: "terrain \u00b7 still blue" },
-      { hex: "#009a4e", role: "green \u00b7 where" },
-      { hex: "#ffc107", role: "yellow field \u00b7 8.2:1" },
+      { hex: "#1f8a52", role: "destination \u00b7 4.25:1" },
+      { hex: "#177a47", role: "button \u00b7 5.2:1" },
+      { hex: "#ffc107", role: "yellow chip \u00b7 8.2:1" },
     ],
   },
 ];

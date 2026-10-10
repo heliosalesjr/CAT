@@ -256,117 +256,77 @@
 [data-hero="c"] .btn-gold:hover { background: #11653c; }
 
 /* ============================================================
-   D — Vibrant orange: the complement of the navy
+   The near-white sheet, shared by D and E
 
-   The measurement that explains the whole problem: today's gold is
-   40deg and the cream sheet is 43deg. They are the same hue, three
-   degrees apart, differing only in lightness — which is exactly what
-   "muddy" means. There is no hue contrast to see, so the eye reads
-   the gold as dirty paper rather than as metal.
+   B and C both run on #f7f7f4 — neutral, with the beige taken out,
+   but still a sheet. These two take the same accents onto #fbfcfd:
+   white with a breath of blue in it, two steps lighter again.
 
-   Orange sits at 20deg: 22deg clear of the sheet, and close to the
-   true complement of the navy (213deg). That is why it reads as
-   deliberate contrast instead of as a cousin of the paper. It is
-   also dark enough to do work gold never could — 4.3:1 as type on
-   the sheet, so the destination word is legible for the first time.
-
-   One orange does both jobs: 4.3:1 as ink, 4.5:1 carrying white on
-   a button.
+   Only the sheet moves. The contours stay exactly as they are in A
+   through C, so D is B with one variable changed and E is C with
+   one variable changed, and the pair answers a single question:
+   does the lighter ground help the accent, or just wash it out?
    ============================================================ */
 
-[data-hero="d"] {
-  --color-gold-deep: #cf4a02;
-  background: var(--color-paper);
-}
-
-[data-hero="d"] .btn-gold {
-  background: #cf4a02;
-  color: #fff;
-}
-
-[data-hero="d"] .btn-gold:hover { background: #b03e02; }
-
-[data-hero="d"] .destination-cc {
-  color: #cf4a02;
-  border-color: rgba(207, 74, 2, 0.45);
-}
-
-/* ============================================================
-   E — Green and vivid yellow on a near-white sheet
-
-   The only variant that moves the sheet to near-white rather than
-   arguing about an accent on cream, and the only one running two
-   full-chroma colours at once.
-
-   Three things change together:
-
-   The sheet goes to #fbfcfd — white with a breath of blue in it,
-   not cream. The warmth that made gold go muddy is simply not
-   there to fight.
-
-   The terrain stops being grey. Those contour lines are #b9c6d6 at
-   26% saturation; here they are #9dc4f0 at 73%, at the same
-   lightness — same weight on the page, far more blue. This is the
-   change that is easiest to miss in a swatch list and largest on
-   screen, since the lines cover the entire hero.
-
-   Two saturated hues, each owning a job and never crossing into
-   the other's:
-
-     green    where — the lit ridge, the destination, the checks
-     yellow   what you do — the button, and only ever as a field
-     navy     the type
-
-   The green is matched to the cobalt it replaces rather than picked
-   by eye: #009a4e is 100% saturated, exactly like #0b5fff, and
-   lands at 3.6:1 against the cobalt's 5.0:1 — the same chroma, one
-   step brighter. The lit ridge runs #00a651, brighter still, since
-   a one-pixel line can afford it.
-
-   The yellow never becomes a line or a letter, and that is the one
-   rule this variant turns on. #ffc107 on this sheet is 1.5:1: as
-   type it would be unreadable, as a hairline invisible. Filled,
-   with navy on it, the identical colour is 8.2:1 — the loudest
-   thing in the lab. So the button is a yellow field and the eyebrow
-   mark stays green, because a hairline is the one shape vivid
-   yellow cannot hold.
-
-   The terrain keeps its blue. Green took the cobalt's job, not the
-   map's.
-   ============================================================ */
-
+[data-hero="d"],
 [data-hero="e"] {
   --color-paper: #fbfcfd;
   --color-paper-2: #f3f6fa;
   --color-paper-3: #e8eef6;
   --color-rule: #dde5ee;
-
-  --color-contour: #9dc4f0;
-  --color-contour-2: #7fb0e8;
-  --contour: #9dc4f0;
-  --signal: #00a651;
-
-  /* Drives the eyebrow hairline, which is an inline style. Green,
-     not yellow — see the note on hairlines above. */
-  --color-gold-deep: #009a4e;
-  --color-green: #009a4e;
-
   --hero-lift: 251 252 253;
   background: var(--color-paper);
 }
 
-[data-hero="e"] .destination { color: #009a4e; }
-[data-hero="e"] .destination-rule { background: #009a4e; }
+/* ============================================================
+   D — B on the near-white sheet
 
-/* Navy on vivid yellow: 8.2:1, and the only place yellow appears. */
-[data-hero="e"] .btn-gold {
-  background: #ffc107;
-  color: var(--color-navy);
+   Gold, untouched, on the lightest ground in the lab.
+
+   Worth knowing before judging it: the lighter sheet barely touches
+   the gold. 1.64:1 on B's sheet, 1.71:1 here — a gain so small it
+   is invisible, because both colours are pale and the gap between
+   them is what matters, not how bright the ground is. Gold on any
+   light sheet stays low-contrast. What this changes is hue
+   separation: the sheet is cool and the gold is warm, with nothing
+   left in the paper to blend into. Judge it on whether the gold
+   finally looks like gold rather than like a stain.
+   ============================================================ */
+
+/* Accents inherited from B — nothing else to declare. */
+
+/* ============================================================
+   E — C on the near-white sheet
+
+   Green leading, vivid yellow punctuating, on the same lighter
+   ground as D.
+
+   The green gains here where the gold could not: it is a dark
+   accent, so a lighter sheet widens the tonal gap rather than
+   closing it. The destination word goes from 4.06:1 on B's sheet
+   to 4.25:1, and the button from 5.00:1 to 5.23:1.
+
+   The yellow chip is unaffected either way — it carries navy on a
+   filled field, so the sheet behind it never enters the sum.
+   ============================================================ */
+
+[data-hero="e"] {
+  --color-green: #2f8f58;
+  --color-gold-deep: #f5a623;
 }
 
-[data-hero="e"] .btn-gold:hover { background: #e0a800; }
+[data-hero="e"] .destination { color: #1f8a52; }
+[data-hero="e"] .destination-rule { background: #1f8a52; }
 
 [data-hero="e"] .destination-cc {
-  color: #007a43;
-  border-color: rgba(0, 154, 78, 0.5);
+  background: #ffc107;
+  color: var(--color-navy);
+  border-color: #ffc107;
 }
+
+[data-hero="e"] .btn-gold {
+  background: #177a47;
+  color: var(--color-paper);
+}
+
+[data-hero="e"] .btn-gold:hover { background: #11653c; }
