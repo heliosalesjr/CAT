@@ -1,0 +1,42 @@
+<!-- @dsCard group="Data" height=280 subtitle="Chart series, ordered by lightness" -->
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..700&family=Google+Sans:GRAD,wght@-50..150,400..700&display=swap">
+<style>
+  body { margin:0; padding:24px; background:var(--surface); font-family:Archivo,system-ui,sans-serif; }
+  .lab { font-variation-settings:"wdth" 76; font-weight:600; font-size:11px; letter-spacing:.22em;
+    text-transform:uppercase; color:var(--ink-subtle); margin:0 0 14px; }
+  .legend { display:flex; flex-wrap:wrap; gap:14px; margin-top:16px; }
+  .item { display:inline-flex; align-items:center; gap:7px; font-variation-settings:"wdth" 70;
+    font-weight:500; font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-muted); }
+  .sw { width:12px; height:12px; flex:none; }
+  svg { display:block; width:100%; height:auto; }
+  text { font-family:Archivo,system-ui,sans-serif; font-size:9px; font-variation-settings:"wdth" 70;
+    letter-spacing:.1em; fill:var(--ink-subtle); }
+</style>
+<p class="lab">Placements by region</p>
+<svg viewBox="0 0 320 150" role="img" aria-label="Grouped bars for five regions across three years">
+  <line x1="34" y1="120" x2="316" y2="120" stroke="var(--border-control)" stroke-width="1"/>
+  <line x1="34" y1="80" x2="316" y2="80" stroke="var(--rule)" stroke-width="1"/>
+  <line x1="34" y1="40" x2="316" y2="40" stroke="var(--rule)" stroke-width="1"/>
+  <text x="30" y="123" text-anchor="end">0</text>
+  <text x="30" y="83" text-anchor="end">40</text>
+  <text x="30" y="43" text-anchor="end">80</text>
+  <g>
+    <rect x="46"  y="52" width="34" height="68" fill="var(--series-1)"/>
+    <rect x="100" y="38" width="34" height="82" fill="var(--series-2)"/>
+    <rect x="154" y="66" width="34" height="54" fill="var(--series-3)"/>
+    <rect x="208" y="82" width="34" height="38" fill="var(--series-4)"/>
+    <rect x="262" y="96" width="34" height="24" fill="var(--series-5)"/>
+  </g>
+  <text x="63"  y="136" text-anchor="middle">E ASIA</text>
+  <text x="117" y="136" text-anchor="middle">GULF</text>
+  <text x="171" y="136" text-anchor="middle">SE ASIA</text>
+  <text x="225" y="136" text-anchor="middle">LATAM</text>
+  <text x="279" y="136" text-anchor="middle">EUROPE</text>
+</svg>
+<div class="legend">
+  <span class="item"><span class="sw" style="background:var(--series-1)"></span>East Asia · 68</span>
+  <span class="item"><span class="sw" style="background:var(--series-2)"></span>Gulf · 82</span>
+  <span class="item"><span class="sw" style="background:var(--series-3)"></span>SE Asia · 54</span>
+  <span class="item"><span class="sw" style="background:var(--series-4)"></span>LatAm · 38</span>
+  <span class="item"><span class="sw" style="background:var(--series-5)"></span>Europe · 24</span>
+</div>

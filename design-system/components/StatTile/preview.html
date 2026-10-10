@@ -1,0 +1,50 @@
+<!-- @dsCard group="Data" height=250 subtitle="Figure, label and trend" -->
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..700&family=Google+Sans:GRAD,wght@-50..150,400..700&display=swap">
+<style>
+  body { margin:0; padding:24px; background:var(--surface); font-family:Archivo,system-ui,sans-serif; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:1px; background:var(--rule); border:1px solid var(--rule); }
+  .tile { background:var(--surface); padding:24px; display:flex; flex-direction:column; gap:14px; }
+  .lab { font-variation-settings:"wdth" 76; font-weight:600; font-size:11px; letter-spacing:.22em;
+    text-transform:uppercase; color:var(--ink-subtle); }
+  .fig { font-family:"Google Sans",system-ui,sans-serif; font-variation-settings:"wght" 700,"GRAD" 120;
+    font-weight:700; font-size:46px; line-height:.9; letter-spacing:.004em;
+    font-variant-numeric:tabular-nums; color:var(--ink); display:flex; align-items:baseline; gap:8px; }
+  .suf { font-family:Archivo,system-ui,sans-serif; font-variation-settings:"wdth" 74; font-weight:600;
+    font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-subtle); }
+  .trend { display:inline-flex; align-items:center; gap:6px; font-variation-settings:"wdth" 78;
+    font-weight:600; font-size:10px; letter-spacing:.18em; text-transform:uppercase; align-self:flex-start;
+    padding:5px 9px; }
+  .up { background:var(--positive-surface); color:var(--positive-ink); }
+  .down { background:var(--critical-surface); color:var(--critical-ink); }
+  .flat { background:var(--surface-sunken); color:var(--ink-muted); }
+  .spark { display:block; width:100%; height:26px; }
+</style>
+<div class="grid">
+  <div class="tile">
+    <span class="lab">Teachers placed</span>
+    <span class="fig">1,284</span>
+    <svg class="spark" viewBox="0 0 120 26" preserveAspectRatio="none" aria-hidden="true">
+      <polyline points="0,22 20,19 40,20 60,13 80,11 100,6 120,3" fill="none" stroke="var(--positive)" stroke-width="1.5"/>
+      <circle cx="120" cy="3" r="2.4" fill="var(--positive)"/>
+    </svg>
+    <span class="trend up">+18% vs 2025</span>
+  </div>
+  <div class="tile">
+    <span class="lab">Median time to hire</span>
+    <span class="fig">31<span class="suf">days</span></span>
+    <svg class="spark" viewBox="0 0 120 26" preserveAspectRatio="none" aria-hidden="true">
+      <polyline points="0,6 20,9 40,8 60,14 80,13 100,18 120,20" fill="none" stroke="var(--series-1)" stroke-width="1.5"/>
+      <circle cx="120" cy="20" r="2.4" fill="var(--series-1)"/>
+    </svg>
+    <span class="trend flat">&minus;9 days</span>
+  </div>
+  <div class="tile">
+    <span class="lab">References outstanding</span>
+    <span class="fig">47</span>
+    <svg class="spark" viewBox="0 0 120 26" preserveAspectRatio="none" aria-hidden="true">
+      <polyline points="0,20 20,17 40,18 60,12 80,14 100,8 120,5" fill="none" stroke="var(--critical)" stroke-width="1.5"/>
+      <circle cx="120" cy="5" r="2.4" fill="var(--critical)"/>
+    </svg>
+    <span class="trend down">Above target</span>
+  </div>
+</div>

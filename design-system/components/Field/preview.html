@@ -1,0 +1,29 @@
+<!-- @dsCard group="Forms" height=265 subtitle="Input, label and error" -->
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..700&family=Google+Sans:GRAD,wght@-50..150,400..700&display=swap">
+<style>
+  body { margin:0; padding:24px; background:var(--surface); font-family:Archivo,system-ui,sans-serif; }
+  .f { display:flex; flex-direction:column; gap:8px; margin-bottom:20px; max-width:380px; }
+  label { font-variation-settings:"wdth" 76; font-weight:600; font-size:11px; letter-spacing:.22em;
+    text-transform:uppercase; color:var(--ink-subtle); }
+  input { background:var(--surface); border:1px solid var(--border-control); border-radius:0;
+    color:var(--ink); padding:15px 16px; font-size:14.5px; width:100%; outline:none; box-sizing:border-box;
+    font-family:Archivo,system-ui,sans-serif; transition:border-color 160ms ease; }
+  input::placeholder { color:var(--ink-subtle); }
+  input:focus-visible { border-color:var(--green-deep); outline:2px solid var(--green-deep); outline-offset:2px; }
+  input[aria-invalid="true"] { border-color:var(--critical); border-left-width:3px; }
+  .err { display:flex; gap:7px; align-items:flex-start; font-size:12.5px; line-height:1.45; color:var(--critical-ink); }
+  .hint { font-size:12.5px; line-height:1.45; color:var(--ink-muted); }
+</style>
+<div class="f">
+  <label for="school">School name</label>
+  <input id="school" type="text" value="Seoul Foreign School">
+  <span class="hint">As it appears on your accreditation certificate.</span>
+</div>
+<div class="f">
+  <label for="email">Work email</label>
+  <input id="email" type="email" value="head.of.school@" aria-invalid="true" aria-describedby="email-err">
+  <span class="err" id="email-err">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex:none;margin-top:1px"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v6M12 16.5v.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    Finish the address after the @ — we send the verification link there.
+  </span>
+</div>

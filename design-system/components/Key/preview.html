@@ -1,0 +1,31 @@
+<!-- @dsCard group="Labels" height=190 subtitle="Legend key and status chips" -->
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..700&family=Google+Sans:GRAD,wght@-50..150,400..700&display=swap">
+<style>
+  body { margin:0; padding:24px; background:var(--surface); font-family:Archivo,system-ui,sans-serif; }
+  .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:18px; }
+  .key { display:inline-flex; align-items:center; gap:8px; font-variation-settings:"wdth" 78;
+    font-weight:600; font-size:10px; letter-spacing:.18em; text-transform:uppercase;
+    padding:6px 11px; border:1px solid var(--border-control); border-radius:0;
+    color:var(--ink-muted); background:var(--surface); }
+  .dot { width:6px; height:6px; border-radius:2px; flex:none; }
+  .chip { display:inline-flex; align-items:center; gap:8px; font-variation-settings:"wdth" 78;
+    font-weight:600; font-size:10px; letter-spacing:.18em; text-transform:uppercase;
+    padding:6px 11px; border:0; border-radius:0; }
+  .chip-positive { background:var(--positive-surface); color:var(--positive-ink); }
+  .chip-caution  { background:var(--caution-surface);  color:var(--caution-ink); }
+  .chip-critical { background:var(--critical-surface); color:var(--critical-ink); }
+  .cap { font-size:10.5px; font-variation-settings:"wdth" 70; font-weight:500; letter-spacing:.15em;
+    text-transform:uppercase; color:var(--ink-subtle); margin:0 0 8px; }
+</style>
+<p class="cap">Legend keys — neutral</p>
+<div class="row">
+  <span class="key">Safeguarding</span>
+  <span class="key">Time-to-hire</span>
+  <span class="key">Fit</span>
+</div>
+<p class="cap">Status chips — filled, never coloured type</p>
+<div class="row">
+  <span class="chip chip-positive"><span class="dot" style="background:var(--positive-ink)"></span>Verified</span>
+  <span class="chip chip-caution"><span class="dot" style="background:var(--caution-ink)"></span>Awaiting reference</span>
+  <span class="chip chip-critical"><span class="dot" style="background:var(--critical-ink)"></span>Overdue</span>
+</div>

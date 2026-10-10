@@ -1,0 +1,41 @@
+<!-- @dsCard group="Surfaces" height=235 subtitle="The panel with trimmed corners" -->
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..700&family=Google+Sans:GRAD,wght@-50..150,400..700&display=swap">
+<style>
+  body { margin:0; padding:24px; background:var(--surface); font-family:Archivo,system-ui,sans-serif; }
+  .legend { position:relative; background:var(--surface-raised); border:1px solid var(--rule); }
+  .corner { position:absolute; width:14px; height:14px; border-color:var(--map-signal); opacity:.55; }
+  .tl { left:-1px; top:-1px; border-left:1px solid; border-top:1px solid; }
+  .tr { right:-1px; top:-1px; border-right:1px solid; border-top:1px solid; }
+  .bl { left:-1px; bottom:-1px; border-left:1px solid; border-bottom:1px solid; }
+  .br { right:-1px; bottom:-1px; border-right:1px solid; border-bottom:1px solid; }
+  .cell { display:flex; gap:20px; padding:26px; }
+  .cell + .cell { border-top:1px solid var(--rule); }
+  .sym { display:flex; align-items:center; justify-content:center; width:46px; height:46px; flex:none;
+    color:var(--map-signal); border:1px solid var(--border-control); }
+  .t { font-family:"Google Sans",system-ui,sans-serif; font-variation-settings:"wght" 700,"GRAD" 80;
+    font-weight:700; font-size:17.5px; line-height:1.18; letter-spacing:.012em; text-transform:uppercase;
+    color:var(--ink); margin:0 0 6px; }
+  .b { font-size:15.5px; line-height:1.65; color:var(--ink-muted); margin:0; max-width:34em; }
+</style>
+<div class="legend">
+  <span class="corner tl"></span><span class="corner tr"></span>
+  <span class="corner bl"></span><span class="corner br"></span>
+  <div class="cell">
+    <span class="sym" aria-hidden="true">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 12.5 9.5 18 20 5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </span>
+    <div>
+      <h3 class="t">Institutionally verified</h3>
+      <p class="b">Every school is checked against its accrediting body before a single post goes live.</p>
+    </div>
+  </div>
+  <div class="cell">
+    <span class="sym" aria-hidden="true">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </span>
+    <div>
+      <h3 class="t">Explainable rankings</h3>
+      <p class="b">Each match shows the signals behind it. AI suggests; the hiring panel decides.</p>
+    </div>
+  </div>
+</div>
