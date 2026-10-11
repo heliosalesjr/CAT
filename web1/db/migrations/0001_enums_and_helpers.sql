@@ -30,6 +30,9 @@ CREATE TYPE curriculum        AS ENUM (
   'IB_PYP','IB_MYP','IB_DP','IB_CP','Cambridge_IGCSE','Cambridge_A_Level',
   'AP','US_Common_Core','British_National','Australian');
 CREATE TYPE employment_type   AS ENUM ('full_time','part_time','fractional');
+-- The KIND OF JOB, not the kind of person: 'teacher' here means a classroom
+-- teaching post. A Candidate may hold any of these; the entity is Candidate
+-- precisely because not every one of them teaches.
 CREATE TYPE role_family       AS ENUM ('teacher','administrator','support_staff');
 CREATE TYPE highest_degree    AS ENUM ('bachelors','masters','doctorate');
 

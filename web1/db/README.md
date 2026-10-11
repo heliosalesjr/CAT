@@ -24,7 +24,7 @@ truncated by a stray flag.
 | --- | --- |
 | `0001_enums_and_helpers` | the 15 enums, copied from the bundle; `stage_rank`; `set_updated_at` |
 | `0002_rbac` | roles, role templates, **per-user grants**, the effective-permission view |
-| `0003_teachers` | teacher profiles and the rankable threshold |
+| `0003_candidates` | candidate profiles and the rankable threshold |
 | `0004_postings_and_ranking` | criteria catalog, postings, criteria validation, `criterion_weight` |
 | `0005_applications` | the pipeline, stage history, transition rules, ranking invariants |
 | `0006_messaging_gate` | platform/school settings, messages, **gate enforcement** |
@@ -51,12 +51,12 @@ the application reaches the configured stage and is never cleared, so a message
 stored legitimately at interview stays valid after a later rejection. New sends
 are refused by a trigger on `messages`. The stage that opens it comes from
 `platform_settings`, overridable per school — `NULL` on the school inherits.
-Teacher-to-teacher messaging is not blocked, it is unrepresentable: every
+Candidate-to-candidate messaging is not blocked, it is unrepresentable: every
 message hangs off an application, and an application has one teacher and one
 school.
 
-**Document isolation.** A school user may read a teacher's documents only when
-they hold `view_documents`, the teacher has applied to their school, and that
+**Document isolation.** A school user may read a candidate's documents only when
+they hold `view_documents`, the candidate has applied to their school, and that
 application has reached screening (`docs_unlocked_at`). `may_read_document()`
 is the whole rule; `document_access_log` records every signed URL issued, and
 refuses to record one the rule would have denied. `storage_key` is constrained
@@ -83,3 +83,17 @@ These migrations parse cleanly under the real Postgres parser, plpgsql function
 bodies included, and the seed's pre-flight passes against the bundle. Nothing
 has been executed: there is no Postgres or Docker on this machine. Run
 `npm run db:migrate` against a scratch Neon branch before trusting it.
+
+## Teacher, Candidate
+
+The entity is `candidates`. A third of the postings in the bundle are
+leadership or student-support roles — a coordinator, a head of science, a
+counsellor — and the people applying to them do not all teach. `teacher` is
+still a value of `role_family`, where it means a classroom teaching post; it
+is no longer the name of the person.
+
+`docs/mock-data.json` has not been changed and still uses `teachers` and
+`teacherId`. `db/seed.mjs` is the only place the two vocabularies meet: it
+reads the bundle's names and writes the schema's, and maps the few string
+values that name the type (`"teacher"` to `"candidate"` on a notification
+recipient, a subscription owner, an audit subject).

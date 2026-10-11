@@ -1,4 +1,4 @@
-import type { JobCard, TeacherSummary } from "@/lib/dashboard-data";
+import type { JobCard, CandidateSummary } from "@/lib/dashboard-data";
 
 /**
  * Zones 5 and 6. Recommended roles always say why they are here; a bare match
@@ -10,7 +10,7 @@ export function JobSuggestions({
 }: {
   recommended: JobCard[];
   saved: JobCard[];
-  why: TeacherSummary["recommendedJobs"];
+  why: CandidateSummary["recommendedJobs"];
   emptyReason: string | null;
 }) {
   const reasonFor = (id: string) => why.find((w) => w.jobPostingId === id);

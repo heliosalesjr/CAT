@@ -4,7 +4,7 @@ BEGIN;
 
 CREATE TABLE applications (
   id                 text PRIMARY KEY,
-  teacher_id         text NOT NULL REFERENCES teachers(id)     ON DELETE CASCADE,
+  candidate_id         text NOT NULL REFERENCES candidates(id)     ON DELETE CASCADE,
   job_posting_id     text NOT NULL REFERENCES job_postings(id) ON DELETE CASCADE,
   -- Denormalised from the posting so every access predicate in 0006/0007 can
   -- answer "which school is this?" without a join. Enforced by trigger below.
@@ -18,7 +18,7 @@ CREATE TABLE applications (
   screening_answers  jsonb NOT NULL DEFAULT '[]'::jsonb,
 
   -- Rule 3: shortlists are invisible to candidates. Enforced in the API layer
-  -- and by never exposing these two columns on a teacher-facing serializer.
+  -- and by never exposing these two columns on a candidate-facing serializer.
   shortlisted        boolean NOT NULL DEFAULT false,
   shortlisted_by_id  text REFERENCES school_users(id),
   internal_notes     text,
@@ -45,7 +45,7 @@ CREATE TABLE applications (
   created_at         timestamptz NOT NULL DEFAULT now(),
   updated_at         timestamptz NOT NULL DEFAULT now(),
 
-  UNIQUE (teacher_id, job_posting_id),
+  UNIQUE (candidate_id, job_posting_id),
 
   -- Rule 6: below the threshold there is no score at all, and never a zero.
   CONSTRAINT rankable_has_score CHECK (
@@ -63,7 +63,7 @@ CREATE TRIGGER applications_updated_at BEFORE UPDATE ON applications
 
 CREATE INDEX ON applications (job_posting_id, stage);
 CREATE INDEX ON applications (school_id, stage) WHERE stage NOT IN ('rejected','withdrawn');
-CREATE INDEX ON applications (teacher_id);
+CREATE INDEX ON applications (candidate_id);
 CREATE INDEX ON applications (school_id) WHERE school_owes_response IS TRUE;
 CREATE INDEX ON applications (job_posting_id, ai_rank_score DESC NULLS LAST) WHERE rankable IS TRUE;
 

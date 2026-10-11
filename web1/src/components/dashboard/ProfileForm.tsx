@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Avatar } from "./Avatar";
-import type { TeacherDoc, TeacherRef } from "@/lib/dashboard-data";
+import type { CandidateDoc, CandidateRef } from "@/lib/dashboard-data";
 
 /**
  * The form a candidate fills in, as a mockup.
@@ -54,15 +54,16 @@ const SECTIONS: { id: string; title: string; blurb: string; fields: Field[] }[] 
     ],
   },
   {
-    id: "teaching", title: "What you teach",
-    blurb: "The single biggest factor in whether a school's ranking puts you near the top.",
+    id: "teaching", title: "What you do",
+    blurb: "The single biggest factor in whether a school's ranking puts you near the top. Leadership and student-support roles are read from the same fields.",
     fields: [
-      { name: "subjects", label: "Subjects", type: "tags" },
+      { name: "subjects", label: "Subjects or specialism", type: "tags",
+        hint: "What you teach, or the area you work in \u2014 counselling, librarianship, admissions. Postings are matched against this." },
       { name: "curriculumExperience", label: "Curricula", type: "tags",
-        hint: "IB, Cambridge, AP and the rest. Schools filter hard on this." },
+        hint: "IB, Cambridge, AP and the rest. Schools filter hard on this, including for roles outside the classroom \u2014 a counsellor at an IB school is expected to know the programme." },
       { name: "gradeLevels", label: "Grade levels", type: "tags" },
-      { name: "yearsExperience", label: "Years teaching", type: "number" },
-      { name: "yearsInSubject", label: "Years in your main subject", type: "number" },
+      { name: "yearsExperience", label: "Years in the profession", type: "number" },
+      { name: "yearsInSubject", label: "Years in your specialism", type: "number" },
       { name: "leadershipYears", label: "Years leading a team", type: "number",
         hint: "Coordination or department-head time. Counted separately because coordinator roles weigh it above classroom years." },
       { name: "coachingActivities", label: "Coaching and activities", type: "tags" },
@@ -94,8 +95,8 @@ export function ProfileForm({
   record, documents, references, completeness, hasPhoto, name,
 }: {
   record: Record<string, unknown>;
-  documents: TeacherDoc[];
-  references: TeacherRef[];
+  documents: CandidateDoc[];
+  references: CandidateRef[];
   completeness: number;
   hasPhoto: boolean;
   name: string;
@@ -144,7 +145,9 @@ export function ProfileForm({
               </span>
               <span className="pf-progress">
                 <span className="bar pf-bar">
-                  <span style={{ width: `${(done / s.fields.length) * 100}%`,
+                  {/* scaleX rather than width: this moves on every keystroke,
+                      and width would relayout the header each time. */}
+                  <span style={{ transform: `scaleX(${done / s.fields.length})`,
                                  background: done === s.fields.length
                                    ? "var(--positive)" : "var(--stage-screening)" }} />
                 </span>
@@ -152,8 +155,13 @@ export function ProfileForm({
               </span>
             </button>
 
-            {isOpen && (
-              <div className="pf-fields">
+            <div className="pf-body" data-open={isOpen || undefined} aria-hidden={!isOpen}>
+              {/* The clip layer carries the overflow so the fields grid can keep
+                  its own padding. Padding on the grid child itself does not
+                  collapse with the 0fr track, and a closed section was holding
+                  26px of dead space. */}
+              <div className="pf-clip">
+                <div className="pf-fields">
                 {s.fields.map((f) => (
                   <label key={f.name} className="pf-field" data-empty={!filled(f) || undefined}>
                     <span className="pf-label">
@@ -177,8 +185,9 @@ export function ProfileForm({
                     {f.hint && <span className="pf-hint">{f.hint}</span>}
                   </label>
                 ))}
+                </div>
               </div>
-            )}
+            </div>
           </section>
         );
       })}
@@ -200,7 +209,7 @@ const DOC_LABEL: Record<string, string> = {
   reference_letter: "Reference letter", background_check: "Background check",
 };
 
-function Documents({ documents }: { documents: TeacherDoc[] }) {
+function Documents({ documents }: { documents: CandidateDoc[] }) {
   return (
     <section className="dash-section" aria-labelledby="docs">
       <div className="dash-head">
@@ -238,13 +247,13 @@ function Documents({ documents }: { documents: TeacherDoc[] }) {
   );
 }
 
-const docTone = (d: TeacherDoc) =>
+const docTone = (d: CandidateDoc) =>
   d.status === "rejected" || d.status === "expired" ? "critical"
   : d.status === "missing" ? "neutral"
   : d.daysUntilExpiry != null && d.daysUntilExpiry < 180 ? "caution"
   : "positive";
 
-const docWord = (d: TeacherDoc) =>
+const docWord = (d: CandidateDoc) =>
   d.status === "missing" ? "Not uploaded"
   : d.status === "under_review" ? "Being checked"
   : d.status === "rejected" ? "Rejected"
@@ -257,7 +266,7 @@ const REL_LABEL: Record<string, string> = {
   department_head: "Department head", colleague: "Colleague",
 };
 
-function References({ references }: { references: TeacherRef[] }) {
+function References({ references }: { references: CandidateRef[] }) {
   return (
     <section className="dash-section" aria-labelledby="refs">
       <div className="dash-head">

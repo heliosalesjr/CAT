@@ -2,6 +2,12 @@
 /**
  * Loads docs/mock-data.json into the database.
  *
+ * The bundle still calls the person a teacher; the schema calls them a
+ * candidate, because a third of the postings are leadership or student-support
+ * roles and not everyone who applies teaches. This file is the only place the
+ * two vocabularies meet: it reads `teachers` and writes `candidates`, and
+ * translates the few string values that name the type. The mock is untouched.
+ *
  *   DATABASE_URL=postgres://... node db/seed.mjs [--reset] [--check-only]
  *
  *   --reset       truncate the seeded tables first (refuses unless
@@ -82,7 +88,7 @@ function preflight() {
   const ids = (k) => new Set(data[k].map((r) => r.id));
   const [T, S, J, U, P] = [ids('teachers'), ids('schools'), ids('jobPostings'), ids('schoolUsers'), ids('plans')];
   for (const a of data.applications) {
-    if (!T.has(a.teacherId)) note(`${a.id}: unknown teacher ${a.teacherId}`);
+    if (!T.has(a.teacherId)) note(`${a.id}: unknown candidate ${a.teacherId}`);
     if (!J.has(a.jobPostingId)) note(`${a.id}: unknown posting ${a.jobPostingId}`);
   }
   for (const j of data.jobPostings) {
@@ -96,7 +102,7 @@ function preflight() {
   }
   for (const u of data.schoolUsers) if (!S.has(u.schoolId)) note(`${u.id}: unknown school ${u.schoolId}`);
   for (const s of data.schools) if (s.planId && !P.has(s.planId)) note(`${s.id}: unknown plan ${s.planId}`);
-  for (const d of data.documents) if (!T.has(d.teacherId)) note(`${d.id}: unknown teacher ${d.teacherId}`);
+  for (const d of data.documents) if (!T.has(d.teacherId)) note(`${d.id}: unknown candidate ${d.teacherId}`);
 
   // The gate, as it will be enforced by the trigger in 0006.
   const byId = new Map(data.applications.map((a) => [a.id, a]));
@@ -185,8 +191,11 @@ async function insert(table, rows, map) {
 
 const SEEDED = ['document_access_log', 'audit_log', 'notifications', 'messages', 'super_likes',
   'interviews', 'references_', 'documents', 'application_stage_history', 'applications',
-  'job_postings', 'criteria_catalog', 'school_user_grants', 'school_users', 'teachers',
+  'job_postings', 'criteria_catalog', 'school_user_grants', 'school_users', 'candidates',
   'subscriptions', 'schools', 'plans', 'platform_settings'];
+
+/** The bundle's word for the person, in the schema's vocabulary. */
+const party = (t) => (t === 'teacher' ? 'candidate' : t);
 
 try {
   await client.query('BEGIN');
@@ -215,7 +224,7 @@ try {
     country_code: s.countryCode, region: s.region, timezone: s.timezone, website: s.website,
     description: s.description, founded_year: s.foundedYear, student_count: s.studentCount,
     curricula: arr(s.curricula), divisions: arr(s.divisions), benefits_summary: s.benefitsSummary,
-    logo_url: s.logoUrl, hero_image_url: s.heroImageUrl, teacher_rating: s.teacherRating,
+    logo_url: s.logoUrl, hero_image_url: s.heroImageUrl, candidate_rating: s.teacherRating,
     rating_count: s.ratingCount ?? 0, average_response_days: s.averageResponseDays,
     verification_status: s.verificationStatus ?? 'pending', verified_at: s.verifiedAt,
     plan_id: s.planId, created_at: s.createdAt ?? new Date().toISOString(),
@@ -248,7 +257,7 @@ try {
     reason: g.granted ? 'granted beyond role template (from seed)' : 'revoked from role template (from seed)',
   }));
 
-  n.teachers = await insert('teachers', data.teachers, (t) => ({
+  n.candidates = await insert('candidates', data.teachers, (t) => ({
     id: t.id, first_name: t.firstName, last_name: t.lastName, headline: t.headline,
     avatar_url: t.avatarUrl, intro_video_url: t.introVideoUrl, linkedin_url: t.linkedinUrl,
     current_school: t.currentSchool, current_city: t.currentCity, current_country: t.currentCountry,
@@ -268,10 +277,10 @@ try {
     last_active_at: t.lastActiveAt, created_at: t.createdAt ?? new Date().toISOString(),
   }));
 
-  // partner_teacher_id is a self-reference, so it waits for every row to exist.
+  // partner_candidate_id is a self-reference, so it waits for every row to exist.
   let couples = 0;
   for (const t of data.teachers) if (t.partnerTeacherId) {
-    await client.query('UPDATE teachers SET partner_teacher_id = $2 WHERE id = $1',
+    await client.query('UPDATE candidates SET partner_candidate_id = $2 WHERE id = $1',
       [t.id, t.partnerTeacherId]);
     couples++;
   }
@@ -304,7 +313,7 @@ try {
   }));
 
   n.applications = await insert('applications', data.applications, (a) => ({
-    id: a.id, teacher_id: a.teacherId, job_posting_id: a.jobPostingId,
+    id: a.id, candidate_id: a.teacherId, job_posting_id: a.jobPostingId,
     // Overwritten by the pipeline trigger from the posting; sent so the NOT
     // NULL holds on the way in.
     school_id: data.jobPostings.find((j) => j.id === a.jobPostingId).schoolId,
@@ -338,14 +347,14 @@ try {
     (a) => ({ application_id: a.id, sent_at: a.appliedAt }));
 
   n.documents = await insert('documents', data.documents, (d) => ({
-    id: d.id, teacher_id: d.teacherId, type: d.type, status: d.status,
+    id: d.id, candidate_id: d.teacherId, type: d.type, status: d.status,
     file_name: d.fileName, file_size_kb: d.fileSizeKb, storage_key: d.storageKey,
     uploaded_at: d.uploadedAt, verified_at: d.verifiedAt, expires_on: d.expiresOn,
     rejection_reason: d.rejectionReason,
   }));
 
   n.references_ = await insert('references_', data.references, (r) => ({
-    id: r.id, teacher_id: r.teacherId, referee_name: r.refereeName,
+    id: r.id, candidate_id: r.teacherId, referee_name: r.refereeName,
     referee_email: r.refereeEmail, referee_title: r.refereeTitle,
     referee_school: r.refereeSchool, relationship: r.relationship, status: r.status,
     verification_method: r.verificationMethod,
@@ -355,10 +364,10 @@ try {
   }));
 
   n.interviews = await insert('interviews', data.interviews, (i) => ({
-    id: i.id, application_id: i.applicationId, teacher_id: i.teacherId,
+    id: i.id, application_id: i.applicationId, candidate_id: i.teacherId,
     school_id: i.schoolId, round_name: i.roundName, status: i.status,
     starts_at_utc: i.startsAtUtc, duration_minutes: i.durationMinutes ?? 45,
-    school_timezone: i.schoolTimezone, teacher_timezone: i.teacherTimezone,
+    school_timezone: i.schoolTimezone, candidate_timezone: i.teacherTimezone,
     meeting_url: i.meetingUrl, google_calendar_event_id: i.googleCalendarEventId,
     interviewer_ids: arr(i.interviewerIds),
     structured_feedback: i.structuredFeedback ? JSON.stringify(i.structuredFeedback) : null,
@@ -369,19 +378,19 @@ try {
   n.messages = await insert('messages', data.messages, (m) => ({
     id: m.id, application_id: m.applicationId,
     sender_school_user_id: m.senderType === 'school' ? m.senderId : null,
-    sender_teacher_id: m.senderType === 'teacher' ? m.senderId : null,
+    sender_candidate_id: m.senderType === 'teacher' ? m.senderId : null,
     body: m.body, sent_at: m.sentAt, read_at: m.readAt,
   }));
 
   n.subscriptions = await insert('subscriptions', data.subscriptions, (s) => ({
-    id: s.id, owner_type: s.ownerType, owner_id: s.ownerId, plan_id: s.planId,
+    id: s.id, owner_type: party(s.ownerType), owner_id: s.ownerId, plan_id: s.planId,
     status: s.status, stripe_subscription_id: s.stripeSubscriptionId,
     current_period_end: s.currentPeriodEnd, job_postings_used: s.jobPostingsUsed ?? 0,
     seats_used: s.seatsUsed ?? 0,
   }));
 
   n.notifications = await insert('notifications', data.notifications, (x) => ({
-    id: x.id, recipient_type: x.recipientType, recipient_id: x.recipientId,
+    id: x.id, recipient_type: party(x.recipientType), recipient_id: x.recipientId,
     kind: x.kind, severity: x.severity ?? 'info', title: x.title, body: x.body,
     action_url: x.actionUrl, read_at: x.readAt, created_at: x.createdAt,
   }));

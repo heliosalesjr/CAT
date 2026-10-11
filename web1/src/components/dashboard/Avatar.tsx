@@ -11,8 +11,12 @@
 export function Avatar({
   name, size = 72, missing = false,
 }: { name: string; size?: number; missing?: boolean }) {
-  const initials = name.split(" ").filter(Boolean).slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? "").join("");
+  /* An empty name means there is nobody to initial yet — a first-run account
+     should not be stamped with the initials of a placeholder. */
+  const initials = name.trim()
+    ? name.split(" ").filter(Boolean).slice(0, 2)
+        .map((w) => w[0]?.toUpperCase() ?? "").join("")
+    : "";
 
   return (
     <span className="avatar" style={{ width: size, height: size }}

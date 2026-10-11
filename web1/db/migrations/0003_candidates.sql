@@ -1,8 +1,8 @@
--- 0003 — teachers
+-- 0003 — candidates
 
 BEGIN;
 
-CREATE TABLE teachers (
+CREATE TABLE candidates (
   id                     text PRIMARY KEY,
   first_name             text NOT NULL,
   last_name              text NOT NULL,
@@ -31,7 +31,7 @@ CREATE TABLE teachers (
   coaching_capable       boolean NOT NULL DEFAULT false,
   coaching_activities    text[] NOT NULL DEFAULT '{}',
   dependents             int NOT NULL DEFAULT 0 CHECK (dependents >= 0),
-  partner_teacher_id     text REFERENCES teachers(id),   -- teaching couples
+  partner_candidate_id     text REFERENCES candidates(id),   -- teaching couples
   available_from         date,
   salary_expectation_min_usd int,
   salary_expectation_max_usd int,
@@ -52,14 +52,14 @@ CREATE TABLE teachers (
          OR salary_expectation_max_usd >= salary_expectation_min_usd)
 );
 
-CREATE TRIGGER teachers_updated_at BEFORE UPDATE ON teachers
+CREATE TRIGGER candidates_updated_at BEFORE UPDATE ON candidates
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
-CREATE INDEX ON teachers (profile_completeness) WHERE deleted_at IS NULL;
-CREATE INDEX ON teachers USING gin (subjects);
-CREATE INDEX ON teachers USING gin (curriculum_experience);
-CREATE INDEX ON teachers USING gin (preferred_regions);
-CREATE INDEX ON teachers (years_experience) WHERE deleted_at IS NULL;
+CREATE INDEX ON candidates (profile_completeness) WHERE deleted_at IS NULL;
+CREATE INDEX ON candidates USING gin (subjects);
+CREATE INDEX ON candidates USING gin (curriculum_experience);
+CREATE INDEX ON candidates USING gin (preferred_regions);
+CREATE INDEX ON candidates (years_experience) WHERE deleted_at IS NULL;
 
 -- Rule 6 lives here: the eligibility threshold is one number, named once.
 CREATE FUNCTION rankable_threshold() RETURNS int

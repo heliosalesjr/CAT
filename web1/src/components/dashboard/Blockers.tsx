@@ -1,4 +1,4 @@
-import type { TeacherSummary } from "@/lib/dashboard-data";
+import type { CandidateSummary } from "@/lib/dashboard-data";
 
 /** Written in full here rather than stored, so the reason travels with the warning. */
 const WHY: Record<string, string> = {
@@ -22,7 +22,7 @@ const WHY: Record<string, string> = {
  * "Passport expires in 42 days" is useless on its own to someone who does not
  * know the six-month permit rule. The consequence is the content.
  */
-export function Blockers({ summary }: { summary: TeacherSummary }) {
+export function Blockers({ summary }: { summary: CandidateSummary }) {
   if (!summary.blockers.length) {
     return (
       <section className="dash-section">

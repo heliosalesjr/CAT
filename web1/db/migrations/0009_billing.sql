@@ -24,10 +24,10 @@ ALTER TABLE schools
 
 CREATE TABLE subscriptions (
   id                     text PRIMARY KEY,
-  -- Only 'school' appears in the mock, but 22 teachers carry
+  -- Only 'school' appears in the mock, but 22 candidates carry
   -- premiumMember = true with no subscription row. Left polymorphic so
-  -- teacher premium has somewhere to land without a migration.
-  owner_type             text NOT NULL CHECK (owner_type IN ('school','teacher')),
+  -- candidate premium has somewhere to land without a migration.
+  owner_type             text NOT NULL CHECK (owner_type IN ('school','candidate')),
   owner_id               text NOT NULL,
   plan_id                text NOT NULL REFERENCES plans(id),
   status                 text NOT NULL,

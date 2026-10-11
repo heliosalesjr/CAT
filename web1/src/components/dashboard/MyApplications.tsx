@@ -1,4 +1,5 @@
-import type { TeacherApplication } from "@/lib/dashboard-data";
+import { OfferPanel } from "./OfferPanel";
+import type { OfferContext, CandidateApplication } from "@/lib/dashboard-data";
 
 const STAGES = ["applied", "screening", "interview", "offer"] as const;
 const LABEL: Record<string, string> = {
@@ -16,7 +17,9 @@ const LABEL: Record<string, string> = {
  * cross, no strikethrough: someone read it and said no, and that deserves a
  * sentence rather than an icon.
  */
-export function MyApplications({ rows }: { rows: TeacherApplication[] }) {
+export function MyApplications({
+  rows, offerContext,
+}: { rows: CandidateApplication[]; offerContext: OfferContext }) {
   if (!rows.length) {
     return (
       <section className="dash-section" aria-labelledby="apps">
@@ -71,6 +74,10 @@ export function MyApplications({ rows }: { rows: TeacherApplication[] }) {
                     </li>
                   ))}
                 </ol>
+              )}
+
+              {a.stage === "offer" && (
+                <OfferPanel application={a} context={offerContext} />
               )}
 
               <div className="app-meta">

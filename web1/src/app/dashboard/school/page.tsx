@@ -31,7 +31,7 @@ export default async function SchoolDashboard({
     return (
       <main className="dash-wrap">
         <Chrome school={PROSPECT.school} viewerName={PROSPECT.name}
-                viewerTitle={PROSPECT.title} asOf={null} view={view} />
+                viewerTitle={PROSPECT.title} asOf={null} view={view} greeting="Welcome" />
         <EmptyState />
       </main>
     );
@@ -82,16 +82,17 @@ export default async function SchoolDashboard({
 }
 
 function Chrome({
-  school, viewerName, viewerTitle, asOf, view,
+  school, viewerName, viewerTitle, asOf, view, greeting: override,
 }: {
-  school: string; viewerName: string; viewerTitle: string; asOf: string | null; view: string;
+  school: string; viewerName: string; viewerTitle: string;
+  asOf: string | null; view: string; greeting?: string;
 }) {
   return (
     <header className="dash-top">
       <div className="dash-ident">
         <span className="label">{school}</span>
         <h1>
-          {greeting()}, {viewerName.split(" ")[0]}
+          {override ?? greeting()}, {viewerName.split(" ")[0]}
         </h1>
         <span className="readout">
           {viewerTitle}
@@ -105,7 +106,8 @@ function Chrome({
   );
 }
 
-/** The brief puts her here on a Monday morning. */
+/** The brief puts her here mid-cycle on a Monday morning. A brand-new account
+    has no cycle to be mid-way through, so that framing is overridden there. */
 function greeting() {
   return "Monday morning";
 }

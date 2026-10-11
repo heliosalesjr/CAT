@@ -20,12 +20,12 @@ export const AS_OF = new Date(bundle.schoolDashboardSummary[0].asOf);
 
 /* ------------------------------------------------------------------ types */
 
-type Teacher = {
+type Candidate = {
   id: string; firstName: string; lastName: string; headline: string;
   currentCity: string; currentCountry: string; timezone: string;
   currentSchool: string | null; nationality: string | null;
   profileCompleteness: number; yearsExperience: number; leadershipYears: number;
-  avatarUrl: string | null;
+  avatarUrl: string | null; dependents: number;
 };
 type Doc = {
   id: string; teacherId: string; type: string; status: string;
@@ -42,7 +42,9 @@ type Posting = {
   rankingCriteria: string[]; aiRankingEnabled: boolean;
   salaryMinUsd: number | null; salaryMaxUsd: number | null;
   openingsAvailable: number; likelihood: string; applyByDate: string | null;
-  startDate: string | null;
+  startDate: string | null; housingProvided: boolean;
+  dependentTuitionCovered: number; contractLengthYears: number | null;
+  academicYear: string | null;
 };
 type Application = {
   id: string; teacherId: string; jobPostingId: string; stage: string;
@@ -57,7 +59,7 @@ type Interview = {
   durationMinutes: number; schoolTimezone: string; teacherTimezone: string;
   structuredFeedback: unknown | null;
 };
-export type TeacherSummary = {
+export type CandidateSummary = {
   teacherId: string; asOf: string; profileCompleteness: number;
   readiness: { profile: number; documents: number; references: number; overall: number };
   activeApplications: number; offersOpen: number; interviewsNext7Days: number;
@@ -74,14 +76,15 @@ type Bundle = {
   schools: { id: string; name: string; city: string; country: string; timezone: string }[];
   schoolUsers: { id: string; schoolId: string; firstName: string; lastName: string;
                  title: string; role: string; permissions: string[] }[];
-  teachers: Teacher[];
+  /* The bundle's key is still `teachers`; the type it holds is a Candidate. */
+  teachers: Candidate[];
   jobPostings: Posting[];
   applications: Application[];
   interviews: Interview[];
   documents: Doc[];
   references: Ref[];
   schoolDashboardSummary: Summary[];
-  teacherDashboardSummary: TeacherSummary[];
+  teacherDashboardSummary: CandidateSummary[];
 };
 export type Summary = {
   schoolId: string; asOf: string; openPostings: number; draftPostings: number;
@@ -389,27 +392,38 @@ export function formatIn(at: Date, timeZone: string, opts: Intl.DateTimeFormatOp
 }
 
 /* ==================================================================
-   Teacher side
+   Candidate side
+
+   The entity is Candidate, not Teacher: a third of the postings in the
+   bundle are leadership or student-support roles, and the people applying
+   to them are not all teachers. The mock data still uses `teachers` and
+   `teacherId` as its keys, and those names stay — this file reads them and
+   speaks Candidate everywhere else.
    ================================================================== */
 
-export type TeacherDoc = {
+export type CandidateDoc = {
   id: string; type: string; status: string;
   expiresOn: string | null; daysUntilExpiry: number | null;
   rejectionReason: string | null;
 };
 
-export type TeacherRef = {
+export type CandidateRef = {
   id: string; refereeName: string; refereeTitle: string | null;
   refereeSchool: string | null; relationship: string; status: string;
   daysWaiting: number | null;
 };
 
-export type TeacherApplication = {
+export type CandidateApplication = {
   id: string; stage: string; stageIndex: number; daysSinceStageChange: number;
   schoolOwesResponse: boolean; rejectionReason: string | null;
   posting: string; school: string; city: string; country: string;
   startDate: string | null; applyByDate: string | null;
   salaryMinUsd: number | null; salaryMaxUsd: number | null;
+  /* Offer terms. Present on every row, read only when stage is "offer". */
+  housingProvided: boolean;
+  dependentTuitionCovered: number;
+  contractLengthYears: number | null;
+  academicYear: string | null;
 };
 
 export type JobCard = {
@@ -419,20 +433,20 @@ export type JobCard = {
   matchScore?: number; whyShown?: string[];
 };
 
-export function getTeacher(id: string) {
+export function getCandidate(id: string) {
   return bundle.teachers.find((t) => t.id === id)!;
 }
 
 /** The full record, for the profile form. */
-export function getTeacherRecord(id: string): Record<string, unknown> {
+export function getCandidateRecord(id: string): Record<string, unknown> {
   return bundle.teachers.find((t) => t.id === id) as unknown as Record<string, unknown>;
 }
 
-export function getTeacherSummary(id: string): TeacherSummary {
+export function getCandidateSummary(id: string): CandidateSummary {
   return bundle.teacherDashboardSummary.find((s) => s.teacherId === id)!;
 }
 
-export function getTeacherDocuments(id: string): TeacherDoc[] {
+export function getCandidateDocuments(id: string): CandidateDoc[] {
   const order = ["passport", "diploma", "teaching_certificate", "transcript",
                  "reference_letter", "background_check"];
   return bundle.documents
@@ -448,7 +462,7 @@ export function getTeacherDocuments(id: string): TeacherDoc[] {
     .sort((a, b) => order.indexOf(a.type) - order.indexOf(b.type));
 }
 
-export function getTeacherReferences(id: string): TeacherRef[] {
+export function getCandidateReferences(id: string): CandidateRef[] {
   return bundle.references
     .filter((r) => r.teacherId === id)
     .map((r) => ({
@@ -459,7 +473,7 @@ export function getTeacherReferences(id: string): TeacherRef[] {
     }));
 }
 
-export function getTeacherApplications(id: string): TeacherApplication[] {
+export function getCandidateApplications(id: string): CandidateApplication[] {
   const order = ["applied", "screening", "interview", "offer"];
   return bundle.applications
     .filter((a) => a.teacherId === id)
@@ -474,6 +488,10 @@ export function getTeacherApplications(id: string): TeacherApplication[] {
         posting: j.title, school: s.name, city: s.city, country: s.country,
         startDate: j.startDate, applyByDate: j.applyByDate,
         salaryMinUsd: j.salaryMinUsd, salaryMaxUsd: j.salaryMaxUsd,
+        housingProvided: j.housingProvided,
+        dependentTuitionCovered: j.dependentTuitionCovered,
+        contractLengthYears: j.contractLengthYears,
+        academicYear: j.academicYear,
       };
     })
     .sort((a, b) => b.stageIndex - a.stageIndex);
@@ -491,8 +509,36 @@ export function getJobCards(ids: string[]): JobCard[] {
   });
 }
 
+export type OfferContext = {
+  dependents: number;
+  salaryExpectationMinUsd: number | null;
+  availableFrom: string | null;
+  /** The document most likely to stop a work permit, if it is in trouble. */
+  passport: { expiresOn: string | null; daysUntilExpiry: number | null; status: string } | null;
+};
+
+/**
+ * Everything needed to read an offer against this particular person: whether
+ * the band clears what they asked for, whether the tuition covers the children
+ * they actually have, and whether their passport survives the permit process.
+ */
+export function getOfferContext(teacherId: string): OfferContext {
+  const t = bundle.teachers.find((x) => x.id === teacherId)!;
+  const passport = getCandidateDocuments(teacherId).find((d) => d.type === "passport");
+  return {
+    dependents: t.dependents ?? 0,
+    salaryExpectationMinUsd: (t as unknown as { salaryExpectationMinUsd: number | null })
+      .salaryExpectationMinUsd ?? null,
+    availableFrom: (t as unknown as { availableFrom: string | null }).availableFrom ?? null,
+    passport: passport
+      ? { expiresOn: passport.expiresOn, daysUntilExpiry: passport.daysUntilExpiry,
+          status: passport.status }
+      : null,
+  };
+}
+
 /** The teacher's own interviews, with their clock leading. */
-export function getTeacherInterviews(teacherId: string): InterviewRow[] {
+export function getCandidateInterviews(teacherId: string): InterviewRow[] {
   return bundle.interviews
     .filter((i) => i.teacherId === teacherId && i.status !== "completed" && i.status !== "cancelled")
     .map((i) => {

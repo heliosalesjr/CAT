@@ -1,10 +1,10 @@
 -- 0006 — the messaging gate
 --
--- Rule 1: teacher -> school messaging is locked until the application reaches
--- the interview stage; before that the teacher may only send a super-like.
--- Rule 2: teacher-to-teacher messaging does not exist. It is not hidden here,
+-- Rule 1: candidate -> school messaging is locked until the application reaches
+-- the interview stage; before that the candidate may only send a super-like.
+-- Rule 2: candidate-to-candidate messaging does not exist. It is not hidden here,
 -- it is unrepresentable: every message hangs off an application, and an
--- application has exactly one teacher and one school.
+-- application has exactly one candidate and one school.
 --
 -- Config: a platform default, overridable per school. NULL on the school
 -- inherits. Decided rather than inferred — nothing in the mock said where the
@@ -56,14 +56,14 @@ CREATE TABLE messages (
   -- the application. Inbound mail is addressed to the school, and whichever
   -- user replies is recorded.
   sender_school_user_id text REFERENCES school_users(id),
-  sender_teacher_id     text REFERENCES teachers(id),
+  sender_candidate_id     text REFERENCES candidates(id),
 
   body           text NOT NULL CHECK (length(btrim(body)) > 0),
   sent_at        timestamptz NOT NULL DEFAULT now(),
   read_at        timestamptz,
 
   CONSTRAINT one_sender CHECK (
-    (sender_school_user_id IS NOT NULL) <> (sender_teacher_id IS NOT NULL)
+    (sender_school_user_id IS NOT NULL) <> (sender_candidate_id IS NOT NULL)
   )
 );
 
@@ -78,7 +78,7 @@ BEGIN
 
   IF app.messaging_unlocked_at IS NULL THEN
     RAISE EXCEPTION
-      'application %: messaging is locked (stage %, opens at %). A teacher may only send a super-like before then.',
+      'application %: messaging is locked (stage %, opens at %). A candidate may only send a super-like before then.',
       app.id, app.stage, messaging_min_stage_for(app.school_id);
   END IF;
 
@@ -96,8 +96,8 @@ BEGIN
       RAISE EXCEPTION 'user % does not belong to school %', NEW.sender_school_user_id, app.school_id;
     END IF;
   ELSE
-    IF NEW.sender_teacher_id <> app.teacher_id THEN
-      RAISE EXCEPTION 'teacher % is not the applicant on %', NEW.sender_teacher_id, app.id;
+    IF NEW.sender_candidate_id <> app.candidate_id THEN
+      RAISE EXCEPTION 'candidate % is not the applicant on %', NEW.sender_candidate_id, app.id;
     END IF;
   END IF;
 
@@ -107,7 +107,7 @@ END $$;
 CREATE TRIGGER messages_enforce_gate BEFORE INSERT ON messages
   FOR EACH ROW EXECUTE FUNCTION messages_enforce_gate();
 
--- The only thing a teacher may send before the gate opens.
+-- The only thing a candidate may send before the gate opens.
 CREATE TABLE super_likes (
   application_id text PRIMARY KEY REFERENCES applications(id) ON DELETE CASCADE,
   sent_at        timestamptz NOT NULL DEFAULT now()

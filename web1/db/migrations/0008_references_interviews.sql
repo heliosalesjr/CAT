@@ -4,7 +4,7 @@ BEGIN;
 
 CREATE TABLE references_ (            -- REFERENCES is reserved in SQL
   id            text PRIMARY KEY,
-  teacher_id    text NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
+  candidate_id    text NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
   referee_name  text NOT NULL,
   referee_email text NOT NULL,
   referee_title text,
@@ -26,7 +26,7 @@ CREATE TABLE references_ (            -- REFERENCES is reserved in SQL
 CREATE TRIGGER references_updated_at BEFORE UPDATE ON references_
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
-CREATE INDEX ON references_ (teacher_id, status);
+CREATE INDEX ON references_ (candidate_id, status);
 
 -- Derived: the mock's daysWaiting was computed on its generation date.
 CREATE VIEW references_with_waiting AS
@@ -37,11 +37,11 @@ FROM   references_ r;
 
 CREATE FUNCTION references_refresh_counts() RETURNS trigger
   LANGUAGE plpgsql AS $$
-DECLARE t text := COALESCE(NEW.teacher_id, OLD.teacher_id);
+DECLARE t text := COALESCE(NEW.candidate_id, OLD.candidate_id);
 BEGIN
-  UPDATE teachers SET verified_supervisor_references = (
+  UPDATE candidates SET verified_supervisor_references = (
     SELECT count(*) FROM references_ r
-    WHERE r.teacher_id = t AND r.status = 'verified'
+    WHERE r.candidate_id = t AND r.status = 'verified'
       AND r.relationship IN ('direct_supervisor','head_of_school','department_head'))
   WHERE id = t;
   RETURN NULL;
@@ -54,7 +54,7 @@ CREATE TRIGGER references_refresh_counts
 CREATE TABLE interviews (
   id              text PRIMARY KEY,
   application_id  text NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
-  teacher_id      text NOT NULL REFERENCES teachers(id),
+  candidate_id      text NOT NULL REFERENCES candidates(id),
   school_id       text NOT NULL REFERENCES schools(id),
   round_name      text,
   status          interview_status NOT NULL DEFAULT 'proposed',
@@ -64,7 +64,7 @@ CREATE TABLE interviews (
   starts_at_utc   timestamptz NOT NULL,
   duration_minutes int NOT NULL DEFAULT 45 CHECK (duration_minutes > 0),
   school_timezone  text NOT NULL,
-  teacher_timezone text NOT NULL,
+  candidate_timezone text NOT NULL,
   meeting_url     text,
   google_calendar_event_id text,
   interviewer_ids text[] NOT NULL DEFAULT '{}',

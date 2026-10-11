@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {
-  getTeacher, getTeacherDocuments, getTeacherReferences, getTeacherRecord,
-  getTeacherSummary,
+  getCandidate, getCandidateDocuments, getCandidateReferences, getCandidateRecord,
+  getCandidateSummary,
 } from "@/lib/dashboard-data";
 import { Avatar } from "@/components/dashboard/Avatar";
 import { ProfileForm } from "@/components/dashboard/ProfileForm";
@@ -17,11 +17,11 @@ export default async function ProfilePage({
   const { view = "daniel" } = (await searchParams) as { view?: string };
   const teacherId = VIEWS[view] ?? VIEWS.daniel;
 
-  const t = getTeacher(teacherId);
-  const record = getTeacherRecord(teacherId);
-  const summary = getTeacherSummary(teacherId);
-  const documents = getTeacherDocuments(teacherId);
-  const references = getTeacherReferences(teacherId);
+  const t = getCandidate(teacherId);
+  const record = getCandidateRecord(teacherId);
+  const summary = getCandidateSummary(teacherId);
+  const documents = getCandidateDocuments(teacherId);
+  const references = getCandidateReferences(teacherId);
 
   return (
     <main className="dash-wrap">

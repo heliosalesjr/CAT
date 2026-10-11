@@ -40,9 +40,9 @@ CREATE TABLE schools (
   benefits_summary    text,
   logo_url            text,
   hero_image_url      text,
-  -- Rule 4: ratings flow one way. These are the school's rating BY teachers.
-  -- There is deliberately no teacher-rating column anywhere in this schema.
-  teacher_rating      numeric(2,1) CHECK (teacher_rating BETWEEN 0 AND 5),
+  -- Rule 4: ratings flow one way. These are the school's rating BY candidates.
+  -- There is deliberately no candidate-rating column anywhere in this schema.
+  candidate_rating      numeric(2,1) CHECK (candidate_rating BETWEEN 0 AND 5),
   rating_count        int NOT NULL DEFAULT 0,
   average_response_days numeric(5,1),
   verification_status text NOT NULL DEFAULT 'pending',

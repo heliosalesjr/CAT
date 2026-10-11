@@ -10,7 +10,7 @@ BEGIN;
 -- one with a legal reading and a verification trigger.
 CREATE TABLE audit_log (
   id          bigserial PRIMARY KEY,
-  actor_type  text NOT NULL CHECK (actor_type IN ('teacher','school_user','system')),
+  actor_type  text NOT NULL CHECK (actor_type IN ('candidate','school_user','system')),
   actor_id    text,
   action      text NOT NULL,            -- 'application.stage_changed', ...
   entity_type text NOT NULL,
@@ -50,7 +50,7 @@ CREATE TRIGGER job_postings_audit_criteria
 
 CREATE TABLE data_export_requests (
   id            bigserial PRIMARY KEY,
-  subject_type  text NOT NULL CHECK (subject_type IN ('teacher','school_user')),
+  subject_type  text NOT NULL CHECK (subject_type IN ('candidate','school_user')),
   subject_id    text NOT NULL,
   status        text NOT NULL DEFAULT 'pending'
                 CHECK (status IN ('pending','running','ready','failed','expired')),
@@ -65,7 +65,7 @@ CREATE INDEX ON data_export_requests (subject_type, subject_id, requested_at DES
 
 CREATE TABLE deletion_requests (
   id            bigserial PRIMARY KEY,
-  subject_type  text NOT NULL CHECK (subject_type IN ('teacher','school_user','school')),
+  subject_type  text NOT NULL CHECK (subject_type IN ('candidate','school_user','school')),
   subject_id    text NOT NULL,
   status        text NOT NULL DEFAULT 'pending'
                 CHECK (status IN ('pending','grace_period','anonymising','done','cancelled')),
@@ -80,7 +80,7 @@ CREATE INDEX ON deletion_requests (status, executes_at);
 CREATE UNIQUE INDEX ON deletion_requests (subject_type, subject_id)
   WHERE status IN ('pending','grace_period','anonymising');
 
--- Deleting a teacher must not erase the record that someone read their
+-- Deleting a candidate must not erase the record that someone read their
 -- passport: the log keeps ON DELETE RESTRICT, and deletion anonymises the
 -- subject instead. This marks the log rows so a later export can prove the
 -- trail was preserved, not quietly dropped.

@@ -48,6 +48,10 @@
   --series-4: #3e9fb0;
   --series-5: #e0a800;
 
+  /* Read by the Contours SVGs, which are shared with the marketing site. */
+  --contour: #9db9d8;
+  --signal:  #3e9fb0;
+
   --stage-applied:   #b9c6d6;
   --stage-screening: #7f9bbd;
   --stage-interview: #3d557a;
@@ -626,3 +630,218 @@
 .queue-row[data-entering]:nth-child(12) { transition-delay: 175ms; }
 .queue-row[data-entering]:nth-child(13) { transition-delay: 210ms; }
 .queue-row[data-entering]:nth-child(n+14) { transition-delay: 245ms; }
+
+/* ---- readiness ring: the three arcs draw in ------------------------- */
+
+/* Which of the three segments is short is the content of this zone, and a
+   ring that paints complete hides that. Drawing them reads the composition
+   out loud — 94, then 83, then the 50 that is actually holding him up.
+   The stagger is what makes the third one land as a statement.
+
+   stroke-dasharray is a paint property, not a layout one, so this does not
+   break the transform/opacity rule; it is the only way to draw an arc.
+   @starting-style gives the entering value, so the resting state is what the
+   server rendered and the ring is correct even if the transition never runs. */
+.dash .ready-arc {
+  stroke-dasharray: var(--len) var(--c);
+  transition: stroke-dasharray 760ms var(--ease-out) var(--draw-delay);
+}
+@starting-style {
+  .dash .ready-arc { stroke-dasharray: 0 var(--c); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash .ready-arc { transition: none; }
+}
+
+/* ---- profile form ---------------------------------------------------- */
+
+/* The section bar answers a keystroke, which is the strongest case for motion
+   there is: it shows what the typing just changed. Full width, scaled — so
+   nothing relayouts while someone is mid-word. */
+.pf-bar > span {
+  width: 100%;
+  transform-origin: left center;
+  transition: transform 300ms var(--ease-out), background-color 200ms ease;
+}
+
+/* Sections open and close rather than snapping. grid-template-rows 0fr->1fr
+   is the one way to transition to an unknown height, and it is a layout
+   animation — a deliberate exception, because the alternative is content
+   appearing out of nowhere, which the eye reads as a bug. It runs once per
+   click on a short list of rows, not per frame on a long one.
+   The contents fade slightly behind the opening so the text is not legible
+   while it is still being squeezed. */
+.pf-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 260ms var(--ease-out);
+}
+.pf-body[data-open] { grid-template-rows: 1fr; }
+.pf-clip {
+  overflow: hidden;
+  min-height: 0;
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+.pf-body[data-open] > .pf-clip { opacity: 1; transition-delay: 90ms; }
+
+/* The red edge on an unanswered field should leave as soon as it is answered,
+   not blink out. Colour only, so it survives reduced motion. */
+.pf-input-wrap, .pf-field textarea {
+  transition: border-color 200ms ease, border-left-width 200ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash .pf-bar > span { transition: background-color 200ms ease; transform-origin: left center; }
+  .dash .pf-body { transition: none; }
+  .dash .pf-clip { transition: none; }
+}
+
+/* ---- the offer -------------------------------------------------------- */
+
+.offer { display: flex; flex-direction: column; }
+.offer-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+
+/* Same disclosure as the profile form, and for the same reason: there is no
+   transform-based way to transition to an unknown height, and content that
+   snaps into place reads as a fault. Opening is a rare, deliberate act here,
+   so the reveal can take its time — 300ms rather than the form's 260. */
+.offer-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 300ms var(--ease-out);
+}
+.offer-body[data-open] { grid-template-rows: 1fr; }
+.offer-clip {
+  overflow: hidden; min-height: 0;
+  opacity: 0; transition: opacity 180ms ease;
+}
+.offer-body[data-open] > .offer-clip { opacity: 1; transition-delay: 110ms; }
+.offer-inner { display: flex; flex-direction: column; gap: 16px; padding-top: 18px; }
+
+.offer-terms { margin: 0; display: grid; gap: 1px; background: var(--rule);
+               border: 1px solid var(--rule); }
+.offer-terms > div { background: var(--surface); padding: 12px 14px;
+                     display: flex; flex-direction: column; gap: 3px;
+                     border-left: 3px solid transparent; }
+.offer-terms > div[data-tone="ok"]    { border-left-color: var(--positive); }
+.offer-terms > div[data-tone="watch"] { border-left-color: var(--caution); }
+.offer-terms dd { margin: 0; display: flex; flex-direction: column; gap: 2px; }
+.offer-terms dd strong { color: var(--ink); font-size: 14.5px; }
+.offer-terms dd span { font-size: 12.5px; color: var(--ink-muted); }
+
+.offer-blocker { margin: 0; display: flex; flex-direction: column; gap: 7px;
+                 align-items: flex-start; padding: 14px;
+                 background: var(--critical-surface); }
+.offer-blocker > span:last-child { font-size: 13px; color: var(--critical-ink);
+                                   max-width: 52em; }
+
+.offer-decide { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+/* Declining is an action, not a dare. Quiet, never hidden, never red. */
+.offer-decline { background: transparent; color: var(--ink-subtle);
+                 text-decoration: underline; text-underline-offset: 3px; padding-inline: 4px; }
+.offer-decline:hover { color: var(--ink); }
+.offer-foot { max-width: 46em; letter-spacing: .06em; text-transform: none;
+              font-size: 11.5px; line-height: 1.5; }
+
+@media (prefers-reduced-motion: reduce) {
+  .dash .offer-body, .dash .offer-clip { transition: none; }
+}
+
+/* ============================================================
+   Empty stage
+   ============================================================ */
+
+.stage {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  /* Fills what is left under the header instead of leaving a field of white.
+     dvh rather than vh so a phone's collapsing toolbar does not leave a gap. */
+  min-height: calc(100dvh - 130px);
+  display: grid;
+  align-content: center;
+  padding-block: 56px;
+  margin-inline: -20px;
+  padding-inline: 20px;
+}
+@media (min-width: 900px) { .stage { margin-inline: -40px; padding-inline: 40px; } }
+
+.stage-terrain { position: absolute; inset: -14%; z-index: -2; }
+.stage-band { position: absolute; inset: 0; will-change: transform; }
+.stage-band .contours { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* Depth comes from three rates, not from a cursor. The sway alternates, so
+   ease-in-out rather than linear: a linear alternate reverses on a hard
+   corner and the eye catches it even at this speed. Minutes per cycle and a
+   couple of percent of travel — enough to be alive, not enough to watch. */
+.stage-band[data-depth="low"]  { opacity: .32; animation: stage-drift-a 92s ease-in-out infinite alternate; }
+.stage-band[data-depth="mid"]  { opacity: .46; animation: stage-drift-b 74s ease-in-out infinite alternate; }
+.stage-band[data-depth="high"] { opacity: .62; animation: stage-drift-c 61s ease-in-out infinite alternate; }
+
+@keyframes stage-drift-a {
+  from { transform: translate3d(-1.2%, 0.6%, 0) scale(1.04); }
+  to   { transform: translate3d(1.4%, -0.8%, 0) scale(1.07); }
+}
+@keyframes stage-drift-b {
+  from { transform: translate3d(1.8%, -1%, 0) scale(1.06); }
+  to   { transform: translate3d(-2%, 1.2%, 0) scale(1.03); }
+}
+@keyframes stage-drift-c {
+  from { transform: translate3d(-2.4%, 1.4%, 0) scale(1.02); }
+  to   { transform: translate3d(2.6%, -1.6%, 0) scale(1.06); }
+}
+
+/* Lifts the sheet under the text. Without it the contour lines run straight
+   through the headline and both lose. */
+.stage-lift {
+  position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(900px 560px at 26% 46%,
+      rgb(251 252 253 / .97), rgb(251 252 253 / .74) 44%, rgb(251 252 253 / 0) 72%);
+}
+
+.stage-content {
+  position: relative;
+  display: grid;
+  gap: 36px 56px;
+  align-items: center;
+  width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
+}
+@media (min-width: 940px) { .stage-content { grid-template-columns: 1.05fr .95fr; } }
+
+.stage-lead { display: flex; flex-direction: column; gap: 16px; align-items: flex-start; }
+.stage-lead h1 {
+  font-size: clamp(32px, 4.4vw, 50px); line-height: 1.02; max-width: 13em;
+  text-wrap: balance;
+}
+.stage-lead p { margin: 0; font-size: 15.5px; line-height: 1.6;
+                color: var(--ink-muted); max-width: 34em; }
+.stage-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+
+/* The steps panel sits on the sheet, opaque, so the terrain reads behind it
+   rather than through it. */
+.stage-steps {
+  margin: 0; padding: 0; list-style: none;
+  background: var(--surface); border: 1px solid var(--rule);
+}
+.stage-steps > li { display: grid; grid-template-columns: 30px 1fr; gap: 14px;
+                    padding: 18px 20px; }
+.stage-steps > li + li { border-top: 1px solid var(--rule); }
+.stage-steps-head { display: block !important; padding-block: 12px !important;
+                    background: var(--surface-raised); }
+.stage-steps li > span:last-child { display: flex; flex-direction: column; gap: 3px; }
+.stage-steps strong { color: var(--ink); font-size: 14.5px; }
+.stage-steps span span { font-size: 13px; color: var(--ink-muted); }
+.stage-step-n {
+  font-family: var(--font-googlesans), sans-serif;
+  font-variation-settings: "wght" 700, "GRAD" 120;
+  font-size: 18px; color: var(--accent-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash .stage-band { animation: none; }
+}

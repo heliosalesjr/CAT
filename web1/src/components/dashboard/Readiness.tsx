@@ -1,4 +1,4 @@
-import type { TeacherSummary } from "@/lib/dashboard-data";
+import type { CandidateSummary } from "@/lib/dashboard-data";
 
 /**
  * Zone 1. The one measured-progress element on the page, and it earns the
@@ -9,7 +9,7 @@ import type { TeacherSummary } from "@/lib/dashboard-data";
  * badge, no streak — the ring exists to show what is still missing before a
  * school can consider you.
  */
-export function Readiness({ summary }: { summary: TeacherSummary }) {
+export function Readiness({ summary }: { summary: CandidateSummary }) {
   const { readiness } = summary;
   const parts = [
     { key: "profile", label: "Profile", value: readiness.profile },
@@ -31,10 +31,18 @@ export function Readiness({ summary }: { summary: TeacherSummary }) {
                       strokeWidth="11"
                       strokeDasharray={`${seg - gap} ${C - seg + gap}`}
                       strokeDashoffset={-i * seg} />
-              <circle cx="70" cy="70" r={R} fill="none"
+              {/* The filled length is handed over as a custom property so
+                  CSS can draw it in from zero with @starting-style — no mount
+                  flag, no effect, and the server-rendered value is already the
+                  resting state if motion is off. */}
+              <circle className="ready-arc" cx="70" cy="70" r={R} fill="none"
                       stroke={`var(--ready-${p.key})`} strokeWidth="11"
-                      strokeDasharray={`${((seg - gap) * p.value) / 100} ${C}`}
-                      strokeDashoffset={-i * seg} />
+                      strokeDashoffset={-i * seg}
+                      style={{
+                        "--len": `${((seg - gap) * p.value) / 100}`,
+                        "--c": `${C}`,
+                        "--draw-delay": `${i * 90}ms`,
+                      } as React.CSSProperties} />
             </g>
           ))}
         </g>
@@ -49,7 +57,7 @@ export function Readiness({ summary }: { summary: TeacherSummary }) {
             <li key={p.key}>
               <span className="dot" style={{ background: `var(--ready-${p.key})` }} />
               <span className="ready-leg-label">{p.label}</span>
-              <span className="bar ready-leg-bar">
+              <span className="bar ready-leg-bar" data-grow>
                 <span style={{ width: `${p.value}%`, background: `var(--ready-${p.key})` }} />
               </span>
               <span className="num ready-leg-n">{p.value}%</span>

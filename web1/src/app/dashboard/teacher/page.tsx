@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {
-  getJobCards, getTeacher, getTeacherApplications, getTeacherInterviews,
-  getTeacherSummary,
+  getJobCards, getOfferContext, getCandidate, getCandidateApplications,
+  getCandidateInterviews, getCandidateSummary,
 } from "@/lib/dashboard-data";
 import { Avatar } from "@/components/dashboard/Avatar";
 import { Readiness } from "@/components/dashboard/Readiness";
@@ -10,6 +10,7 @@ import { Blockers } from "@/components/dashboard/Blockers";
 import { Interviews } from "@/components/dashboard/Interviews";
 import { JobSuggestions } from "@/components/dashboard/JobSuggestions";
 import { TeacherSwitch } from "@/components/dashboard/TeacherSwitch";
+import { EmptyStage } from "@/components/dashboard/EmptyStage";
 
 export const metadata = { title: "Your applications — Class Act Talent" };
 export const dynamic = "force-dynamic";
@@ -24,10 +25,10 @@ export default async function TeacherDashboard({
   if (view === "new") return <FirstDay />;
 
   const teacherId = VIEWS[view] ?? VIEWS.daniel;
-  const t = getTeacher(teacherId);
-  const summary = getTeacherSummary(teacherId);
-  const applications = getTeacherApplications(teacherId);
-  const interviews = getTeacherInterviews(teacherId);
+  const t = getCandidate(teacherId);
+  const summary = getCandidateSummary(teacherId);
+  const applications = getCandidateApplications(teacherId);
+  const interviews = getCandidateInterviews(teacherId);
   const recommended = getJobCards(summary.recommendedJobs.map((r) => r.jobPostingId));
   const saved = getJobCards(summary.savedJobIds);
 
@@ -57,7 +58,7 @@ export default async function TeacherDashboard({
         </aside>
       </section>
 
-      <MyApplications rows={applications} />
+      <MyApplications rows={applications} offerContext={getOfferContext(teacherId)} />
       <Blockers summary={summary} />
       <Interviews rows={interviews} leadTimezone={t.timezone} perspective="teacher" />
       <JobSuggestions
@@ -66,7 +67,7 @@ export default async function TeacherDashboard({
         why={summary.recommendedJobs}
         emptyReason={
           summary.recommendedJobs.length === 0
-            ? `Nothing is being suggested yet, and the reason is specific: at ${summary.profileCompleteness}% your profile does not say enough about what you teach for a match to mean anything. Subjects, curricula and the regions you would move to are what the matching reads.`
+            ? `Nothing is being suggested yet, and the reason is specific: at ${summary.profileCompleteness}% your profile does not say enough about the work you do for a match to mean anything. The role you want, your specialism, the curricula you have worked in and the regions you would move to are what the matching reads.`
             : null
         }
       />
@@ -79,7 +80,7 @@ export default async function TeacherDashboard({
 }
 
 /** One sentence answering "where do I stand". */
-function standing(s: ReturnType<typeof getTeacherSummary>) {
+function standing(s: ReturnType<typeof getCandidateSummary>) {
   if (s.offersOpen > 0)
     return "You have an offer open. Everything below is what stands between you and accepting it safely.";
   if (s.activeApplications > 0 && s.schoolsOwingResponse > 0)
@@ -93,7 +94,7 @@ function FirstDay() {
     <main className="dash-wrap">
       <header className="dash-top">
         <div className="tc-ident">
-          <Avatar name="New Teacher" missing />
+          <Avatar name="" missing />
           <div className="dash-ident">
             <h1>Welcome</h1>
             <span className="readout">Account created today</span>
@@ -102,32 +103,32 @@ function FirstDay() {
         <TeacherSwitch view="new" />
       </header>
 
-      <section className="dash-section empty">
-        <div className="empty-lead">
-          <h1>Schools find you by what you teach.</h1>
-          <p>
-            Three things decide whether a school can consider you: the subjects
-            and curricula on your profile, verified documents, and a reference
-            from someone who managed you. Nothing else moves until those do.
-          </p>
-          <div className="empty-actions">
-            <Link href="/dashboard/teacher/profile" className="btn btn-accent">Start your profile</Link>
+      <EmptyStage
+        title="Schools filter before they read."
+        blurb={
+          "Teaching, leadership or student support \u2014 a school narrows a long list " +
+          "on what your profile says about the role you want, the curricula you have " +
+          "worked in and the ages you have worked with, before anyone opens a CV. " +
+          "Documents and a supervisor's reference decide the gate after that."
+        }
+        actions={
+          <>
+            <Link href="/dashboard/teacher/profile" className="btn btn-accent">
+              Start your profile
+            </Link>
             <button type="button" className="btn btn-quiet">Browse roles first</button>
-          </div>
-        </div>
-        <ol className="empty-steps panel panel-rows">
-          {[
-            { h: "Say what you teach", p: "Subjects, curricula, grade levels and the regions you would move to." },
-            { h: "Upload what schools verify", p: "Passport, degree, teaching certificate. These are checked, not just stored." },
-            { h: "Name a supervisor", p: "A reference from someone who managed you counts far more than one from a peer." },
-          ].map((s, i) => (
-            <li key={s.h}>
-              <span className="empty-step-n num">{i + 1}</span>
-              <span><strong>{s.h}</strong><span>{s.p}</span></span>
-            </li>
-          ))}
-        </ol>
-      </section>
+          </>
+        }
+        stepsTitle="What a school checks, in order"
+        steps={[
+          { h: "Say what you do",
+            p: "The kind of role you want, your specialism, the curricula you have worked in, and the regions you would move to." },
+          { h: "Upload what schools verify",
+            p: "Passport, degree, teaching certificate. These are checked, not just stored." },
+          { h: "Name a supervisor",
+            p: "Someone who managed you, in any role. A reference from a peer rarely counts towards safeguarding." },
+        ]}
+      />
     </main>
   );
 }

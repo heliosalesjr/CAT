@@ -5,7 +5,7 @@ BEGIN;
 
 CREATE TABLE notifications (
   id             text PRIMARY KEY,
-  recipient_type text NOT NULL CHECK (recipient_type IN ('teacher','school_user')),
+  recipient_type text NOT NULL CHECK (recipient_type IN ('candidate','school_user')),
   recipient_id   text NOT NULL,
   kind           text NOT NULL,
   severity       text NOT NULL DEFAULT 'info'
