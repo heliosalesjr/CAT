@@ -45,7 +45,7 @@ export function Analytics({ summary }: { summary: Summary }) {
               return (
                 <li key={s}>
                   <span className="readout">{s}</span>
-                  <span className="bar an-funnel-bar">
+                  <span className="bar an-funnel-bar" data-grow>
                     <span style={{ width: `${(n / widest) * 100}%`, background: `var(--stage-${s})` }} />
                   </span>
                   <span className="num">{n}</span>

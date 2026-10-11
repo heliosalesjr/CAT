@@ -12,6 +12,12 @@
    ============================================================ */
 
 .dash {
+  /* The built-in CSS easings are too weak to read as intentional. These are
+     the two this page uses, and nothing else. ease-in is never used: it holds
+     still for the first frames, which are exactly the frames being watched. */
+  --ease-out:    cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+
   --surface:        #fbfcfd;
   --surface-raised: #f3f6fa;
   --surface-sunken: #e8eef6;
@@ -131,7 +137,8 @@
   font-family: inherit; font-variation-settings: "wdth" 90; font-weight: 600;
   font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase;
   line-height: 1; padding: 10px 14px; cursor: pointer; white-space: nowrap;
-  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+  transition: transform 140ms var(--ease-out), background-color 150ms ease,
+              color 150ms ease, border-color 150ms ease;
 }
 .btn-accent  { background: var(--accent-ink); color: var(--surface); }
 .btn-accent:hover { background: var(--accent-pressed); }
@@ -139,6 +146,11 @@
                color: var(--ink); }
 .btn-quiet:hover { background: var(--ink); color: var(--surface); border-color: var(--ink); }
 .btn:focus-visible { outline: 2px solid var(--accent-deep); outline-offset: 2px; }
+
+/* Every pressable element answers the press. Nothing on this page had an
+   :active state, so the interface gave no sign it had heard the click. */
+.btn:active, .demo-opt:active, .pf-head:active { transform: scale(0.97); }
+.demo-opt, .pf-head { transition: transform 140ms var(--ease-out), background-color 150ms ease; }
 
 .dash a { color: inherit; }
 .dash a:focus-visible, .dash button:focus-visible, .dash summary:focus-visible {
@@ -150,10 +162,15 @@
 .bar { display: flex; height: 10px; width: 100%; background: var(--surface-sunken); }
 .bar > span { display: block; height: 100%; }
 
+/* Reduced motion means fewer and gentler animations, not none. Colour and
+   opacity still transition, because they carry meaning here — a chip changing
+   state, a score fading in. What goes is movement: travel, growth, scale. */
 @media (prefers-reduced-motion: reduce) {
-  .dash *, .dash *::before, .dash *::after {
-    transition-duration: 1ms !important; animation-duration: 1ms !important;
-  }
+  .dash .btn:active, .dash .demo-opt:active, .dash .pf-head:active { transform: none; }
+  .dash .bar > span, .dash .ready-ring circle { transition: none !important; }
+  .dash [data-grow] > span { animation: none !important; transform: none !important; }
+  .dash .sl-score { transform: none !important; }
+  .dash .queue-row, .dash .sl-row { animation: none !important; }
 }
 
 /* ============================================================
@@ -519,3 +536,93 @@
 .dash a.btn-quiet  { color: var(--ink); }
 .dash a.btn-quiet:hover { color: var(--surface); }
 .dash a.btn { text-decoration: none; }
+
+/* ============================================================
+   Motion
+
+   Three places earn an animation on this page, and the test each one passes
+   is that the movement carries information the still frame does not:
+
+   1. the ratio bars, where watching the red half claim the majority IS the
+      argument the zone exists to make;
+   2. the shortlist reorder, where the travel explains why the order changed
+      (handled in JS — see src/lib/use-flip.ts);
+   3. rows arriving when the queue expands, so new content does not appear
+      out of nowhere.
+
+   Everything else on this page is deliberately still. Hover effects are seen
+   dozens of times a day and were kept to a background change at 120ms;
+   section entrances were considered and dropped, because the content is
+   server-rendered and already there at first paint, so there is no jarring
+   change to prevent and the motion would be pure decoration.
+   ============================================================ */
+
+/* ---- ratio bars: grow from their own origin on first paint ---------- */
+
+.dash [data-grow] > span {
+  transform-origin: left center;
+  animation: bar-grow 620ms var(--ease-out) both;
+}
+/* Explanatory rather than reactive, so it is allowed past the 300ms UI
+   ceiling — the viewer is reading it, not waiting on it. */
+@keyframes bar-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* The split bar is one statement in two parts; the second follows the first
+   so the eye reads "answered, then never answered" in that order. */
+.health-split > span:nth-child(2) { animation-delay: 160ms; }
+
+/* Pipeline bars build down the list, 45ms apart. Short enough to read as one
+   gesture rather than a queue of separate animations. */
+.pipe-row:nth-child(1) [data-grow] > span { animation-delay: 0ms; }
+.pipe-row:nth-child(2) [data-grow] > span { animation-delay: 45ms; }
+.pipe-row:nth-child(3) [data-grow] > span { animation-delay: 90ms; }
+.pipe-row:nth-child(4) [data-grow] > span { animation-delay: 135ms; }
+.pipe-row:nth-child(5) [data-grow] > span { animation-delay: 180ms; }
+.pipe-row:nth-child(6) [data-grow] > span { animation-delay: 225ms; }
+
+/* ---- shortlist: the score column leaving and arriving ---------------- */
+
+/* The column keeps its width whether or not a score is in it. Animating the
+   width would transition a layout property — the one thing the performance
+   rule forbids — and it would also reflow the row horizontally while the FLIP
+   is moving it vertically, which reads as a wobble. Reserved space costs
+   nothing and leaves only transform and opacity in motion. */
+.sl-score {
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  width: 3.4em; flex: none;
+  opacity: 0; transform: scale(0.96);
+  transition: opacity 180ms ease, transform 180ms var(--ease-out);
+}
+.sl-score[data-on] { opacity: 1; transform: none; }
+
+/* ---- queue rows arriving on expand ----------------------------------- */
+
+.queue-row { transition: background-color 120ms ease; }
+
+@media (hover: hover) and (pointer: fine) {
+  .queue-row:hover, .sl-row:hover, .pipe-row:hover { background: var(--surface-raised); }
+  .sl-row, .pipe-row { transition: background-color 120ms ease; }
+}
+
+/* Entry is a transition, not a keyframe, so rapid expand/collapse retargets
+   instead of restarting from zero. @starting-style gives the entering value
+   without a mounted-flag round trip through React. */
+.queue-row[data-entering] {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 220ms var(--ease-out), transform 220ms var(--ease-out),
+              background-color 120ms ease;
+}
+@starting-style {
+  .queue-row[data-entering] { opacity: 0; transform: translateY(-6px); }
+}
+/* Capped at eight: beyond that the stagger stops reading as a cascade and
+   starts reading as a wait. */
+.queue-row[data-entering]:nth-child(7)  { transition-delay: 0ms; }
+.queue-row[data-entering]:nth-child(8)  { transition-delay: 35ms; }
+.queue-row[data-entering]:nth-child(9)  { transition-delay: 70ms; }
+.queue-row[data-entering]:nth-child(10) { transition-delay: 105ms; }
+.queue-row[data-entering]:nth-child(11) { transition-delay: 140ms; }
+.queue-row[data-entering]:nth-child(12) { transition-delay: 175ms; }
+.queue-row[data-entering]:nth-child(13) { transition-delay: 210ms; }
+.queue-row[data-entering]:nth-child(n+14) { transition-delay: 245ms; }

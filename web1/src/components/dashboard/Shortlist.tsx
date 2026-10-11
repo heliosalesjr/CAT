@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useFlip } from "@/lib/use-flip";
 import type { Shortlist as Data } from "@/lib/dashboard-data";
 
 /**
@@ -21,7 +22,21 @@ export function Shortlist({
   data, canEditCriteria, canSeeDocuments,
 }: { data: Data; canEditCriteria: boolean; canSeeDocuments: boolean }) {
   const [ranked, setRanked] = useState(true);
-  const list = ranked ? data.ranked : data.byRecency;
+
+  /* The shortlist is one set of people, shown in two orders. Slicing after
+     sorting — which is what this did — meant turning ranking off swapped in a
+     different eight candidates, so the control was quietly filtering rather
+     than ordering. The brief rules that out, and animating it is what exposed
+     it: only one row ever had somewhere to travel to.
+
+     The visible set is fixed by the ranking, then reordered in place. */
+  const SHOWN = 8;
+  const visible = data.ranked.slice(0, SHOWN);
+  const byWait = [...visible].sort((a, b) => b.appliedDaysAgo - a.appliedDaysAgo);
+  const list = ranked ? visible : byWait;
+
+  // Rows travel to their new places rather than blinking into them.
+  const listRef = useFlip<HTMLOListElement>(ranked);
 
   return (
     <section className="dash-section" aria-labelledby="shortlist">
@@ -31,7 +46,7 @@ export function Shortlist({
           {data.posting.applicationCount} applications.{" "}
           {ranked
             ? "Ranked against this posting's priorities."
-            : "Ranking off — ordered by how long each candidate has waited."}
+            : "Ranking off — the same candidates, ordered by how long each has waited."}
         </p>
         <button type="button" className="btn btn-quiet" aria-pressed={ranked}
                 onClick={() => setRanked((v) => !v)}>
@@ -62,9 +77,9 @@ export function Shortlist({
         every call.
       </p>
 
-      <ol className="panel panel-rows sl-list">
-        {list.slice(0, 8).map((c, i) => (
-          <li key={c.id} className="sl-row">
+      <ol className="panel panel-rows sl-list" ref={listRef}>
+        {list.map((c, i) => (
+          <li key={c.id} className="sl-row" data-flip-key={c.id}>
             <span className="sl-rank num">{ranked ? i + 1 : "—"}</span>
 
             <span className="sl-who">
@@ -83,12 +98,10 @@ export function Shortlist({
             </ul>
 
             <span className="sl-right">
-              {ranked && (
-                <span className="sl-score">
-                  <span className="fig sl-score-fig">{c.score}</span>
-                  <span className="readout">score</span>
-                </span>
-              )}
+              <span className="sl-score" data-on={ranked || undefined} aria-hidden={!ranked}>
+                <span className="fig sl-score-fig">{c.score}</span>
+                <span className="readout">score</span>
+              </span>
               <span className={`chip ${c.owed ? "chip-critical" : "chip-neutral"}`}>
                 {c.owed ? "Owes reply" : c.stage}
               </span>

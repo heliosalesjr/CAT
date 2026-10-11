@@ -40,7 +40,7 @@ export function HealthBar({ summary }: { summary: Summary }) {
             <span><span className="fig health-fig-sm health-fig-bad">{never}</span>
               <span className="readout"> never answered</span></span>
           </div>
-          <div className="bar health-split" role="img"
+          <div className="bar health-split" data-grow role="img"
                aria-label={`${answered} of ${total} applicants answered, ${never} never answered`}>
             <span style={{ width: `${100 - neverPct}%`, background: "var(--positive)" }} />
             <span style={{ width: `${neverPct}%`, background: "var(--critical)" }} />

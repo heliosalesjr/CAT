@@ -36,8 +36,12 @@ export function AttentionQueue({ items }: { items: QueueItem[] }) {
       </div>
 
       <ol className="panel panel-rows queue">
-        {shown.map((i) => (
-          <li key={i.key} className="queue-row" data-severity={i.severity}>
+        {shown.map((i, idx) => (
+          <li key={i.key} className="queue-row" data-severity={i.severity}
+              /* Only the rows revealed by "show more" animate in. The first
+                 six are present at first paint and have nothing to arrive
+                 from. */
+              data-entering={expanded && idx >= FIRST ? "" : undefined}>
             <span className="queue-days num" aria-label={`${i.days} days`}>
               <strong>{i.days}</strong><span className="readout">d</span>
             </span>

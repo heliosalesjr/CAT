@@ -44,7 +44,7 @@ export function Pipeline({ rows, canSeeSalary }: { rows: PipelineRow[]; canSeeSa
 
               <div className="pipe-bar-wrap">
                 {active > 0 ? (
-                  <div className="bar pipe-bar"
+                  <div className="bar pipe-bar" data-grow
                        style={{ width: `${Math.max((r.applicationCount / widest) * 100, 4)}%` }}
                        role="img"
                        aria-label={ACTIVE_STAGES.map((s) => `${r.counts[s]} ${STAGE_LABEL[s]}`).join(", ")}>
