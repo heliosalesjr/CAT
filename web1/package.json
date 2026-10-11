@@ -6,12 +6,19 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "terrain": "python3 scripts/generate-terrain.py"
+    "terrain": "python3 scripts/generate-terrain.py",
+    "db:migrate": "node db/migrate.mjs",
+    "db:migrate:dry": "node db/migrate.mjs --dry-run",
+    "db:seed": "node db/seed.mjs",
+    "db:seed:check": "node db/seed.mjs --check-only",
+    "db:reset": "ALLOW_RESET=1 node db/seed.mjs --reset"
   },
   "dependencies": {
     "next": "16.3.5",
+    "pg": "^8.13.1",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

@@ -1,0 +1,6046 @@
+{
+  "_meta": {
+    "purpose": "Focused slice for building and testing the reorderable ranking-criteria panel. Attach THIS file to a design prompt instead of the full bundle when you only need the ranking feature.",
+    "jobPostingId": "job_his_mathco",
+    "howToUse": "Render the criteria as a drag-to-reorder list. On every reorder, recompute each application's score with the weight formula and re-sort. Nothing is pre-sorted for you except the scenarios below, which exist so you can verify your maths."
+  },
+  "rankingModel": {
+    "formula": "weight(i) = (N - i + 1) / (N * (N + 1) / 2), where i is the 1-indexed position of the criterion and N is how many criteria the posting uses.",
+    "weightsByCount": {
+      "3": [
+        0.5,
+        0.333,
+        0.167
+      ],
+      "4": [
+        0.4,
+        0.3,
+        0.2,
+        0.1
+      ],
+      "5": [
+        0.333,
+        0.267,
+        0.2,
+        0.133,
+        0.067
+      ]
+    },
+    "score": "aiRankScore = round( sum over criteria of weight(position) * application.criterionScores[criterionId] ). Scores are 0-100.",
+    "recomputeOnReorder": true,
+    "scoresAreStoredForEveryCriterion": "Each application carries a score and a note for ALL criteria in the catalog, not only the ones the posting currently uses. That means the recruiter can both REORDER the chosen criteria and SWAP one out for another, and the UI recomputes the whole candidate list client-side with no server round trip.",
+    "postingUsesThreeToFive": "A posting's rankingCriteria array holds between 3 and 5 criterion ids, in priority order. Position 1 is the highest priority.",
+    "explainabilityRule": "Show the note for the TWO highest-weighted criteria. If the candidate's score on that criterion is >= 70 present it as a reason; if < 55 present it as a concern; between 55 and 69 present it neutrally. Reasons and concerns must change when the recruiter reorders the criteria — they are derived, never stored as prose.",
+    "eligibilityRule": "Candidates with profileCompleteness < 70 are not scored at all (aiRankScore is null) and appear in a separate 'Not yet rankable' group.",
+    "humanInTheLoop": "Ranking orders a list. It never rejects, filters out, or hides a candidate, and it never makes a hiring decision."
+  },
+  "criteriaCatalog": [
+    {
+      "id": "years_experience",
+      "label": "Years of experience",
+      "shortLabel": "Experience",
+      "description": "Total classroom years, weighted toward years in the posting's subject.",
+      "measuredFrom": "teacher.yearsExperience and teacher.yearsInSubject"
+    },
+    {
+      "id": "curriculum_match",
+      "label": "Curriculum experience",
+      "shortLabel": "Curriculum",
+      "description": "Overlap between the curricula the candidate has taught and those the posting requires (IB, Cambridge, AP).",
+      "measuredFrom": "teacher.curriculumExperience vs jobPosting.curriculumRequired"
+    },
+    {
+      "id": "subject_specialization",
+      "label": "Subject specialisation",
+      "shortLabel": "Subject",
+      "description": "How closely the candidate's primary specialism matches the posted subject.",
+      "measuredFrom": "teacher.subjects vs jobPosting.subjects"
+    },
+    {
+      "id": "advanced_degree",
+      "label": "Advanced degree",
+      "shortLabel": "Degree",
+      "description": "Highest qualification held — doctorate, master's, or bachelor's.",
+      "measuredFrom": "teacher.highestDegree"
+    },
+    {
+      "id": "availability",
+      "label": "Availability",
+      "shortLabel": "Availability",
+      "description": "Whether the candidate is free by the posting's start date, and how much margin there is.",
+      "measuredFrom": "teacher.availableFrom vs jobPosting.startDate"
+    },
+    {
+      "id": "safeguarding_references",
+      "label": "Verified supervisor references",
+      "shortLabel": "References",
+      "description": "Number of verified references from direct supervisors or heads of school. Peer references do not count.",
+      "measuredFrom": "teacher.verifiedSupervisorReferences"
+    },
+    {
+      "id": "regional_experience",
+      "label": "Regional experience",
+      "shortLabel": "Region",
+      "description": "Prior international placement, weighted toward the school's own region.",
+      "measuredFrom": "teacher.regionsWorked vs school.region"
+    },
+    {
+      "id": "leadership",
+      "label": "Leadership experience",
+      "shortLabel": "Leadership",
+      "description": "Years in a coordination, head-of-department or senior-leadership role.",
+      "measuredFrom": "teacher.leadershipYears"
+    },
+    {
+      "id": "extracurricular",
+      "label": "Coaching & activities",
+      "shortLabel": "Activities",
+      "description": "Willingness and ability to lead an after-school activity or sport.",
+      "measuredFrom": "teacher.coachingCapable and teacher.coachingActivities"
+    },
+    {
+      "id": "local_hire",
+      "label": "Local hire",
+      "shortLabel": "Local",
+      "description": "Already holds the right to work in the school's country — no relocation package or work permit needed.",
+      "measuredFrom": "teacher.currentCountry and teacher.nationality vs school.country"
+    }
+  ],
+  "jobPosting": {
+    "id": "job_his_mathco",
+    "schoolId": "sch_hangang",
+    "title": "MYP Mathematics Coordinator",
+    "roleFamily": "administrator",
+    "subjects": [
+      "Mathematics"
+    ],
+    "division": "middle",
+    "gradeLevels": [
+      "middle"
+    ],
+    "curriculumRequired": [
+      "IB_MYP"
+    ],
+    "status": "posted",
+    "academicYear": "2027-2028",
+    "likelihood": "definite",
+    "employmentType": "full_time",
+    "contractLengthYears": 3,
+    "openingsAvailable": 1,
+    "minYearsExperience": 5,
+    "excludedNationalities": [],
+    "coverLetterRequired": true,
+    "screeningQuestions": [
+      {
+        "id": "q1",
+        "question": "Outline a time you led a curriculum review.",
+        "type": "long_text",
+        "required": true
+      }
+    ],
+    "aiRankingEnabled": true,
+    "rankingCriteria": [
+      "leadership",
+      "curriculum_match",
+      "years_experience",
+      "advanced_degree",
+      "availability"
+    ],
+    "rankingCriteriaUpdatedAt": "2026-10-08T00:00:00Z",
+    "rankingCriteriaUpdatedById": "usr_his_head",
+    "previousRankingCriteria": [
+      "years_experience",
+      "curriculum_match",
+      "subject_specialization",
+      "advanced_degree",
+      "availability"
+    ],
+    "salaryMinUsd": 62000,
+    "salaryMaxUsd": 78000,
+    "housingProvided": true,
+    "dependentTuitionCovered": 2,
+    "postedAt": "2026-09-29T00:00:00Z",
+    "applyByDate": "2027-03-01",
+    "startDate": "2027-08-01",
+    "createdById": "usr_his_head",
+    "applicationCount": 47,
+    "hiredCount": 0,
+    "viewCount": 1130,
+    "createdAt": "2026-09-26T00:00:00Z",
+    "updatedAt": "2026-10-10T00:00:00Z"
+  },
+  "school": {
+    "id": "sch_hangang",
+    "name": "Hangang International School",
+    "shortName": "HIS",
+    "city": "Seoul",
+    "country": "South Korea",
+    "countryCode": "KR",
+    "region": "East Asia",
+    "timezone": "Asia/Seoul",
+    "studentCount": 1240,
+    "curricula": [
+      "IB_PYP",
+      "IB_MYP",
+      "IB_DP",
+      "AP"
+    ],
+    "divisions": [
+      "early_years",
+      "elementary",
+      "middle",
+      "high"
+    ],
+    "foundedYear": 1998,
+    "website": "https://example-his.edu",
+    "logoUrl": null,
+    "heroImageUrl": null,
+    "description": "A 1,200-student IB continuum school in the Pangyo district, serving a mixed expatriate and Korean-national community.",
+    "benefitsSummary": "Housing allowance, annual flights, dependent tuition (2 children), national health insurance, shipping allowance.",
+    "verificationStatus": "verified",
+    "verifiedAt": "2025-08-16T00:00:00Z",
+    "averageResponseDays": 6.2,
+    "teacherRating": 4.3,
+    "ratingCount": 38,
+    "planId": "plan_growth",
+    "createdAt": "2025-08-06T00:00:00Z"
+  },
+  "applications": [
+    {
+      "id": "app_0006",
+      "teacherId": "tch_0004",
+      "jobPostingId": "job_his_mathco",
+      "stage": "interview",
+      "appliedAt": "2026-10-01T00:00:00Z",
+      "stageChangedAt": "2026-10-07T00:00:00Z",
+      "daysSinceStageChange": 3,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 100,
+        "curriculum_match": 95,
+        "subject_specialization": 98,
+        "advanced_degree": 80,
+        "availability": 88,
+        "safeguarding_references": 100,
+        "regional_experience": 66,
+        "leadership": 60,
+        "extracurricular": 84,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "15 years teaching, 15 in Physics",
+        "curriculum_match": "Has taught IB MYP",
+        "subject_specialization": "Specialises in Mathematics",
+        "advanced_degree": "Master's in Physics",
+        "availability": "Available from 2027-08-01, before the 2027-08-01 start",
+        "safeguarding_references": "2 verified supervisor references",
+        "regional_experience": "International experience, but not in East Asia",
+        "leadership": "2 years in a coordination or department-head role",
+        "extracurricular": "Can lead robotics club",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 82,
+      "shortlisted": true,
+      "shortlistedById": "usr_his_head",
+      "internalNotes": [
+        {
+          "authorId": "usr_his_head",
+          "at": "2026-10-07T00:00:00Z",
+          "text": "Couple hire. If we take Hanne for Humanities, Marcus becomes very attractive even if not for the coordinator post."
+        }
+      ],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": true,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-01T00:00:00Z"
+        },
+        {
+          "stage": "screening",
+          "at": "2026-10-04T00:00:00Z"
+        },
+        {
+          "stage": "interview",
+          "at": "2026-10-07T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0007",
+      "teacherId": "tch_0002",
+      "jobPostingId": "job_his_mathco",
+      "stage": "screening",
+      "appliedAt": "2026-09-30T00:00:00Z",
+      "stageChangedAt": "2026-10-05T00:00:00Z",
+      "daysSinceStageChange": 5,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 44,
+        "curriculum_match": 95,
+        "subject_specialization": 98,
+        "advanced_degree": 45,
+        "availability": 88,
+        "safeguarding_references": 15,
+        "regional_experience": 32,
+        "leadership": 12,
+        "extracurricular": 20,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "6 years teaching, 6 in Mathematics",
+        "curriculum_match": "Has taught IB MYP",
+        "subject_specialization": "Specialises in Mathematics",
+        "advanced_degree": "Bachelor's degree — no postgraduate qualification",
+        "availability": "Available from 2027-08-01, before the 2027-08-01 start",
+        "safeguarding_references": "No verified supervisor reference yet",
+        "regional_experience": "No prior international placement",
+        "leadership": "No formal leadership or coordination role",
+        "extracurricular": "No coaching or activity commitment indicated",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 50,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-09-30T00:00:00Z"
+        },
+        {
+          "stage": "screening",
+          "at": "2026-10-05T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0008",
+      "teacherId": "tch_0010",
+      "jobPostingId": "job_his_mathco",
+      "stage": "applied",
+      "appliedAt": "2026-10-08T00:00:00Z",
+      "stageChangedAt": "2026-10-08T00:00:00Z",
+      "daysSinceStageChange": 2,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 80,
+        "curriculum_match": 95,
+        "subject_specialization": 22,
+        "advanced_degree": 80,
+        "availability": 88,
+        "safeguarding_references": 100,
+        "regional_experience": 66,
+        "leadership": 82,
+        "extracurricular": 84,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "11 years teaching, 11 in Design Technology",
+        "curriculum_match": "Has taught IB MYP",
+        "subject_specialization": "Primary specialism is Design Technology, not Mathematics",
+        "advanced_degree": "Master's in Educational Technology",
+        "availability": "Available from 2027-08-01, before the 2027-08-01 start",
+        "safeguarding_references": "2 verified supervisor references",
+        "regional_experience": "International experience, but not in East Asia",
+        "leadership": "4 years in a coordination or department-head role",
+        "extracurricular": "Can lead robotics club",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 85,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": true,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-08T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0009",
+      "teacherId": "tch_0005",
+      "jobPostingId": "job_his_mathco",
+      "stage": "applied",
+      "appliedAt": "2026-10-01T00:00:00Z",
+      "stageChangedAt": "2026-10-01T00:00:00Z",
+      "daysSinceStageChange": 9,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 94,
+        "curriculum_match": 95,
+        "subject_specialization": 22,
+        "advanced_degree": 80,
+        "availability": 88,
+        "safeguarding_references": 100,
+        "regional_experience": 66,
+        "leadership": 93,
+        "extracurricular": 84,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "13 years teaching, 13 in Individuals & Societies",
+        "curriculum_match": "Has taught IB MYP",
+        "subject_specialization": "Primary specialism is Individuals & Societies, not Mathematics",
+        "advanced_degree": "Master's in History",
+        "availability": "Available from 2027-08-01, before the 2027-08-01 start",
+        "safeguarding_references": "2 verified supervisor references",
+        "regional_experience": "International experience, but not in East Asia",
+        "leadership": "5 years in a coordination or department-head role",
+        "extracurricular": "Can lead MUN",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 92,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-01T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0031",
+      "teacherId": "tch_0061",
+      "jobPostingId": "job_his_mathco",
+      "stage": "applied",
+      "appliedAt": "2026-10-09T00:00:00Z",
+      "stageChangedAt": "2026-10-09T00:00:00Z",
+      "daysSinceStageChange": 1,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 15,
+        "curriculum_match": 18,
+        "subject_specialization": 22,
+        "advanced_degree": 100,
+        "availability": 88,
+        "safeguarding_references": 65,
+        "regional_experience": 100,
+        "leadership": 12,
+        "extracurricular": 20,
+        "local_hire": 82
+      },
+      "criterionNotes": {
+        "years_experience": "4 years teaching, 4 in Elementary Generalist — below the 5-year minimum",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Primary specialism is Elementary Generalist, not Mathematics",
+        "advanced_degree": "Doctorate in Elementary Generalist",
+        "availability": "Available from 2027-08-01, before the 2027-08-01 start",
+        "safeguarding_references": "1 verified supervisor reference",
+        "regional_experience": "Has worked in East Asia",
+        "leadership": "No formal leadership or coordination role",
+        "extracurricular": "No coaching or activity commitment indicated",
+        "local_hire": "Already in South Korea — no relocation or work permit needed"
+      },
+      "aiRankScore": 31,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-09T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0032",
+      "teacherId": "tch_0042",
+      "jobPostingId": "job_his_mathco",
+      "stage": "rejected",
+      "appliedAt": "2026-10-07T00:00:00Z",
+      "stageChangedAt": "2026-10-10T00:00:00Z",
+      "daysSinceStageChange": 0,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 10,
+        "curriculum_match": 18,
+        "subject_specialization": 22,
+        "advanced_degree": 80,
+        "availability": 20,
+        "safeguarding_references": 100,
+        "regional_experience": 32,
+        "leadership": 12,
+        "extracurricular": 96,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "3 years teaching, 2 in Visual Arts — below the 5-year minimum",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Primary specialism is Visual Arts, not Mathematics",
+        "advanced_degree": "Master's in Visual Arts",
+        "availability": "Not available until 2028-01-05, after the 2027-08-01 start",
+        "safeguarding_references": "2 verified supervisor references",
+        "regional_experience": "No prior international placement",
+        "leadership": "No formal leadership or coordination role",
+        "extracurricular": "Can lead cross country, basketball",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 23,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": "below_experience_minimum",
+      "feedbackSentAt": "2026-10-10T00:00:00Z",
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-07T00:00:00Z"
+        },
+        {
+          "stage": "rejected",
+          "at": "2026-10-10T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0033",
+      "teacherId": "tch_0123",
+      "jobPostingId": "job_his_mathco",
+      "stage": "applied",
+      "appliedAt": "2026-10-04T00:00:00Z",
+      "stageChangedAt": "2026-10-04T00:00:00Z",
+      "daysSinceStageChange": 6,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 100,
+        "curriculum_match": 18,
+        "subject_specialization": 22,
+        "advanced_degree": 80,
+        "availability": 20,
+        "safeguarding_references": 65,
+        "regional_experience": 100,
+        "leadership": 100,
+        "extracurricular": 20,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "14 years teaching, 12 in Music",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Primary specialism is Music, not Mathematics",
+        "advanced_degree": "Master's in Music",
+        "availability": "Not available until 2028-01-05, after the 2027-08-01 start",
+        "safeguarding_references": "1 verified supervisor reference",
+        "regional_experience": "Has worked in East Asia",
+        "leadership": "6 years in a coordination or department-head role",
+        "extracurricular": "No coaching or activity commitment indicated",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 70,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-04T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0034",
+      "teacherId": "tch_0116",
+      "jobPostingId": "job_his_mathco",
+      "stage": "screening",
+      "appliedAt": "2026-10-06T00:00:00Z",
+      "stageChangedAt": "2026-10-09T00:00:00Z",
+      "daysSinceStageChange": 1,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 100,
+        "curriculum_match": 18,
+        "subject_specialization": 22,
+        "advanced_degree": 100,
+        "availability": 20,
+        "safeguarding_references": 65,
+        "regional_experience": 66,
+        "leadership": 71,
+        "extracurricular": 84,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "16 years teaching, 16 in Learning Support",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Primary specialism is Learning Support, not Mathematics",
+        "advanced_degree": "Doctorate in Learning Support",
+        "availability": "Not available until 2028-01-05, after the 2027-08-01 start",
+        "safeguarding_references": "1 verified supervisor reference",
+        "regional_experience": "International experience, but not in East Asia",
+        "leadership": "3 years in a coordination or department-head role",
+        "extracurricular": "Can lead swimming",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 63,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-06T00:00:00Z"
+        },
+        {
+          "stage": "screening",
+          "at": "2026-10-09T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0035",
+      "teacherId": "tch_0035",
+      "jobPostingId": "job_his_mathco",
+      "stage": "applied",
+      "appliedAt": "2026-10-06T00:00:00Z",
+      "stageChangedAt": "2026-10-06T00:00:00Z",
+      "daysSinceStageChange": 4,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 77,
+        "curriculum_match": 38,
+        "subject_specialization": 22,
+        "advanced_degree": 45,
+        "availability": 20,
+        "safeguarding_references": 100,
+        "regional_experience": 66,
+        "leadership": 71,
+        "extracurricular": 84,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "11 years teaching, 8 in Elementary Generalist",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Primary specialism is Elementary Generalist, not Mathematics",
+        "advanced_degree": "Bachelor's degree — no postgraduate qualification",
+        "availability": "Not available until 2028-01-05, after the 2027-08-01 start",
+        "safeguarding_references": "2 verified supervisor references",
+        "regional_experience": "International experience, but not in East Asia",
+        "leadership": "3 years in a coordination or department-head role",
+        "extracurricular": "Can lead cross country",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 57,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-06T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0036",
+      "teacherId": "tch_0136",
+      "jobPostingId": "job_his_mathco",
+      "stage": "applied",
+      "appliedAt": "2026-10-04T00:00:00Z",
+      "stageChangedAt": "2026-10-04T00:00:00Z",
+      "daysSinceStageChange": 6,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 66,
+        "curriculum_match": 38,
+        "subject_specialization": 22,
+        "advanced_degree": 45,
+        "availability": 55,
+        "safeguarding_references": 100,
+        "regional_experience": 100,
+        "leadership": 49,
+        "extracurricular": 20,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "9 years teaching, 9 in Counseling",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Primary specialism is Counseling, not Mathematics",
+        "advanced_degree": "Bachelor's degree — no postgraduate qualification",
+        "availability": "Available 2027-09-01 — tight against the 2027-08-01 start",
+        "safeguarding_references": "2 verified supervisor references",
+        "regional_experience": "Has worked in East Asia",
+        "leadership": "1 years in a coordination or department-head role",
+        "extracurricular": "No coaching or activity commitment indicated",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 49,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-04T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0037",
+      "teacherId": "tch_0021",
+      "jobPostingId": "job_his_mathco",
+      "stage": "screening",
+      "appliedAt": "2026-10-05T00:00:00Z",
+      "stageChangedAt": "2026-10-07T00:00:00Z",
+      "daysSinceStageChange": 3,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 51,
+        "curriculum_match": 18,
+        "subject_specialization": 22,
+        "advanced_degree": 80,
+        "availability": 100,
+        "safeguarding_references": 65,
+        "regional_experience": 100,
+        "leadership": 71,
+        "extracurricular": 96,
+        "local_hire": 100
+      },
+      "criterionNotes": {
+        "years_experience": "7 years teaching, 7 in Physical Education",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Primary specialism is Physical Education, not Mathematics",
+        "advanced_degree": "Master's in Physical Education",
+        "availability": "Available from 2027-07-01, before the 2027-08-01 start",
+        "safeguarding_references": "1 verified supervisor reference",
+        "regional_experience": "Has worked in East Asia",
+        "leadership": "3 years in a coordination or department-head role",
+        "extracurricular": "Can lead robotics club, school musical",
+        "local_hire": "Already in South Korea — no relocation or work permit needed"
+      },
+      "aiRankScore": 56,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-05T00:00:00Z"
+        },
+        {
+          "stage": "screening",
+          "at": "2026-10-07T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0038",
+      "teacherId": "tch_0047",
+      "jobPostingId": "job_his_mathco",
+      "stage": "rejected",
+      "appliedAt": "2026-09-29T00:00:00Z",
+      "stageChangedAt": "2026-10-01T00:00:00Z",
+      "daysSinceStageChange": 9,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 84,
+        "curriculum_match": 95,
+        "subject_specialization": 22,
+        "advanced_degree": 45,
+        "availability": 88,
+        "safeguarding_references": 15,
+        "regional_experience": 66,
+        "leadership": 100,
+        "extracurricular": 20,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "12 years teaching, 9 in Counseling",
+        "curriculum_match": "Has taught IB MYP",
+        "subject_specialization": "Primary specialism is Counseling, not Mathematics",
+        "advanced_degree": "Bachelor's degree — no postgraduate qualification",
+        "availability": "Available from 2027-08-01, before the 2027-08-01 start",
+        "safeguarding_references": "No verified supervisor reference yet",
+        "regional_experience": "International experience, but not in East Asia",
+        "leadership": "6 years in a coordination or department-head role",
+        "extracurricular": "No coaching or activity commitment indicated",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 87,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": "curriculum_mismatch",
+      "feedbackSentAt": "2026-10-02T00:00:00Z",
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-09-29T00:00:00Z"
+        },
+        {
+          "stage": "rejected",
+          "at": "2026-10-01T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0039",
+      "teacherId": "tch_0108",
+      "jobPostingId": "job_his_mathco",
+      "stage": "applied",
+      "appliedAt": "2026-10-01T00:00:00Z",
+      "stageChangedAt": "2026-10-01T00:00:00Z",
+      "daysSinceStageChange": 9,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 58,
+        "curriculum_match": 18,
+        "subject_specialization": 22,
+        "advanced_degree": 80,
+        "availability": 88,
+        "safeguarding_references": 65,
+        "regional_experience": 66,
+        "leadership": 60,
+        "extracurricular": 84,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "8 years teaching, 8 in Computer Science",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Primary specialism is Computer Science, not Mathematics",
+        "advanced_degree": "Master's in Computer Science",
+        "availability": "Available from 2027-08-01, before the 2027-08-01 start",
+        "safeguarding_references": "1 verified supervisor reference",
+        "regional_experience": "International experience, but not in East Asia",
+        "leadership": "2 years in a coordination or department-head role",
+        "extracurricular": "Can lead basketball",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 53,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": true,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-01T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0040",
+      "teacherId": "tch_0072",
+      "jobPostingId": "job_his_mathco",
+      "stage": "screening",
+      "appliedAt": "2026-10-03T00:00:00Z",
+      "stageChangedAt": "2026-10-06T00:00:00Z",
+      "daysSinceStageChange": 4,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 55,
+        "curriculum_match": 18,
+        "subject_specialization": 22,
+        "advanced_degree": 100,
+        "availability": 88,
+        "safeguarding_references": 65,
+        "regional_experience": 66,
+        "leadership": 12,
+        "extracurricular": 84,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "8 years teaching, 5 in Elementary Generalist",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Primary specialism is Elementary Generalist, not Mathematics",
+        "advanced_degree": "Doctorate in Elementary Generalist",
+        "availability": "Available from 2027-08-01, before the 2027-08-01 start",
+        "safeguarding_references": "1 verified supervisor reference",
+        "regional_experience": "International experience, but not in East Asia",
+        "leadership": "No formal leadership or coordination role",
+        "extracurricular": "Can lead Duke of Edinburgh",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 39,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-03T00:00:00Z"
+        },
+        {
+          "stage": "screening",
+          "at": "2026-10-06T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0041",
+      "teacherId": "tch_0070",
+      "jobPostingId": "job_his_mathco",
+      "stage": "applied",
+      "appliedAt": "2026-10-05T00:00:00Z",
+      "stageChangedAt": "2026-10-05T00:00:00Z",
+      "daysSinceStageChange": 5,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 33,
+        "curriculum_match": 95,
+        "subject_specialization": 98,
+        "advanced_degree": 45,
+        "availability": 88,
+        "safeguarding_references": 100,
+        "regional_experience": 100,
+        "leadership": 12,
+        "extracurricular": 96,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "5 years teaching, 2 in Mathematics",
+        "curriculum_match": "Has taught IB MYP",
+        "subject_specialization": "Specialises in Mathematics",
+        "advanced_degree": "Bachelor's degree — no postgraduate qualification",
+        "availability": "Available from 2027-08-01, before the 2027-08-01 start",
+        "safeguarding_references": "2 verified supervisor references",
+        "regional_experience": "Has worked in East Asia",
+        "leadership": "No formal leadership or coordination role",
+        "extracurricular": "Can lead robotics club, debate",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 48,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-05T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0042",
+      "teacherId": "tch_0102",
+      "jobPostingId": "job_his_mathco",
+      "stage": "applied",
+      "appliedAt": "2026-10-04T00:00:00Z",
+      "stageChangedAt": "2026-10-04T00:00:00Z",
+      "daysSinceStageChange": 6,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 10,
+        "curriculum_match": 18,
+        "subject_specialization": 22,
+        "advanced_degree": 100,
+        "availability": 88,
+        "safeguarding_references": 65,
+        "regional_experience": 66,
+        "leadership": 12,
+        "extracurricular": 96,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "3 years teaching, 2 in Music — below the 5-year minimum",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Primary specialism is Music, not Mathematics",
+        "advanced_degree": "Doctorate in Music",
+        "availability": "Available from 2027-08-01, before the 2027-08-01 start",
+        "safeguarding_references": "1 verified supervisor reference",
+        "regional_experience": "International experience, but not in East Asia",
+        "leadership": "No formal leadership or coordination role",
+        "extracurricular": "Can lead Duke of Edinburgh, debate",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 30,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-04T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0043",
+      "teacherId": "tch_0098",
+      "jobPostingId": "job_his_mathco",
+      "stage": "applied",
+      "appliedAt": "2026-10-07T00:00:00Z",
+      "stageChangedAt": "2026-10-07T00:00:00Z",
+      "daysSinceStageChange": 3,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 100,
+        "curriculum_match": 38,
+        "subject_specialization": 22,
+        "advanced_degree": 100,
+        "availability": 88,
+        "safeguarding_references": 15,
+        "regional_experience": 66,
+        "leadership": 12,
+        "extracurricular": 20,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "16 years teaching, 14 in Health",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Primary specialism is Health, not Mathematics",
+        "advanced_degree": "Doctorate in Health",
+        "availability": "Available from 2027-08-01, before the 2027-08-01 start",
+        "safeguarding_references": "No verified supervisor reference yet",
+        "regional_experience": "International experience, but not in East Asia",
+        "leadership": "No formal leadership or coordination role",
+        "extracurricular": "No coaching or activity commitment indicated",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 53,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-07T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0044",
+      "teacherId": "tch_0134",
+      "jobPostingId": "job_his_mathco",
+      "stage": "applied",
+      "appliedAt": "2026-10-08T00:00:00Z",
+      "stageChangedAt": "2026-10-08T00:00:00Z",
+      "daysSinceStageChange": 2,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 7,
+        "curriculum_match": 95,
+        "subject_specialization": 22,
+        "advanced_degree": 80,
+        "availability": 55,
+        "safeguarding_references": 65,
+        "regional_experience": 66,
+        "leadership": 12,
+        "extracurricular": 20,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "2 years teaching, 1 in Early Years — below the 5-year minimum",
+        "curriculum_match": "Has taught IB MYP",
+        "subject_specialization": "Primary specialism is Early Years, not Mathematics",
+        "advanced_degree": "Master's in Early Years",
+        "availability": "Available 2027-09-01 — tight against the 2027-08-01 start",
+        "safeguarding_references": "1 verified supervisor reference",
+        "regional_experience": "International experience, but not in East Asia",
+        "leadership": "No formal leadership or coordination role",
+        "extracurricular": "No coaching or activity commitment indicated",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 45,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-08T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0045",
+      "teacherId": "tch_0090",
+      "jobPostingId": "job_his_mathco",
+      "stage": "applied",
+      "appliedAt": "2026-10-08T00:00:00Z",
+      "stageChangedAt": "2026-10-08T00:00:00Z",
+      "daysSinceStageChange": 2,
+      "schoolOwesResponse": false,
+      "rankable": false,
+      "notRankableReason": "profile_incomplete",
+      "criterionScores": {
+        "years_experience": 9,
+        "curriculum_match": 38,
+        "subject_specialization": 22,
+        "advanced_degree": 100,
+        "availability": 88,
+        "safeguarding_references": 65,
+        "regional_experience": 32,
+        "leadership": 12,
+        "extracurricular": 20,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "3 years teaching, 1 in Geography — below the 5-year minimum",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Primary specialism is Geography, not Mathematics",
+        "advanced_degree": "Doctorate in Geography",
+        "availability": "Available from 2027-08-01, before the 2027-08-01 start",
+        "safeguarding_references": "1 verified supervisor reference",
+        "regional_experience": "No prior international placement",
+        "leadership": "No formal leadership or coordination role",
+        "extracurricular": "No coaching or activity commitment indicated",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": null,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-08T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0046",
+      "teacherId": "tch_0019",
+      "jobPostingId": "job_his_mathco",
+      "stage": "screening",
+      "appliedAt": "2026-10-04T00:00:00Z",
+      "stageChangedAt": "2026-10-07T00:00:00Z",
+      "daysSinceStageChange": 3,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 36,
+        "curriculum_match": 18,
+        "subject_specialization": 22,
+        "advanced_degree": 45,
+        "availability": 20,
+        "safeguarding_references": 65,
+        "regional_experience": 66,
+        "leadership": 12,
+        "extracurricular": 20,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "5 years teaching, 5 in Elementary Generalist",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Primary specialism is Elementary Generalist, not Mathematics",
+        "advanced_degree": "Bachelor's degree — no postgraduate qualification",
+        "availability": "Not available until 2028-01-05, after the 2027-08-01 start",
+        "safeguarding_references": "1 verified supervisor reference",
+        "regional_experience": "International experience, but not in East Asia",
+        "leadership": "No formal leadership or coordination role",
+        "extracurricular": "No coaching or activity commitment indicated",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 23,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-04T00:00:00Z"
+        },
+        {
+          "stage": "screening",
+          "at": "2026-10-07T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0047",
+      "teacherId": "tch_0131",
+      "jobPostingId": "job_his_mathco",
+      "stage": "withdrawn",
+      "appliedAt": "2026-09-30T00:00:00Z",
+      "stageChangedAt": "2026-10-03T00:00:00Z",
+      "daysSinceStageChange": 7,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 9,
+        "curriculum_match": 18,
+        "subject_specialization": 22,
+        "advanced_degree": 45,
+        "availability": 88,
+        "safeguarding_references": 65,
+        "regional_experience": 32,
+        "leadership": 12,
+        "extracurricular": 20,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "3 years teaching, 1 in Physics — below the 5-year minimum",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Primary specialism is Physics, not Mathematics",
+        "advanced_degree": "Bachelor's degree — no postgraduate qualification",
+        "availability": "Available from 2027-08-01, before the 2027-08-01 start",
+        "safeguarding_references": "1 verified supervisor reference",
+        "regional_experience": "No prior international placement",
+        "leadership": "No formal leadership or coordination role",
+        "extracurricular": "No coaching or activity commitment indicated",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 22,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": "accepted_another_offer",
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-09-30T00:00:00Z"
+        },
+        {
+          "stage": "withdrawn",
+          "at": "2026-10-03T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0048",
+      "teacherId": "tch_0089",
+      "jobPostingId": "job_his_mathco",
+      "stage": "applied",
+      "appliedAt": "2026-10-05T00:00:00Z",
+      "stageChangedAt": "2026-10-05T00:00:00Z",
+      "daysSinceStageChange": 5,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 33,
+        "curriculum_match": 18,
+        "subject_specialization": 22,
+        "advanced_degree": 45,
+        "availability": 55,
+        "safeguarding_references": 65,
+        "regional_experience": 32,
+        "leadership": 12,
+        "extracurricular": 96,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "5 years teaching, 2 in Visual Arts",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Primary specialism is Visual Arts, not Mathematics",
+        "advanced_degree": "Bachelor's degree — no postgraduate qualification",
+        "availability": "Available 2027-09-01 — tight against the 2027-08-01 start",
+        "safeguarding_references": "1 verified supervisor reference",
+        "regional_experience": "No prior international placement",
+        "leadership": "No formal leadership or coordination role",
+        "extracurricular": "Can lead school musical, Duke of Edinburgh",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 25,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-05T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0049",
+      "teacherId": "tch_0094",
+      "jobPostingId": "job_his_mathco",
+      "stage": "applied",
+      "appliedAt": "2026-09-29T00:00:00Z",
+      "stageChangedAt": "2026-09-29T00:00:00Z",
+      "daysSinceStageChange": 11,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 87,
+        "curriculum_match": 18,
+        "subject_specialization": 22,
+        "advanced_degree": 45,
+        "availability": 55,
+        "safeguarding_references": 100,
+        "regional_experience": 66,
+        "leadership": 82,
+        "extracurricular": 96,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "12 years teaching, 12 in Drama",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Primary specialism is Drama, not Mathematics",
+        "advanced_degree": "Bachelor's degree — no postgraduate qualification",
+        "availability": "Available 2027-09-01 — tight against the 2027-08-01 start",
+        "safeguarding_references": "2 verified supervisor references",
+        "regional_experience": "International experience, but not in East Asia",
+        "leadership": "4 years in a coordination or department-head role",
+        "extracurricular": "Can lead Duke of Edinburgh, debate",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 59,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-09-29T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0050",
+      "teacherId": "tch_0062",
+      "jobPostingId": "job_his_mathco",
+      "stage": "applied",
+      "appliedAt": "2026-10-03T00:00:00Z",
+      "stageChangedAt": "2026-10-03T00:00:00Z",
+      "daysSinceStageChange": 7,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 15,
+        "curriculum_match": 18,
+        "subject_specialization": 22,
+        "advanced_degree": 80,
+        "availability": 100,
+        "safeguarding_references": 65,
+        "regional_experience": 32,
+        "leadership": 12,
+        "extracurricular": 96,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "4 years teaching, 4 in Spanish — below the 5-year minimum",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Primary specialism is Spanish, not Mathematics",
+        "advanced_degree": "Master's in Spanish",
+        "availability": "Available from 2027-07-01, before the 2027-08-01 start",
+        "safeguarding_references": "1 verified supervisor reference",
+        "regional_experience": "No prior international placement",
+        "leadership": "No formal leadership or coordination role",
+        "extracurricular": "Can lead MUN, school musical",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 29,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-03T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0051",
+      "teacherId": "tch_0041",
+      "jobPostingId": "job_his_mathco",
+      "stage": "applied",
+      "appliedAt": "2026-09-29T00:00:00Z",
+      "stageChangedAt": "2026-09-29T00:00:00Z",
+      "daysSinceStageChange": 11,
+      "schoolOwesResponse": false,
+      "rankable": false,
+      "notRankableReason": "profile_incomplete",
+      "criterionScores": {
+        "years_experience": 9,
+        "curriculum_match": 18,
+        "subject_specialization": 22,
+        "advanced_degree": 45,
+        "availability": 20,
+        "safeguarding_references": 15,
+        "regional_experience": 32,
+        "leadership": 12,
+        "extracurricular": 20,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "3 years teaching, 1 in English Literature — below the 5-year minimum",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Primary specialism is English Literature, not Mathematics",
+        "advanced_degree": "Bachelor's degree — no postgraduate qualification",
+        "availability": "Not available until 2028-01-05, after the 2027-08-01 start",
+        "safeguarding_references": "No verified supervisor reference yet",
+        "regional_experience": "No prior international placement",
+        "leadership": "No formal leadership or coordination role",
+        "extracurricular": "No coaching or activity commitment indicated",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": null,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": true,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-09-29T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0052",
+      "teacherId": "tch_0075",
+      "jobPostingId": "job_his_mathco",
+      "stage": "rejected",
+      "appliedAt": "2026-09-29T00:00:00Z",
+      "stageChangedAt": "2026-10-03T00:00:00Z",
+      "daysSinceStageChange": 7,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 13,
+        "curriculum_match": 95,
+        "subject_specialization": 22,
+        "advanced_degree": 100,
+        "availability": 20,
+        "safeguarding_references": 65,
+        "regional_experience": 66,
+        "leadership": 12,
+        "extracurricular": 84,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "4 years teaching, 2 in Individuals & Societies — below the 5-year minimum",
+        "curriculum_match": "Has taught IB MYP",
+        "subject_specialization": "Primary specialism is Individuals & Societies, not Mathematics",
+        "advanced_degree": "Doctorate in Individuals & Societies",
+        "availability": "Not available until 2028-01-05, after the 2027-08-01 start",
+        "safeguarding_references": "1 verified supervisor reference",
+        "regional_experience": "International experience, but not in East Asia",
+        "leadership": "No formal leadership or coordination role",
+        "extracurricular": "Can lead debate",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 47,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": "position_filled",
+      "feedbackSentAt": "2026-10-04T00:00:00Z",
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-09-29T00:00:00Z"
+        },
+        {
+          "stage": "rejected",
+          "at": "2026-10-03T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0053",
+      "teacherId": "tch_0066",
+      "jobPostingId": "job_his_mathco",
+      "stage": "applied",
+      "appliedAt": "2026-10-07T00:00:00Z",
+      "stageChangedAt": "2026-10-07T00:00:00Z",
+      "daysSinceStageChange": 3,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 35,
+        "curriculum_match": 95,
+        "subject_specialization": 22,
+        "advanced_degree": 45,
+        "availability": 100,
+        "safeguarding_references": 15,
+        "regional_experience": 66,
+        "leadership": 12,
+        "extracurricular": 84,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "5 years teaching, 4 in Physical Education",
+        "curriculum_match": "Has taught IB MYP",
+        "subject_specialization": "Primary specialism is Physical Education, not Mathematics",
+        "advanced_degree": "Bachelor's degree — no postgraduate qualification",
+        "availability": "Available from 2027-07-01, before the 2027-08-01 start",
+        "safeguarding_references": "No verified supervisor reference yet",
+        "regional_experience": "International experience, but not in East Asia",
+        "leadership": "No formal leadership or coordination role",
+        "extracurricular": "Can lead football",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 49,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": true,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-07T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0054",
+      "teacherId": "tch_0110",
+      "jobPostingId": "job_his_mathco",
+      "stage": "screening",
+      "appliedAt": "2026-10-01T00:00:00Z",
+      "stageChangedAt": "2026-10-05T00:00:00Z",
+      "daysSinceStageChange": 5,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 56,
+        "curriculum_match": 95,
+        "subject_specialization": 22,
+        "advanced_degree": 100,
+        "availability": 88,
+        "safeguarding_references": 65,
+        "regional_experience": 100,
+        "leadership": 60,
+        "extracurricular": 20,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "8 years teaching, 6 in Spanish Literature",
+        "curriculum_match": "Has taught IB MYP",
+        "subject_specialization": "Primary specialism is Spanish Literature, not Mathematics",
+        "advanced_degree": "Doctorate in Spanish Literature",
+        "availability": "Available from 2027-08-01, before the 2027-08-01 start",
+        "safeguarding_references": "1 verified supervisor reference",
+        "regional_experience": "Has worked in East Asia",
+        "leadership": "2 years in a coordination or department-head role",
+        "extracurricular": "No coaching or activity commitment indicated",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 76,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-01T00:00:00Z"
+        },
+        {
+          "stage": "screening",
+          "at": "2026-10-05T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0055",
+      "teacherId": "tch_0037",
+      "jobPostingId": "job_his_mathco",
+      "stage": "rejected",
+      "appliedAt": "2026-09-30T00:00:00Z",
+      "stageChangedAt": "2026-10-02T00:00:00Z",
+      "daysSinceStageChange": 8,
+      "schoolOwesResponse": false,
+      "rankable": false,
+      "notRankableReason": "profile_incomplete",
+      "criterionScores": {
+        "years_experience": 10,
+        "curriculum_match": 18,
+        "subject_specialization": 22,
+        "advanced_degree": 80,
+        "availability": 20,
+        "safeguarding_references": 65,
+        "regional_experience": 32,
+        "leadership": 12,
+        "extracurricular": 84,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "3 years teaching, 2 in Visual Arts — below the 5-year minimum",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Primary specialism is Visual Arts, not Mathematics",
+        "advanced_degree": "Master's in Visual Arts",
+        "availability": "Not available until 2028-01-05, after the 2027-08-01 start",
+        "safeguarding_references": "1 verified supervisor reference",
+        "regional_experience": "No prior international placement",
+        "leadership": "No formal leadership or coordination role",
+        "extracurricular": "Can lead football",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": null,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": "subject_mismatch",
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-09-30T00:00:00Z"
+        },
+        {
+          "stage": "rejected",
+          "at": "2026-10-02T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0056",
+      "teacherId": "tch_0022",
+      "jobPostingId": "job_his_mathco",
+      "stage": "applied",
+      "appliedAt": "2026-10-06T00:00:00Z",
+      "stageChangedAt": "2026-10-06T00:00:00Z",
+      "daysSinceStageChange": 4,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 11,
+        "curriculum_match": 95,
+        "subject_specialization": 22,
+        "advanced_degree": 45,
+        "availability": 20,
+        "safeguarding_references": 65,
+        "regional_experience": 32,
+        "leadership": 12,
+        "extracurricular": 20,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "3 years teaching, 3 in Early Years — below the 5-year minimum",
+        "curriculum_match": "Has taught IB MYP",
+        "subject_specialization": "Primary specialism is Early Years, not Mathematics",
+        "advanced_degree": "Bachelor's degree — no postgraduate qualification",
+        "availability": "Not available until 2028-01-05, after the 2027-08-01 start",
+        "safeguarding_references": "1 verified supervisor reference",
+        "regional_experience": "No prior international placement",
+        "leadership": "No formal leadership or coordination role",
+        "extracurricular": "No coaching or activity commitment indicated",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 39,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-06T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0057",
+      "teacherId": "tch_0059",
+      "jobPostingId": "job_his_mathco",
+      "stage": "applied",
+      "appliedAt": "2026-09-29T00:00:00Z",
+      "stageChangedAt": "2026-09-29T00:00:00Z",
+      "daysSinceStageChange": 11,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 87,
+        "curriculum_match": 18,
+        "subject_specialization": 22,
+        "advanced_degree": 45,
+        "availability": 55,
+        "safeguarding_references": 65,
+        "regional_experience": 66,
+        "leadership": 71,
+        "extracurricular": 20,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "12 years teaching, 12 in Biology",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Primary specialism is Biology, not Mathematics",
+        "advanced_degree": "Bachelor's degree — no postgraduate qualification",
+        "availability": "Available 2027-09-01 — tight against the 2027-08-01 start",
+        "safeguarding_references": "1 verified supervisor reference",
+        "regional_experience": "International experience, but not in East Asia",
+        "leadership": "3 years in a coordination or department-head role",
+        "extracurricular": "No coaching or activity commitment indicated",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 56,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": true,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-09-29T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0058",
+      "teacherId": "tch_0067",
+      "jobPostingId": "job_his_mathco",
+      "stage": "applied",
+      "appliedAt": "2026-09-29T00:00:00Z",
+      "stageChangedAt": "2026-09-29T00:00:00Z",
+      "daysSinceStageChange": 11,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 85,
+        "curriculum_match": 95,
+        "subject_specialization": 22,
+        "advanced_degree": 45,
+        "availability": 20,
+        "safeguarding_references": 15,
+        "regional_experience": 66,
+        "leadership": 49,
+        "extracurricular": 84,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "12 years teaching, 10 in Geography",
+        "curriculum_match": "Has taught IB MYP",
+        "subject_specialization": "Primary specialism is Geography, not Mathematics",
+        "advanced_degree": "Bachelor's degree — no postgraduate qualification",
+        "availability": "Not available until 2028-01-05, after the 2027-08-01 start",
+        "safeguarding_references": "No verified supervisor reference yet",
+        "regional_experience": "International experience, but not in East Asia",
+        "leadership": "1 years in a coordination or department-head role",
+        "extracurricular": "Can lead cross country",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 66,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-09-29T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0059",
+      "teacherId": "tch_0015",
+      "jobPostingId": "job_his_mathco",
+      "stage": "applied",
+      "appliedAt": "2026-10-01T00:00:00Z",
+      "stageChangedAt": "2026-10-01T00:00:00Z",
+      "daysSinceStageChange": 9,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 78,
+        "curriculum_match": 18,
+        "subject_specialization": 22,
+        "advanced_degree": 80,
+        "availability": 88,
+        "safeguarding_references": 15,
+        "regional_experience": 66,
+        "leadership": 49,
+        "extracurricular": 96,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "11 years teaching, 9 in Biology",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Primary specialism is Biology, not Mathematics",
+        "advanced_degree": "Master's in Biology",
+        "availability": "Available from 2027-08-01, before the 2027-08-01 start",
+        "safeguarding_references": "No verified supervisor reference yet",
+        "regional_experience": "International experience, but not in East Asia",
+        "leadership": "1 years in a coordination or department-head role",
+        "extracurricular": "Can lead football, MUN",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 53,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-01T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0060",
+      "teacherId": "tch_0030",
+      "jobPostingId": "job_his_mathco",
+      "stage": "applied",
+      "appliedAt": "2026-10-01T00:00:00Z",
+      "stageChangedAt": "2026-10-01T00:00:00Z",
+      "daysSinceStageChange": 9,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 12,
+        "curriculum_match": 18,
+        "subject_specialization": 22,
+        "advanced_degree": 80,
+        "availability": 100,
+        "safeguarding_references": 100,
+        "regional_experience": 32,
+        "leadership": 12,
+        "extracurricular": 96,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "4 years teaching, 1 in Physics — below the 5-year minimum",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Primary specialism is Physics, not Mathematics",
+        "advanced_degree": "Master's in Physics",
+        "availability": "Available from 2027-07-01, before the 2027-08-01 start",
+        "safeguarding_references": "2 verified supervisor references",
+        "regional_experience": "No prior international placement",
+        "leadership": "No formal leadership or coordination role",
+        "extracurricular": "Can lead MUN, Duke of Edinburgh",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 29,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-01T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0061",
+      "teacherId": "tch_0046",
+      "jobPostingId": "job_his_mathco",
+      "stage": "screening",
+      "appliedAt": "2026-09-29T00:00:00Z",
+      "stageChangedAt": "2026-10-04T00:00:00Z",
+      "daysSinceStageChange": 6,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 57,
+        "curriculum_match": 38,
+        "subject_specialization": 22,
+        "advanced_degree": 45,
+        "availability": 100,
+        "safeguarding_references": 15,
+        "regional_experience": 66,
+        "leadership": 12,
+        "extracurricular": 96,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "8 years teaching, 7 in Spanish Literature",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Primary specialism is Spanish Literature, not Mathematics",
+        "advanced_degree": "Bachelor's degree — no postgraduate qualification",
+        "availability": "Available from 2027-07-01, before the 2027-08-01 start",
+        "safeguarding_references": "No verified supervisor reference yet",
+        "regional_experience": "International experience, but not in East Asia",
+        "leadership": "No formal leadership or coordination role",
+        "extracurricular": "Can lead swimming, cross country",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 38,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-09-29T00:00:00Z"
+        },
+        {
+          "stage": "screening",
+          "at": "2026-10-04T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0062",
+      "teacherId": "tch_0081",
+      "jobPostingId": "job_his_mathco",
+      "stage": "applied",
+      "appliedAt": "2026-10-03T00:00:00Z",
+      "stageChangedAt": "2026-10-03T00:00:00Z",
+      "daysSinceStageChange": 7,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 100,
+        "curriculum_match": 18,
+        "subject_specialization": 90,
+        "advanced_degree": 80,
+        "availability": 88,
+        "safeguarding_references": 15,
+        "regional_experience": 66,
+        "leadership": 100,
+        "extracurricular": 20,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "18 years teaching, 15 in Mathematics",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Specialises in Mathematics",
+        "advanced_degree": "Master's in Mathematics",
+        "availability": "Available from 2027-08-01, before the 2027-08-01 start",
+        "safeguarding_references": "No verified supervisor reference yet",
+        "regional_experience": "International experience, but not in East Asia",
+        "leadership": "6 years in a coordination or department-head role",
+        "extracurricular": "No coaching or activity commitment indicated",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 75,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-03T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0063",
+      "teacherId": "tch_0095",
+      "jobPostingId": "job_his_mathco",
+      "stage": "screening",
+      "appliedAt": "2026-10-05T00:00:00Z",
+      "stageChangedAt": "2026-10-08T00:00:00Z",
+      "daysSinceStageChange": 2,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 72,
+        "curriculum_match": 18,
+        "subject_specialization": 22,
+        "advanced_degree": 45,
+        "availability": 55,
+        "safeguarding_references": 15,
+        "regional_experience": 66,
+        "leadership": 12,
+        "extracurricular": 96,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "10 years teaching, 9 in Learning Support",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Primary specialism is Learning Support, not Mathematics",
+        "advanced_degree": "Bachelor's degree — no postgraduate qualification",
+        "availability": "Available 2027-09-01 — tight against the 2027-08-01 start",
+        "safeguarding_references": "No verified supervisor reference yet",
+        "regional_experience": "International experience, but not in East Asia",
+        "leadership": "No formal leadership or coordination role",
+        "extracurricular": "Can lead swimming, cross country",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 33,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-05T00:00:00Z"
+        },
+        {
+          "stage": "screening",
+          "at": "2026-10-08T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0064",
+      "teacherId": "tch_0113",
+      "jobPostingId": "job_his_mathco",
+      "stage": "applied",
+      "appliedAt": "2026-10-07T00:00:00Z",
+      "stageChangedAt": "2026-10-07T00:00:00Z",
+      "daysSinceStageChange": 3,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 55,
+        "curriculum_match": 38,
+        "subject_specialization": 22,
+        "advanced_degree": 80,
+        "availability": 100,
+        "safeguarding_references": 15,
+        "regional_experience": 66,
+        "leadership": 12,
+        "extracurricular": 20,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "8 years teaching, 5 in Computer Science",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Primary specialism is Computer Science, not Mathematics",
+        "advanced_degree": "Master's in Computer Science",
+        "availability": "Available from 2027-07-01, before the 2027-08-01 start",
+        "safeguarding_references": "No verified supervisor reference yet",
+        "regional_experience": "International experience, but not in East Asia",
+        "leadership": "No formal leadership or coordination role",
+        "extracurricular": "No coaching or activity commitment indicated",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 42,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": true,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-07T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0065",
+      "teacherId": "tch_0112",
+      "jobPostingId": "job_his_mathco",
+      "stage": "screening",
+      "appliedAt": "2026-10-04T00:00:00Z",
+      "stageChangedAt": "2026-10-06T00:00:00Z",
+      "daysSinceStageChange": 4,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 56,
+        "curriculum_match": 38,
+        "subject_specialization": 22,
+        "advanced_degree": 45,
+        "availability": 100,
+        "safeguarding_references": 65,
+        "regional_experience": 66,
+        "leadership": 100,
+        "extracurricular": 96,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "8 years teaching, 6 in English Literature",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Primary specialism is English Literature, not Mathematics",
+        "advanced_degree": "Bachelor's degree — no postgraduate qualification",
+        "availability": "Available from 2027-07-01, before the 2027-08-01 start",
+        "safeguarding_references": "1 verified supervisor reference",
+        "regional_experience": "International experience, but not in East Asia",
+        "leadership": "6 years in a coordination or department-head role",
+        "extracurricular": "Can lead Duke of Edinburgh, debate",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 67,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-04T00:00:00Z"
+        },
+        {
+          "stage": "screening",
+          "at": "2026-10-06T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0066",
+      "teacherId": "tch_0106",
+      "jobPostingId": "job_his_mathco",
+      "stage": "interview",
+      "appliedAt": "2026-10-09T00:00:00Z",
+      "stageChangedAt": "2026-10-10T00:00:00Z",
+      "daysSinceStageChange": 0,
+      "schoolOwesResponse": false,
+      "rankable": false,
+      "notRankableReason": "profile_incomplete",
+      "criterionScores": {
+        "years_experience": 8,
+        "curriculum_match": 95,
+        "subject_specialization": 22,
+        "advanced_degree": 80,
+        "availability": 55,
+        "safeguarding_references": 15,
+        "regional_experience": 66,
+        "leadership": 12,
+        "extracurricular": 20,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "2 years teaching, 2 in Learning Support — below the 5-year minimum",
+        "curriculum_match": "Has taught IB MYP",
+        "subject_specialization": "Primary specialism is Learning Support, not Mathematics",
+        "advanced_degree": "Master's in Learning Support",
+        "availability": "Available 2027-09-01 — tight against the 2027-08-01 start",
+        "safeguarding_references": "No verified supervisor reference yet",
+        "regional_experience": "International experience, but not in East Asia",
+        "leadership": "No formal leadership or coordination role",
+        "extracurricular": "No coaching or activity commitment indicated",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": null,
+      "shortlisted": true,
+      "shortlistedById": "usr_his_head",
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": true,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-09T00:00:00Z"
+        },
+        {
+          "stage": "interview",
+          "at": "2026-10-10T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0067",
+      "teacherId": "tch_0080",
+      "jobPostingId": "job_his_mathco",
+      "stage": "withdrawn",
+      "appliedAt": "2026-10-03T00:00:00Z",
+      "stageChangedAt": "2026-10-05T00:00:00Z",
+      "daysSinceStageChange": 5,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 55,
+        "curriculum_match": 18,
+        "subject_specialization": 22,
+        "advanced_degree": 45,
+        "availability": 20,
+        "safeguarding_references": 15,
+        "regional_experience": 66,
+        "leadership": 60,
+        "extracurricular": 84,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "8 years teaching, 5 in Computer Science",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Primary specialism is Computer Science, not Mathematics",
+        "advanced_degree": "Bachelor's degree — no postgraduate qualification",
+        "availability": "Not available until 2028-01-05, after the 2027-08-01 start",
+        "safeguarding_references": "No verified supervisor reference yet",
+        "regional_experience": "International experience, but not in East Asia",
+        "leadership": "2 years in a coordination or department-head role",
+        "extracurricular": "Can lead debate",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 43,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": "family_circumstances",
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-03T00:00:00Z"
+        },
+        {
+          "stage": "withdrawn",
+          "at": "2026-10-05T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0068",
+      "teacherId": "tch_0052",
+      "jobPostingId": "job_his_mathco",
+      "stage": "rejected",
+      "appliedAt": "2026-09-30T00:00:00Z",
+      "stageChangedAt": "2026-10-05T00:00:00Z",
+      "daysSinceStageChange": 5,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 13,
+        "curriculum_match": 95,
+        "subject_specialization": 22,
+        "advanced_degree": 45,
+        "availability": 20,
+        "safeguarding_references": 100,
+        "regional_experience": 66,
+        "leadership": 12,
+        "extracurricular": 20,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "4 years teaching, 2 in Health — below the 5-year minimum",
+        "curriculum_match": "Has taught IB MYP",
+        "subject_specialization": "Primary specialism is Health, not Mathematics",
+        "advanced_degree": "Bachelor's degree — no postgraduate qualification",
+        "availability": "Not available until 2028-01-05, after the 2027-08-01 start",
+        "safeguarding_references": "2 verified supervisor references",
+        "regional_experience": "International experience, but not in East Asia",
+        "leadership": "No formal leadership or coordination role",
+        "extracurricular": "No coaching or activity commitment indicated",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 39,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": "curriculum_mismatch",
+      "feedbackSentAt": "2026-10-06T00:00:00Z",
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-09-30T00:00:00Z"
+        },
+        {
+          "stage": "rejected",
+          "at": "2026-10-05T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0069",
+      "teacherId": "tch_0096",
+      "jobPostingId": "job_his_mathco",
+      "stage": "applied",
+      "appliedAt": "2026-10-05T00:00:00Z",
+      "stageChangedAt": "2026-10-05T00:00:00Z",
+      "daysSinceStageChange": 5,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 10,
+        "curriculum_match": 18,
+        "subject_specialization": 22,
+        "advanced_degree": 45,
+        "availability": 88,
+        "safeguarding_references": 100,
+        "regional_experience": 32,
+        "leadership": 12,
+        "extracurricular": 84,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "3 years teaching, 2 in Counseling — below the 5-year minimum",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Primary specialism is Counseling, not Mathematics",
+        "advanced_degree": "Bachelor's degree — no postgraduate qualification",
+        "availability": "Available from 2027-08-01, before the 2027-08-01 start",
+        "safeguarding_references": "2 verified supervisor references",
+        "regional_experience": "No prior international placement",
+        "leadership": "No formal leadership or coordination role",
+        "extracurricular": "Can lead basketball",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 23,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-05T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0070",
+      "teacherId": "tch_0039",
+      "jobPostingId": "job_his_mathco",
+      "stage": "applied",
+      "appliedAt": "2026-10-07T00:00:00Z",
+      "stageChangedAt": "2026-10-07T00:00:00Z",
+      "daysSinceStageChange": 3,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 79,
+        "curriculum_match": 38,
+        "subject_specialization": 22,
+        "advanced_degree": 80,
+        "availability": 20,
+        "safeguarding_references": 65,
+        "regional_experience": 66,
+        "leadership": 12,
+        "extracurricular": 20,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "11 years teaching, 10 in Music",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Primary specialism is Music, not Mathematics",
+        "advanced_degree": "Master's in Music",
+        "availability": "Not available until 2028-01-05, after the 2027-08-01 start",
+        "safeguarding_references": "1 verified supervisor reference",
+        "regional_experience": "International experience, but not in East Asia",
+        "leadership": "No formal leadership or coordination role",
+        "extracurricular": "No coaching or activity commitment indicated",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 42,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-07T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0071",
+      "teacherId": "tch_0117",
+      "jobPostingId": "job_his_mathco",
+      "stage": "applied",
+      "appliedAt": "2026-09-29T00:00:00Z",
+      "stageChangedAt": "2026-09-29T00:00:00Z",
+      "daysSinceStageChange": 11,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 9,
+        "curriculum_match": 18,
+        "subject_specialization": 22,
+        "advanced_degree": 45,
+        "availability": 88,
+        "safeguarding_references": 65,
+        "regional_experience": 66,
+        "leadership": 12,
+        "extracurricular": 84,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "3 years teaching, 1 in Economics — below the 5-year minimum",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Primary specialism is Economics, not Mathematics",
+        "advanced_degree": "Bachelor's degree — no postgraduate qualification",
+        "availability": "Available from 2027-08-01, before the 2027-08-01 start",
+        "safeguarding_references": "1 verified supervisor reference",
+        "regional_experience": "International experience, but not in East Asia",
+        "leadership": "No formal leadership or coordination role",
+        "extracurricular": "Can lead basketball",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 22,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-09-29T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0072",
+      "teacherId": "tch_0107",
+      "jobPostingId": "job_his_mathco",
+      "stage": "applied",
+      "appliedAt": "2026-10-08T00:00:00Z",
+      "stageChangedAt": "2026-10-08T00:00:00Z",
+      "daysSinceStageChange": 2,
+      "schoolOwesResponse": false,
+      "rankable": false,
+      "notRankableReason": "profile_incomplete",
+      "criterionScores": {
+        "years_experience": 100,
+        "curriculum_match": 18,
+        "subject_specialization": 22,
+        "advanced_degree": 45,
+        "availability": 88,
+        "safeguarding_references": 65,
+        "regional_experience": 66,
+        "leadership": 49,
+        "extracurricular": 20,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "14 years teaching, 13 in English",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Primary specialism is English, not Mathematics",
+        "advanced_degree": "Bachelor's degree — no postgraduate qualification",
+        "availability": "Available from 2027-08-01, before the 2027-08-01 start",
+        "safeguarding_references": "1 verified supervisor reference",
+        "regional_experience": "International experience, but not in East Asia",
+        "leadership": "1 years in a coordination or department-head role",
+        "extracurricular": "No coaching or activity commitment indicated",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": null,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": null,
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": true,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-08T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "app_0073",
+      "teacherId": "tch_0084",
+      "jobPostingId": "job_his_mathco",
+      "stage": "withdrawn",
+      "appliedAt": "2026-10-05T00:00:00Z",
+      "stageChangedAt": "2026-10-08T00:00:00Z",
+      "daysSinceStageChange": 2,
+      "schoolOwesResponse": false,
+      "rankable": true,
+      "notRankableReason": null,
+      "criterionScores": {
+        "years_experience": 100,
+        "curriculum_match": 38,
+        "subject_specialization": 22,
+        "advanced_degree": 100,
+        "availability": 100,
+        "safeguarding_references": 100,
+        "regional_experience": 66,
+        "leadership": 12,
+        "extracurricular": 84,
+        "local_hire": 15
+      },
+      "criterionNotes": {
+        "years_experience": "18 years teaching, 15 in Health",
+        "curriculum_match": "No IB MYP experience on record",
+        "subject_specialization": "Primary specialism is Health, not Mathematics",
+        "advanced_degree": "Doctorate in Health",
+        "availability": "Available from 2027-07-01, before the 2027-08-01 start",
+        "safeguarding_references": "2 verified supervisor references",
+        "regional_experience": "International experience, but not in East Asia",
+        "leadership": "No formal leadership or coordination role",
+        "extracurricular": "Can lead cross country",
+        "local_hire": "Requires relocation and a work permit"
+      },
+      "aiRankScore": 54,
+      "shortlisted": false,
+      "shortlistedById": null,
+      "internalNotes": [],
+      "screeningAnswers": [],
+      "coverLetterSubmitted": true,
+      "withdrawnReason": "no_longer_relocating",
+      "rejectionReason": null,
+      "feedbackSentAt": null,
+      "messagingUnlocked": false,
+      "superLikeSent": false,
+      "stageHistory": [
+        {
+          "stage": "applied",
+          "at": "2026-10-05T00:00:00Z"
+        },
+        {
+          "stage": "withdrawn",
+          "at": "2026-10-08T00:00:00Z"
+        }
+      ]
+    }
+  ],
+  "teachers": [
+    {
+      "id": "tch_0004",
+      "firstName": "Marcus",
+      "lastName": "Lindqvist",
+      "nationality": "Sweden",
+      "nationalities": [
+        "Sweden"
+      ],
+      "currentCity": "Hanoi",
+      "currentCountry": "Vietnam",
+      "timezone": "Asia/Ho_Chi_Minh",
+      "headline": "DP Physics, 15 years. Seeking placement with partner (MYP Humanities).",
+      "currentSchool": "UNIS Hanoi",
+      "subjects": [
+        "Physics",
+        "Mathematics"
+      ],
+      "curriculumExperience": [
+        "IB_DP",
+        "IB_MYP"
+      ],
+      "yearsExperience": 15,
+      "yearsInSubject": 15,
+      "gradeLevels": [
+        "high"
+      ],
+      "highestDegree": "masters",
+      "degreeField": "Physics",
+      "leadershipYears": 2,
+      "regionsWorked": [
+        "Southeast Asia",
+        "Europe"
+      ],
+      "coachingCapable": true,
+      "coachingActivities": [
+        "robotics club"
+      ],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 1,
+      "partnerTeacherId": "tch_0005",
+      "profileCompleteness": 91,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-08-01",
+      "preferredRegions": [
+        "East Asia",
+        "Europe"
+      ],
+      "salaryExpectationMinUsd": 62000,
+      "salaryExpectationMaxUsd": 78000,
+      "documentsVerified": 6,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 2,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/marcus-lindqvist",
+      "premiumMember": false,
+      "lastActiveAt": "2026-10-08T00:00:00Z",
+      "createdAt": "2026-01-28T00:00:00Z"
+    },
+    {
+      "id": "tch_0002",
+      "firstName": "Amara",
+      "lastName": "Nwosu",
+      "nationality": "United Kingdom",
+      "nationalities": [
+        "United Kingdom"
+      ],
+      "currentCity": "Manchester",
+      "currentCountry": "United Kingdom",
+      "timezone": "Europe/London",
+      "headline": "MYP Maths specialist moving from UK state sector to international",
+      "currentSchool": "Whitworth Academy",
+      "subjects": [
+        "Mathematics"
+      ],
+      "curriculumExperience": [
+        "IB_MYP",
+        "Cambridge_IGCSE"
+      ],
+      "yearsExperience": 6,
+      "yearsInSubject": 6,
+      "gradeLevels": [
+        "middle",
+        "high"
+      ],
+      "highestDegree": "bachelors",
+      "degreeField": "Mathematics",
+      "leadershipYears": 0,
+      "regionsWorked": [
+        "Europe"
+      ],
+      "coachingCapable": false,
+      "coachingActivities": [],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": true,
+      "dependents": 0,
+      "partnerTeacherId": null,
+      "profileCompleteness": 88,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-08-01",
+      "preferredRegions": [
+        "Southeast Asia",
+        "Middle East"
+      ],
+      "salaryExpectationMinUsd": 45000,
+      "salaryExpectationMaxUsd": 58000,
+      "documentsVerified": 4,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 0,
+      "avatarUrl": null,
+      "introVideoUrl": "https://example.cdn/intro.mp4",
+      "linkedinUrl": "https://linkedin.com/in/amara-nwosu",
+      "premiumMember": false,
+      "lastActiveAt": "2026-10-09T00:00:00Z",
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "tch_0010",
+      "firstName": "James",
+      "lastName": "Carter",
+      "nationality": "Canada",
+      "nationalities": [
+        "Canada"
+      ],
+      "currentCity": "Vancouver",
+      "currentCountry": "Canada",
+      "timezone": "America/Toronto",
+      "headline": "DP Design Technology & CS, robotics program builder",
+      "currentSchool": "Mulgrave School",
+      "subjects": [
+        "Design Technology",
+        "Computer Science"
+      ],
+      "curriculumExperience": [
+        "IB_MYP",
+        "IB_DP"
+      ],
+      "yearsExperience": 11,
+      "yearsInSubject": 11,
+      "gradeLevels": [
+        "middle",
+        "high"
+      ],
+      "highestDegree": "masters",
+      "degreeField": "Educational Technology",
+      "leadershipYears": 4,
+      "regionsWorked": [
+        "North America"
+      ],
+      "coachingCapable": true,
+      "coachingActivities": [
+        "robotics club"
+      ],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 3,
+      "partnerTeacherId": null,
+      "profileCompleteness": 95,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-08-01",
+      "preferredRegions": [
+        "East Asia",
+        "Europe"
+      ],
+      "salaryExpectationMinUsd": 60000,
+      "salaryExpectationMaxUsd": 75000,
+      "documentsVerified": 6,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 2,
+      "avatarUrl": null,
+      "introVideoUrl": "https://example.cdn/intro.mp4",
+      "linkedinUrl": "https://linkedin.com/in/james-carter",
+      "premiumMember": true,
+      "lastActiveAt": "2026-10-10T00:00:00Z",
+      "createdAt": "2026-01-16T00:00:00Z"
+    },
+    {
+      "id": "tch_0005",
+      "firstName": "Hanne",
+      "lastName": "Lindqvist",
+      "nationality": "Norway",
+      "nationalities": [
+        "Norway"
+      ],
+      "currentCity": "Hanoi",
+      "currentCountry": "Vietnam",
+      "timezone": "Asia/Ho_Chi_Minh",
+      "headline": "MYP Humanities lead. Part of a teaching couple with DP Physics.",
+      "currentSchool": "UNIS Hanoi",
+      "subjects": [
+        "Individuals & Societies",
+        "History"
+      ],
+      "curriculumExperience": [
+        "IB_MYP",
+        "IB_DP"
+      ],
+      "yearsExperience": 13,
+      "yearsInSubject": 13,
+      "gradeLevels": [
+        "middle",
+        "high"
+      ],
+      "highestDegree": "masters",
+      "degreeField": "History",
+      "leadershipYears": 5,
+      "regionsWorked": [
+        "Southeast Asia",
+        "Europe"
+      ],
+      "coachingCapable": true,
+      "coachingActivities": [
+        "MUN"
+      ],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 1,
+      "partnerTeacherId": "tch_0004",
+      "profileCompleteness": 89,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-08-01",
+      "preferredRegions": [
+        "East Asia",
+        "Europe"
+      ],
+      "salaryExpectationMinUsd": 58000,
+      "salaryExpectationMaxUsd": 72000,
+      "documentsVerified": 5,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 2,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/hanne-lindqvist",
+      "premiumMember": false,
+      "lastActiveAt": "2026-10-08T00:00:00Z",
+      "createdAt": "2026-01-22T00:00:00Z"
+    },
+    {
+      "id": "tch_0061",
+      "firstName": "Rudo",
+      "lastName": "Chikwanha",
+      "nationality": "Zimbabwe",
+      "nationalities": [
+        "Zimbabwe"
+      ],
+      "currentCity": "Seoul",
+      "currentCountry": "South Korea",
+      "timezone": "Asia/Seoul",
+      "headline": "Elementary Generalist teacher, 4 years",
+      "currentSchool": null,
+      "subjects": [
+        "Elementary Generalist",
+        "Early Years"
+      ],
+      "curriculumExperience": [
+        "Australian"
+      ],
+      "yearsExperience": 4,
+      "yearsInSubject": 4,
+      "gradeLevels": [
+        "high"
+      ],
+      "highestDegree": "doctorate",
+      "degreeField": "Elementary Generalist",
+      "leadershipYears": 0,
+      "regionsWorked": [
+        "Africa",
+        "East Asia"
+      ],
+      "coachingCapable": false,
+      "coachingActivities": [],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 2,
+      "partnerTeacherId": null,
+      "profileCompleteness": 78,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-08-01",
+      "preferredRegions": [
+        "Latin America",
+        "Southeast Asia"
+      ],
+      "salaryExpectationMinUsd": 48000,
+      "salaryExpectationMaxUsd": 46000,
+      "documentsVerified": 5,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 1,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/rudo-chikwanha",
+      "premiumMember": false,
+      "lastActiveAt": "2026-10-02T00:00:00Z",
+      "createdAt": "2025-12-26T00:00:00Z"
+    },
+    {
+      "id": "tch_0042",
+      "firstName": "Wanjiru",
+      "lastName": "Muthoni",
+      "nationality": "Kenya",
+      "nationalities": [
+        "Kenya"
+      ],
+      "currentCity": "Nairobi",
+      "currentCountry": "Kenya",
+      "timezone": "Africa/Nairobi",
+      "headline": "Visual Arts teacher, 3 years",
+      "currentSchool": null,
+      "subjects": [
+        "Visual Arts"
+      ],
+      "curriculumExperience": [
+        "US_Common_Core"
+      ],
+      "yearsExperience": 3,
+      "yearsInSubject": 2,
+      "gradeLevels": [
+        "high"
+      ],
+      "highestDegree": "masters",
+      "degreeField": "Visual Arts",
+      "leadershipYears": 0,
+      "regionsWorked": [
+        "Africa"
+      ],
+      "coachingCapable": true,
+      "coachingActivities": [
+        "cross country",
+        "basketball"
+      ],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": true,
+      "dependents": 2,
+      "partnerTeacherId": null,
+      "profileCompleteness": 94,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2028-01-05",
+      "preferredRegions": [
+        "Latin America",
+        "Africa"
+      ],
+      "salaryExpectationMinUsd": 52000,
+      "salaryExpectationMaxUsd": 68000,
+      "documentsVerified": 0,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 2,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/wanjiru-muthoni",
+      "premiumMember": false,
+      "lastActiveAt": "2026-10-06T00:00:00Z",
+      "createdAt": "2025-12-23T00:00:00Z"
+    },
+    {
+      "id": "tch_0123",
+      "firstName": "Lihua",
+      "lastName": "Huang",
+      "nationality": "China",
+      "nationalities": [
+        "China"
+      ],
+      "currentCity": "Shanghai",
+      "currentCountry": "China",
+      "timezone": "Asia/Shanghai",
+      "headline": "Music teacher, 14 years",
+      "currentSchool": null,
+      "subjects": [
+        "Music",
+        "Visual Arts"
+      ],
+      "curriculumExperience": [
+        "AP",
+        "US_Common_Core"
+      ],
+      "yearsExperience": 14,
+      "yearsInSubject": 12,
+      "gradeLevels": [
+        "middle"
+      ],
+      "highestDegree": "masters",
+      "degreeField": "Music",
+      "leadershipYears": 6,
+      "regionsWorked": [
+        "East Asia"
+      ],
+      "coachingCapable": false,
+      "coachingActivities": [],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 0,
+      "partnerTeacherId": null,
+      "profileCompleteness": 90,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2028-01-05",
+      "preferredRegions": [
+        "Africa",
+        "North America"
+      ],
+      "salaryExpectationMinUsd": 48000,
+      "salaryExpectationMaxUsd": 68000,
+      "documentsVerified": 5,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 1,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/lihua-huang",
+      "premiumMember": false,
+      "lastActiveAt": "2026-09-18T00:00:00Z",
+      "createdAt": "2026-01-25T00:00:00Z"
+    },
+    {
+      "id": "tch_0116",
+      "firstName": "James",
+      "lastName": "Mackenzie",
+      "nationality": "Canada",
+      "nationalities": [
+        "Canada"
+      ],
+      "currentCity": "Canada",
+      "currentCountry": "Canada",
+      "timezone": "America/Toronto",
+      "headline": "Learning Support teacher, 16 years",
+      "currentSchool": null,
+      "subjects": [
+        "Learning Support"
+      ],
+      "curriculumExperience": [
+        "British_National"
+      ],
+      "yearsExperience": 16,
+      "yearsInSubject": 16,
+      "gradeLevels": [
+        "early_years"
+      ],
+      "highestDegree": "doctorate",
+      "degreeField": "Learning Support",
+      "leadershipYears": 3,
+      "regionsWorked": [
+        "North America"
+      ],
+      "coachingCapable": true,
+      "coachingActivities": [
+        "swimming"
+      ],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 1,
+      "partnerTeacherId": null,
+      "profileCompleteness": 92,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2028-01-05",
+      "preferredRegions": [
+        "Middle East",
+        "Africa"
+      ],
+      "salaryExpectationMinUsd": 44000,
+      "salaryExpectationMaxUsd": 58000,
+      "documentsVerified": 6,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 1,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/james-mackenzie",
+      "premiumMember": true,
+      "lastActiveAt": "2026-10-09T00:00:00Z",
+      "createdAt": "2026-01-31T00:00:00Z"
+    },
+    {
+      "id": "tch_0035",
+      "firstName": "Sanne",
+      "lastName": "de Roo",
+      "nationality": "Netherlands",
+      "nationalities": [
+        "Netherlands"
+      ],
+      "currentCity": "Netherlands",
+      "currentCountry": "Netherlands",
+      "timezone": "Europe/Amsterdam",
+      "headline": "Elementary Generalist teacher, 11 years",
+      "currentSchool": null,
+      "subjects": [
+        "Elementary Generalist"
+      ],
+      "curriculumExperience": [
+        "IB_DP"
+      ],
+      "yearsExperience": 11,
+      "yearsInSubject": 8,
+      "gradeLevels": [
+        "early_years"
+      ],
+      "highestDegree": "bachelors",
+      "degreeField": "Elementary Generalist",
+      "leadershipYears": 3,
+      "regionsWorked": [
+        "Europe"
+      ],
+      "coachingCapable": true,
+      "coachingActivities": [
+        "cross country"
+      ],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 1,
+      "partnerTeacherId": null,
+      "profileCompleteness": 87,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2028-01-05",
+      "preferredRegions": [
+        "Southeast Asia",
+        "Latin America"
+      ],
+      "salaryExpectationMinUsd": 48000,
+      "salaryExpectationMaxUsd": 42000,
+      "documentsVerified": 4,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 2,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/sanne-de-roo",
+      "premiumMember": false,
+      "lastActiveAt": "2026-10-10T00:00:00Z",
+      "createdAt": "2026-01-16T00:00:00Z"
+    },
+    {
+      "id": "tch_0136",
+      "firstName": "Jun",
+      "lastName": "Huang",
+      "nationality": "China",
+      "nationalities": [
+        "China"
+      ],
+      "currentCity": "Shanghai",
+      "currentCountry": "China",
+      "timezone": "Asia/Shanghai",
+      "headline": "Counseling teacher, 9 years",
+      "currentSchool": null,
+      "subjects": [
+        "Counseling"
+      ],
+      "curriculumExperience": [
+        "IB_PYP"
+      ],
+      "yearsExperience": 9,
+      "yearsInSubject": 9,
+      "gradeLevels": [
+        "elementary"
+      ],
+      "highestDegree": "bachelors",
+      "degreeField": "Counseling",
+      "leadershipYears": 1,
+      "regionsWorked": [
+        "East Asia"
+      ],
+      "coachingCapable": false,
+      "coachingActivities": [],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 2,
+      "partnerTeacherId": null,
+      "profileCompleteness": 91,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-09-01",
+      "preferredRegions": [
+        "Africa",
+        "Southeast Asia"
+      ],
+      "salaryExpectationMinUsd": 52000,
+      "salaryExpectationMaxUsd": 50000,
+      "documentsVerified": 5,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 2,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/jun-huang",
+      "premiumMember": false,
+      "lastActiveAt": "2026-09-25T00:00:00Z",
+      "createdAt": "2026-01-10T00:00:00Z"
+    },
+    {
+      "id": "tch_0021",
+      "firstName": "Minjun",
+      "lastName": "Jung",
+      "nationality": "South Korea",
+      "nationalities": [
+        "South Korea"
+      ],
+      "currentCity": "Seoul",
+      "currentCountry": "South Korea",
+      "timezone": "Asia/Seoul",
+      "headline": "Physical Education teacher, 7 years",
+      "currentSchool": null,
+      "subjects": [
+        "Physical Education",
+        "Health"
+      ],
+      "curriculumExperience": [
+        "AP",
+        "US_Common_Core"
+      ],
+      "yearsExperience": 7,
+      "yearsInSubject": 7,
+      "gradeLevels": [
+        "middle"
+      ],
+      "highestDegree": "masters",
+      "degreeField": "Physical Education",
+      "leadershipYears": 3,
+      "regionsWorked": [
+        "East Asia"
+      ],
+      "coachingCapable": true,
+      "coachingActivities": [
+        "robotics club",
+        "school musical"
+      ],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": true,
+      "dependents": 0,
+      "partnerTeacherId": null,
+      "profileCompleteness": 80,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-07-01",
+      "preferredRegions": [
+        "East Asia",
+        "Africa"
+      ],
+      "salaryExpectationMinUsd": 44000,
+      "salaryExpectationMaxUsd": 50000,
+      "documentsVerified": 4,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 1,
+      "avatarUrl": null,
+      "introVideoUrl": "https://example.cdn/intro.mp4",
+      "linkedinUrl": "https://linkedin.com/in/minjun-jung",
+      "premiumMember": false,
+      "lastActiveAt": "2026-10-04T00:00:00Z",
+      "createdAt": "2026-01-04T00:00:00Z"
+    },
+    {
+      "id": "tch_0047",
+      "firstName": "Regina",
+      "lastName": "Rentería",
+      "nationality": "Mexico",
+      "nationalities": [
+        "Mexico"
+      ],
+      "currentCity": "Cairo",
+      "currentCountry": "Egypt",
+      "timezone": "Africa/Cairo",
+      "headline": "Counseling teacher, 12 years",
+      "currentSchool": null,
+      "subjects": [
+        "Counseling"
+      ],
+      "curriculumExperience": [
+        "IB_MYP",
+        "IB_DP"
+      ],
+      "yearsExperience": 12,
+      "yearsInSubject": 9,
+      "gradeLevels": [
+        "middle",
+        "high"
+      ],
+      "highestDegree": "bachelors",
+      "degreeField": "Counseling",
+      "leadershipYears": 6,
+      "regionsWorked": [
+        "Latin America",
+        "Middle East"
+      ],
+      "coachingCapable": false,
+      "coachingActivities": [],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 1,
+      "partnerTeacherId": null,
+      "profileCompleteness": 87,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-08-01",
+      "preferredRegions": [
+        "Southeast Asia",
+        "East Asia"
+      ],
+      "salaryExpectationMinUsd": 28000,
+      "salaryExpectationMaxUsd": 46000,
+      "documentsVerified": 2,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 0,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/regina-renteria",
+      "premiumMember": false,
+      "lastActiveAt": "2026-10-09T00:00:00Z",
+      "createdAt": "2026-01-19T00:00:00Z"
+    },
+    {
+      "id": "tch_0108",
+      "firstName": "Jenna",
+      "lastName": "Halloran",
+      "nationality": "United States",
+      "nationalities": [
+        "United States"
+      ],
+      "currentCity": "United States",
+      "currentCountry": "United States",
+      "timezone": "America/Chicago",
+      "headline": "Computer Science teacher, 8 years",
+      "currentSchool": null,
+      "subjects": [
+        "Computer Science"
+      ],
+      "curriculumExperience": [
+        "Cambridge_IGCSE"
+      ],
+      "yearsExperience": 8,
+      "yearsInSubject": 8,
+      "gradeLevels": [
+        "high"
+      ],
+      "highestDegree": "masters",
+      "degreeField": "Computer Science",
+      "leadershipYears": 2,
+      "regionsWorked": [
+        "North America"
+      ],
+      "coachingCapable": true,
+      "coachingActivities": [
+        "basketball"
+      ],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 3,
+      "partnerTeacherId": null,
+      "profileCompleteness": 78,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-08-01",
+      "preferredRegions": [
+        "Southeast Asia",
+        "Latin America"
+      ],
+      "salaryExpectationMinUsd": 48000,
+      "salaryExpectationMaxUsd": 54000,
+      "documentsVerified": 4,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 1,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/jenna-halloran",
+      "premiumMember": false,
+      "lastActiveAt": "2026-09-29T00:00:00Z",
+      "createdAt": "2026-01-07T00:00:00Z"
+    },
+    {
+      "id": "tch_0072",
+      "firstName": "Fenna",
+      "lastName": "de Roo",
+      "nationality": "Netherlands",
+      "nationalities": [
+        "Netherlands"
+      ],
+      "currentCity": "São Paulo",
+      "currentCountry": "Brazil",
+      "timezone": "America/Sao_Paulo",
+      "headline": "Elementary Generalist teacher, 8 years",
+      "currentSchool": null,
+      "subjects": [
+        "Elementary Generalist",
+        "Early Years"
+      ],
+      "curriculumExperience": [
+        "Cambridge_IGCSE",
+        "Cambridge_A_Level"
+      ],
+      "yearsExperience": 8,
+      "yearsInSubject": 5,
+      "gradeLevels": [
+        "elementary"
+      ],
+      "highestDegree": "doctorate",
+      "degreeField": "Elementary Generalist",
+      "leadershipYears": 0,
+      "regionsWorked": [
+        "Latin America",
+        "Europe"
+      ],
+      "coachingCapable": true,
+      "coachingActivities": [
+        "Duke of Edinburgh"
+      ],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 1,
+      "partnerTeacherId": null,
+      "profileCompleteness": 96,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-08-01",
+      "preferredRegions": [
+        "Southeast Asia",
+        "East Asia"
+      ],
+      "salaryExpectationMinUsd": 28000,
+      "salaryExpectationMaxUsd": 58000,
+      "documentsVerified": 5,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 1,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/fenna-de-roo",
+      "premiumMember": false,
+      "lastActiveAt": "2026-10-09T00:00:00Z",
+      "createdAt": "2026-01-07T00:00:00Z"
+    },
+    {
+      "id": "tch_0070",
+      "firstName": "Xiaoyan",
+      "lastName": "Zhang",
+      "nationality": "China",
+      "nationalities": [
+        "China"
+      ],
+      "currentCity": "Bogotá",
+      "currentCountry": "Colombia",
+      "timezone": "America/Bogota",
+      "headline": "Mathematics teacher, 5 years",
+      "currentSchool": null,
+      "subjects": [
+        "Mathematics"
+      ],
+      "curriculumExperience": [
+        "IB_PYP",
+        "IB_MYP"
+      ],
+      "yearsExperience": 5,
+      "yearsInSubject": 2,
+      "gradeLevels": [
+        "middle"
+      ],
+      "highestDegree": "bachelors",
+      "degreeField": "Mathematics",
+      "leadershipYears": 0,
+      "regionsWorked": [
+        "Latin America",
+        "East Asia"
+      ],
+      "coachingCapable": true,
+      "coachingActivities": [
+        "robotics club",
+        "debate"
+      ],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 1,
+      "partnerTeacherId": null,
+      "profileCompleteness": 95,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-08-01",
+      "preferredRegions": [
+        "Europe",
+        "Africa"
+      ],
+      "salaryExpectationMinUsd": 28000,
+      "salaryExpectationMaxUsd": 42000,
+      "documentsVerified": 4,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 2,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/xiaoyan-zhang",
+      "premiumMember": false,
+      "lastActiveAt": "2026-09-10T00:00:00Z",
+      "createdAt": "2025-12-29T00:00:00Z"
+    },
+    {
+      "id": "tch_0102",
+      "firstName": "Mila",
+      "lastName": "Georgiev",
+      "nationality": "Bulgaria",
+      "nationalities": [
+        "Bulgaria"
+      ],
+      "currentCity": "Mexico City",
+      "currentCountry": "Mexico",
+      "timezone": "America/Mexico_City",
+      "headline": "Music teacher, 3 years",
+      "currentSchool": null,
+      "subjects": [
+        "Music"
+      ],
+      "curriculumExperience": [
+        "US_Common_Core"
+      ],
+      "yearsExperience": 3,
+      "yearsInSubject": 2,
+      "gradeLevels": [
+        "early_years"
+      ],
+      "highestDegree": "doctorate",
+      "degreeField": "Music",
+      "leadershipYears": 0,
+      "regionsWorked": [
+        "Latin America",
+        "Europe"
+      ],
+      "coachingCapable": true,
+      "coachingActivities": [
+        "Duke of Edinburgh",
+        "debate"
+      ],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 1,
+      "partnerTeacherId": null,
+      "profileCompleteness": 87,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-08-01",
+      "preferredRegions": [
+        "Middle East",
+        "Europe"
+      ],
+      "salaryExpectationMinUsd": 28000,
+      "salaryExpectationMaxUsd": 80000,
+      "documentsVerified": 5,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 1,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/mila-georgiev",
+      "premiumMember": false,
+      "lastActiveAt": "2026-10-07T00:00:00Z",
+      "createdAt": "2025-12-23T00:00:00Z"
+    },
+    {
+      "id": "tch_0098",
+      "firstName": "Fabian",
+      "lastName": "Brandtner",
+      "nationality": "Germany",
+      "nationalities": [
+        "Germany"
+      ],
+      "currentCity": "Germany",
+      "currentCountry": "Germany",
+      "timezone": "Europe/Berlin",
+      "headline": "Health teacher, 16 years",
+      "currentSchool": null,
+      "subjects": [
+        "Health",
+        "Physical Education"
+      ],
+      "curriculumExperience": [
+        "IB_DP",
+        "AP"
+      ],
+      "yearsExperience": 16,
+      "yearsInSubject": 14,
+      "gradeLevels": [
+        "middle",
+        "high"
+      ],
+      "highestDegree": "doctorate",
+      "degreeField": "Health",
+      "leadershipYears": 0,
+      "regionsWorked": [
+        "Europe"
+      ],
+      "coachingCapable": false,
+      "coachingActivities": [],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 2,
+      "partnerTeacherId": null,
+      "profileCompleteness": 93,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-08-01",
+      "preferredRegions": [
+        "Middle East",
+        "Africa"
+      ],
+      "salaryExpectationMinUsd": 40000,
+      "salaryExpectationMaxUsd": 42000,
+      "documentsVerified": 4,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 0,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/fabian-brandtner",
+      "premiumMember": false,
+      "lastActiveAt": "2026-10-10T00:00:00Z",
+      "createdAt": "2026-01-31T00:00:00Z"
+    },
+    {
+      "id": "tch_0134",
+      "firstName": "Greta",
+      "lastName": "Lindenberg",
+      "nationality": "Germany",
+      "nationalities": [
+        "Germany"
+      ],
+      "currentCity": "Kuala Lumpur",
+      "currentCountry": "Malaysia",
+      "timezone": "Asia/Kuala_Lumpur",
+      "headline": "Early Years teacher, 2 years",
+      "currentSchool": null,
+      "subjects": [
+        "Early Years"
+      ],
+      "curriculumExperience": [
+        "IB_MYP"
+      ],
+      "yearsExperience": 2,
+      "yearsInSubject": 1,
+      "gradeLevels": [
+        "early_years"
+      ],
+      "highestDegree": "masters",
+      "degreeField": "Early Years",
+      "leadershipYears": 0,
+      "regionsWorked": [
+        "Southeast Asia",
+        "Europe"
+      ],
+      "coachingCapable": false,
+      "coachingActivities": [],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 2,
+      "partnerTeacherId": null,
+      "profileCompleteness": 96,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-09-01",
+      "preferredRegions": [
+        "Africa",
+        "Middle East"
+      ],
+      "salaryExpectationMinUsd": 28000,
+      "salaryExpectationMaxUsd": 80000,
+      "documentsVerified": 1,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 1,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/greta-lindenberg",
+      "premiumMember": false,
+      "lastActiveAt": "2026-10-08T00:00:00Z",
+      "createdAt": "2025-12-20T00:00:00Z"
+    },
+    {
+      "id": "tch_0090",
+      "firstName": "Annika",
+      "lastName": "Köhler",
+      "nationality": "Germany",
+      "nationalities": [
+        "Germany"
+      ],
+      "currentCity": "Germany",
+      "currentCountry": "Germany",
+      "timezone": "Europe/Berlin",
+      "headline": "Geography teacher, 3 years",
+      "currentSchool": null,
+      "subjects": [
+        "Geography",
+        "History"
+      ],
+      "curriculumExperience": [
+        "IB_DP",
+        "AP"
+      ],
+      "yearsExperience": 3,
+      "yearsInSubject": 1,
+      "gradeLevels": [
+        "middle",
+        "high"
+      ],
+      "highestDegree": "doctorate",
+      "degreeField": "Geography",
+      "leadershipYears": 0,
+      "regionsWorked": [
+        "Europe"
+      ],
+      "coachingCapable": false,
+      "coachingActivities": [],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": true,
+      "dependents": 0,
+      "partnerTeacherId": null,
+      "profileCompleteness": 61,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-08-01",
+      "preferredRegions": [
+        "East Asia",
+        "Europe"
+      ],
+      "salaryExpectationMinUsd": 48000,
+      "salaryExpectationMaxUsd": 80000,
+      "documentsVerified": 6,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 1,
+      "avatarUrl": null,
+      "introVideoUrl": "https://example.cdn/intro.mp4",
+      "linkedinUrl": "https://linkedin.com/in/annika-kohler",
+      "premiumMember": false,
+      "lastActiveAt": "2026-10-06T00:00:00Z",
+      "createdAt": "2025-12-23T00:00:00Z"
+    },
+    {
+      "id": "tch_0019",
+      "firstName": "Lucía",
+      "lastName": "Bermúdez",
+      "nationality": "Spain",
+      "nationalities": [
+        "Spain"
+      ],
+      "currentCity": "Hanoi",
+      "currentCountry": "Vietnam",
+      "timezone": "Asia/Ho_Chi_Minh",
+      "headline": "Elementary Generalist teacher, 5 years",
+      "currentSchool": null,
+      "subjects": [
+        "Elementary Generalist"
+      ],
+      "curriculumExperience": [
+        "US_Common_Core"
+      ],
+      "yearsExperience": 5,
+      "yearsInSubject": 5,
+      "gradeLevels": [
+        "early_years"
+      ],
+      "highestDegree": "bachelors",
+      "degreeField": "Elementary Generalist",
+      "leadershipYears": 0,
+      "regionsWorked": [
+        "Southeast Asia",
+        "Europe"
+      ],
+      "coachingCapable": false,
+      "coachingActivities": [],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 3,
+      "partnerTeacherId": null,
+      "profileCompleteness": 96,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2028-01-05",
+      "preferredRegions": [
+        "Southeast Asia",
+        "Middle East"
+      ],
+      "salaryExpectationMinUsd": 52000,
+      "salaryExpectationMaxUsd": 74000,
+      "documentsVerified": 6,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 1,
+      "avatarUrl": null,
+      "introVideoUrl": "https://example.cdn/intro.mp4",
+      "linkedinUrl": "https://linkedin.com/in/lucia-bermudez",
+      "premiumMember": false,
+      "lastActiveAt": "2026-10-09T00:00:00Z",
+      "createdAt": "2025-12-29T00:00:00Z"
+    },
+    {
+      "id": "tch_0131",
+      "firstName": "Gustavo",
+      "lastName": "Monteiro",
+      "nationality": "Brazil",
+      "nationalities": [
+        "Brazil"
+      ],
+      "currentCity": "São Paulo",
+      "currentCountry": "Brazil",
+      "timezone": "America/Sao_Paulo",
+      "headline": "Physics teacher, 3 years",
+      "currentSchool": null,
+      "subjects": [
+        "Physics"
+      ],
+      "curriculumExperience": [
+        "Cambridge_IGCSE",
+        "Cambridge_A_Level"
+      ],
+      "yearsExperience": 3,
+      "yearsInSubject": 1,
+      "gradeLevels": [
+        "high"
+      ],
+      "highestDegree": "bachelors",
+      "degreeField": "Physics",
+      "leadershipYears": 0,
+      "regionsWorked": [
+        "Latin America"
+      ],
+      "coachingCapable": false,
+      "coachingActivities": [],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": true,
+      "dependents": 0,
+      "partnerTeacherId": null,
+      "profileCompleteness": 78,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-08-01",
+      "preferredRegions": [
+        "East Asia",
+        "Middle East"
+      ],
+      "salaryExpectationMinUsd": 28000,
+      "salaryExpectationMaxUsd": 62000,
+      "documentsVerified": 3,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 1,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/gustavo-monteiro",
+      "premiumMember": false,
+      "lastActiveAt": "2026-10-07T00:00:00Z",
+      "createdAt": "2025-12-23T00:00:00Z"
+    },
+    {
+      "id": "tch_0089",
+      "firstName": "Akosua",
+      "lastName": "Owusu",
+      "nationality": "Ghana",
+      "nationalities": [
+        "Ghana"
+      ],
+      "currentCity": "Accra",
+      "currentCountry": "Ghana",
+      "timezone": "Africa/Accra",
+      "headline": "Visual Arts teacher, 5 years",
+      "currentSchool": null,
+      "subjects": [
+        "Visual Arts"
+      ],
+      "curriculumExperience": [
+        "AP",
+        "US_Common_Core"
+      ],
+      "yearsExperience": 5,
+      "yearsInSubject": 2,
+      "gradeLevels": [
+        "middle"
+      ],
+      "highestDegree": "bachelors",
+      "degreeField": "Visual Arts",
+      "leadershipYears": 0,
+      "regionsWorked": [
+        "Africa"
+      ],
+      "coachingCapable": true,
+      "coachingActivities": [
+        "school musical",
+        "Duke of Edinburgh"
+      ],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": true,
+      "dependents": 0,
+      "partnerTeacherId": null,
+      "profileCompleteness": 95,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-09-01",
+      "preferredRegions": [
+        "Europe",
+        "Southeast Asia"
+      ],
+      "salaryExpectationMinUsd": 36000,
+      "salaryExpectationMaxUsd": 74000,
+      "documentsVerified": 4,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 1,
+      "avatarUrl": null,
+      "introVideoUrl": "https://example.cdn/intro.mp4",
+      "linkedinUrl": "https://linkedin.com/in/akosua-owusu",
+      "premiumMember": false,
+      "lastActiveAt": "2026-10-09T00:00:00Z",
+      "createdAt": "2025-12-29T00:00:00Z"
+    },
+    {
+      "id": "tch_0094",
+      "firstName": "Amara",
+      "lastName": "Thorne",
+      "nationality": "United Kingdom",
+      "nationalities": [
+        "United Kingdom"
+      ],
+      "currentCity": "Singapore",
+      "currentCountry": "Singapore",
+      "timezone": "Asia/Singapore",
+      "headline": "Drama teacher, 12 years",
+      "currentSchool": null,
+      "subjects": [
+        "Drama",
+        "Visual Arts"
+      ],
+      "curriculumExperience": [
+        "British_National"
+      ],
+      "yearsExperience": 12,
+      "yearsInSubject": 12,
+      "gradeLevels": [
+        "early_years"
+      ],
+      "highestDegree": "bachelors",
+      "degreeField": "Drama",
+      "leadershipYears": 4,
+      "regionsWorked": [
+        "Southeast Asia",
+        "Europe"
+      ],
+      "coachingCapable": true,
+      "coachingActivities": [
+        "Duke of Edinburgh",
+        "debate"
+      ],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 2,
+      "partnerTeacherId": null,
+      "profileCompleteness": 84,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-09-01",
+      "preferredRegions": [
+        "Europe",
+        "Middle East"
+      ],
+      "salaryExpectationMinUsd": 52000,
+      "salaryExpectationMaxUsd": 46000,
+      "documentsVerified": 5,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 2,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/amara-thorne",
+      "premiumMember": true,
+      "lastActiveAt": "2026-10-08T00:00:00Z",
+      "createdAt": "2026-01-19T00:00:00Z"
+    },
+    {
+      "id": "tch_0062",
+      "firstName": "Jonas",
+      "lastName": "Reinhardt",
+      "nationality": "Germany",
+      "nationalities": [
+        "Germany"
+      ],
+      "currentCity": "Germany",
+      "currentCountry": "Germany",
+      "timezone": "Europe/Berlin",
+      "headline": "Spanish teacher, 4 years",
+      "currentSchool": null,
+      "subjects": [
+        "Spanish",
+        "Spanish Literature"
+      ],
+      "curriculumExperience": [
+        "US_Common_Core"
+      ],
+      "yearsExperience": 4,
+      "yearsInSubject": 4,
+      "gradeLevels": [
+        "high"
+      ],
+      "highestDegree": "masters",
+      "degreeField": "Spanish",
+      "leadershipYears": 0,
+      "regionsWorked": [
+        "Europe"
+      ],
+      "coachingCapable": true,
+      "coachingActivities": [
+        "MUN",
+        "school musical"
+      ],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": true,
+      "dependents": 0,
+      "partnerTeacherId": null,
+      "profileCompleteness": 75,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-07-01",
+      "preferredRegions": [
+        "Europe",
+        "Middle East"
+      ],
+      "salaryExpectationMinUsd": 36000,
+      "salaryExpectationMaxUsd": 62000,
+      "documentsVerified": 5,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 1,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/jonas-reinhardt",
+      "premiumMember": false,
+      "lastActiveAt": "2026-10-10T00:00:00Z",
+      "createdAt": "2025-12-26T00:00:00Z"
+    },
+    {
+      "id": "tch_0041",
+      "firstName": "Yaw",
+      "lastName": "Asantewaa",
+      "nationality": "Ghana",
+      "nationalities": [
+        "Ghana"
+      ],
+      "currentCity": "Accra",
+      "currentCountry": "Ghana",
+      "timezone": "Africa/Accra",
+      "headline": "English Literature teacher, 3 years",
+      "currentSchool": null,
+      "subjects": [
+        "English Literature",
+        "English"
+      ],
+      "curriculumExperience": [
+        "British_National"
+      ],
+      "yearsExperience": 3,
+      "yearsInSubject": 1,
+      "gradeLevels": [
+        "early_years"
+      ],
+      "highestDegree": "bachelors",
+      "degreeField": "English Literature",
+      "leadershipYears": 0,
+      "regionsWorked": [
+        "Africa"
+      ],
+      "coachingCapable": false,
+      "coachingActivities": [],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": true,
+      "dependents": 1,
+      "partnerTeacherId": null,
+      "profileCompleteness": 68,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2028-01-05",
+      "preferredRegions": [
+        "Latin America",
+        "Southeast Asia"
+      ],
+      "salaryExpectationMinUsd": 52000,
+      "salaryExpectationMaxUsd": 50000,
+      "documentsVerified": 5,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 0,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/yaw-asantewaa",
+      "premiumMember": true,
+      "lastActiveAt": "2026-10-06T00:00:00Z",
+      "createdAt": "2025-12-23T00:00:00Z"
+    },
+    {
+      "id": "tch_0075",
+      "firstName": "Liezel",
+      "lastName": "Esperanza",
+      "nationality": "Philippines",
+      "nationalities": [
+        "Philippines"
+      ],
+      "currentCity": "Mexico City",
+      "currentCountry": "Mexico",
+      "timezone": "America/Mexico_City",
+      "headline": "Individuals & Societies teacher, 4 years",
+      "currentSchool": null,
+      "subjects": [
+        "Individuals & Societies",
+        "Geography"
+      ],
+      "curriculumExperience": [
+        "IB_MYP"
+      ],
+      "yearsExperience": 4,
+      "yearsInSubject": 2,
+      "gradeLevels": [
+        "early_years"
+      ],
+      "highestDegree": "doctorate",
+      "degreeField": "Individuals & Societies",
+      "leadershipYears": 0,
+      "regionsWorked": [
+        "Latin America",
+        "Southeast Asia"
+      ],
+      "coachingCapable": true,
+      "coachingActivities": [
+        "debate"
+      ],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 2,
+      "partnerTeacherId": null,
+      "profileCompleteness": 84,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2028-01-05",
+      "preferredRegions": [
+        "East Asia",
+        "Middle East"
+      ],
+      "salaryExpectationMinUsd": 56000,
+      "salaryExpectationMaxUsd": 46000,
+      "documentsVerified": 1,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 1,
+      "avatarUrl": null,
+      "introVideoUrl": "https://example.cdn/intro.mp4",
+      "linkedinUrl": "https://linkedin.com/in/liezel-esperanza",
+      "premiumMember": false,
+      "lastActiveAt": "2026-10-04T00:00:00Z",
+      "createdAt": "2025-12-26T00:00:00Z"
+    },
+    {
+      "id": "tch_0066",
+      "firstName": "Catalina",
+      "lastName": "Quintero",
+      "nationality": "Colombia",
+      "nationalities": [
+        "Colombia"
+      ],
+      "currentCity": "Accra",
+      "currentCountry": "Ghana",
+      "timezone": "Africa/Accra",
+      "headline": "Physical Education teacher, 5 years",
+      "currentSchool": null,
+      "subjects": [
+        "Physical Education"
+      ],
+      "curriculumExperience": [
+        "IB_PYP",
+        "IB_MYP"
+      ],
+      "yearsExperience": 5,
+      "yearsInSubject": 4,
+      "gradeLevels": [
+        "middle"
+      ],
+      "highestDegree": "bachelors",
+      "degreeField": "Physical Education",
+      "leadershipYears": 0,
+      "regionsWorked": [
+        "Latin America",
+        "Africa"
+      ],
+      "coachingCapable": true,
+      "coachingActivities": [
+        "football"
+      ],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 3,
+      "partnerTeacherId": null,
+      "profileCompleteness": 82,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-07-01",
+      "preferredRegions": [
+        "North America",
+        "Africa"
+      ],
+      "salaryExpectationMinUsd": 56000,
+      "salaryExpectationMaxUsd": 50000,
+      "documentsVerified": 5,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 0,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/catalina-quintero",
+      "premiumMember": false,
+      "lastActiveAt": "2026-10-10T00:00:00Z",
+      "createdAt": "2025-12-29T00:00:00Z"
+    },
+    {
+      "id": "tch_0110",
+      "firstName": "Wanjiru",
+      "lastName": "Chepkwony",
+      "nationality": "Kenya",
+      "nationalities": [
+        "Kenya"
+      ],
+      "currentCity": "Shanghai",
+      "currentCountry": "China",
+      "timezone": "Asia/Shanghai",
+      "headline": "Spanish Literature teacher, 8 years",
+      "currentSchool": null,
+      "subjects": [
+        "Spanish Literature",
+        "Spanish"
+      ],
+      "curriculumExperience": [
+        "IB_MYP"
+      ],
+      "yearsExperience": 8,
+      "yearsInSubject": 6,
+      "gradeLevels": [
+        "early_years"
+      ],
+      "highestDegree": "doctorate",
+      "degreeField": "Spanish Literature",
+      "leadershipYears": 2,
+      "regionsWorked": [
+        "Africa",
+        "East Asia"
+      ],
+      "coachingCapable": false,
+      "coachingActivities": [],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 0,
+      "partnerTeacherId": null,
+      "profileCompleteness": 95,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-08-01",
+      "preferredRegions": [
+        "North America",
+        "Latin America"
+      ],
+      "salaryExpectationMinUsd": 44000,
+      "salaryExpectationMaxUsd": 46000,
+      "documentsVerified": 4,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 1,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/wanjiru-chepkwony",
+      "premiumMember": false,
+      "lastActiveAt": "2026-10-02T00:00:00Z",
+      "createdAt": "2026-01-07T00:00:00Z"
+    },
+    {
+      "id": "tch_0037",
+      "firstName": "Jonas",
+      "lastName": "Weissmüller",
+      "nationality": "Germany",
+      "nationalities": [
+        "Germany"
+      ],
+      "currentCity": "Germany",
+      "currentCountry": "Germany",
+      "timezone": "Europe/Berlin",
+      "headline": "Visual Arts teacher, 3 years",
+      "currentSchool": null,
+      "subjects": [
+        "Visual Arts"
+      ],
+      "curriculumExperience": [
+        "Cambridge_IGCSE",
+        "Cambridge_A_Level"
+      ],
+      "yearsExperience": 3,
+      "yearsInSubject": 2,
+      "gradeLevels": [
+        "high"
+      ],
+      "highestDegree": "masters",
+      "degreeField": "Visual Arts",
+      "leadershipYears": 0,
+      "regionsWorked": [
+        "Europe"
+      ],
+      "coachingCapable": true,
+      "coachingActivities": [
+        "football"
+      ],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": true,
+      "dependents": 2,
+      "partnerTeacherId": null,
+      "profileCompleteness": 68,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2028-01-05",
+      "preferredRegions": [
+        "North America",
+        "Latin America"
+      ],
+      "salaryExpectationMinUsd": 28000,
+      "salaryExpectationMaxUsd": 54000,
+      "documentsVerified": 1,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 1,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/jonas-weissmuller",
+      "premiumMember": false,
+      "lastActiveAt": "2026-09-29T00:00:00Z",
+      "createdAt": "2025-12-23T00:00:00Z"
+    },
+    {
+      "id": "tch_0022",
+      "firstName": "Bongani",
+      "lastName": "Dlamini",
+      "nationality": "South Africa",
+      "nationalities": [
+        "South Africa"
+      ],
+      "currentCity": "South Africa",
+      "currentCountry": "South Africa",
+      "timezone": "Africa/Johannesburg",
+      "headline": "Early Years teacher, 3 years",
+      "currentSchool": null,
+      "subjects": [
+        "Early Years"
+      ],
+      "curriculumExperience": [
+        "IB_MYP"
+      ],
+      "yearsExperience": 3,
+      "yearsInSubject": 3,
+      "gradeLevels": [
+        "high"
+      ],
+      "highestDegree": "bachelors",
+      "degreeField": "Early Years",
+      "leadershipYears": 0,
+      "regionsWorked": [
+        "Africa"
+      ],
+      "coachingCapable": false,
+      "coachingActivities": [],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": true,
+      "dependents": 0,
+      "partnerTeacherId": null,
+      "profileCompleteness": 92,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2028-01-05",
+      "preferredRegions": [
+        "Africa",
+        "East Asia"
+      ],
+      "salaryExpectationMinUsd": 56000,
+      "salaryExpectationMaxUsd": 68000,
+      "documentsVerified": 4,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 1,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/bongani-dlamini",
+      "premiumMember": true,
+      "lastActiveAt": "2026-10-09T00:00:00Z",
+      "createdAt": "2025-12-23T00:00:00Z"
+    },
+    {
+      "id": "tch_0059",
+      "firstName": "Allison",
+      "lastName": "Mercer",
+      "nationality": "United States",
+      "nationalities": [
+        "United States"
+      ],
+      "currentCity": "Hanoi",
+      "currentCountry": "Vietnam",
+      "timezone": "Asia/Ho_Chi_Minh",
+      "headline": "Biology teacher, 12 years",
+      "currentSchool": null,
+      "subjects": [
+        "Biology"
+      ],
+      "curriculumExperience": [
+        "British_National"
+      ],
+      "yearsExperience": 12,
+      "yearsInSubject": 12,
+      "gradeLevels": [
+        "high"
+      ],
+      "highestDegree": "bachelors",
+      "degreeField": "Biology",
+      "leadershipYears": 3,
+      "regionsWorked": [
+        "Southeast Asia",
+        "North America"
+      ],
+      "coachingCapable": false,
+      "coachingActivities": [],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 2,
+      "partnerTeacherId": null,
+      "profileCompleteness": 92,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-09-01",
+      "preferredRegions": [
+        "Europe",
+        "East Asia"
+      ],
+      "salaryExpectationMinUsd": 56000,
+      "salaryExpectationMaxUsd": 50000,
+      "documentsVerified": 6,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 1,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/allison-mercer",
+      "premiumMember": false,
+      "lastActiveAt": "2026-10-06T00:00:00Z",
+      "createdAt": "2026-01-19T00:00:00Z"
+    },
+    {
+      "id": "tch_0067",
+      "firstName": "Oskar",
+      "lastName": "Sandberg",
+      "nationality": "Sweden",
+      "nationalities": [
+        "Sweden"
+      ],
+      "currentCity": "Bogotá",
+      "currentCountry": "Colombia",
+      "timezone": "America/Bogota",
+      "headline": "Geography teacher, 12 years",
+      "currentSchool": null,
+      "subjects": [
+        "Geography"
+      ],
+      "curriculumExperience": [
+        "IB_PYP",
+        "IB_MYP"
+      ],
+      "yearsExperience": 12,
+      "yearsInSubject": 10,
+      "gradeLevels": [
+        "middle",
+        "high"
+      ],
+      "highestDegree": "bachelors",
+      "degreeField": "Geography",
+      "leadershipYears": 1,
+      "regionsWorked": [
+        "Latin America",
+        "Europe"
+      ],
+      "coachingCapable": true,
+      "coachingActivities": [
+        "cross country"
+      ],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 0,
+      "partnerTeacherId": null,
+      "profileCompleteness": 91,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2028-01-05",
+      "preferredRegions": [
+        "Europe",
+        "East Asia"
+      ],
+      "salaryExpectationMinUsd": 52000,
+      "salaryExpectationMaxUsd": 46000,
+      "documentsVerified": 5,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 0,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/oskar-sandberg",
+      "premiumMember": false,
+      "lastActiveAt": "2026-09-18T00:00:00Z",
+      "createdAt": "2026-01-19T00:00:00Z"
+    },
+    {
+      "id": "tch_0015",
+      "firstName": "Mutiso",
+      "lastName": "Omondi",
+      "nationality": "Kenya",
+      "nationalities": [
+        "Kenya"
+      ],
+      "currentCity": "Hanoi",
+      "currentCountry": "Vietnam",
+      "timezone": "Asia/Ho_Chi_Minh",
+      "headline": "Biology teacher, 11 years",
+      "currentSchool": null,
+      "subjects": [
+        "Biology",
+        "Environmental Systems"
+      ],
+      "curriculumExperience": [
+        "AP",
+        "US_Common_Core"
+      ],
+      "yearsExperience": 11,
+      "yearsInSubject": 9,
+      "gradeLevels": [
+        "high"
+      ],
+      "highestDegree": "masters",
+      "degreeField": "Biology",
+      "leadershipYears": 1,
+      "regionsWorked": [
+        "Africa",
+        "Southeast Asia"
+      ],
+      "coachingCapable": true,
+      "coachingActivities": [
+        "football",
+        "MUN"
+      ],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 1,
+      "partnerTeacherId": null,
+      "profileCompleteness": 78,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-08-01",
+      "preferredRegions": [
+        "Europe",
+        "North America"
+      ],
+      "salaryExpectationMinUsd": 32000,
+      "salaryExpectationMaxUsd": 46000,
+      "documentsVerified": 0,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 0,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/mutiso-omondi",
+      "premiumMember": false,
+      "lastActiveAt": "2026-10-06T00:00:00Z",
+      "createdAt": "2026-01-16T00:00:00Z"
+    },
+    {
+      "id": "tch_0030",
+      "firstName": "Liezel",
+      "lastName": "Dimaculangan",
+      "nationality": "Philippines",
+      "nationalities": [
+        "Philippines"
+      ],
+      "currentCity": "Philippines",
+      "currentCountry": "Philippines",
+      "timezone": "Asia/Manila",
+      "headline": "Physics teacher, 4 years",
+      "currentSchool": null,
+      "subjects": [
+        "Physics",
+        "Environmental Systems"
+      ],
+      "curriculumExperience": [
+        "AP",
+        "US_Common_Core"
+      ],
+      "yearsExperience": 4,
+      "yearsInSubject": 1,
+      "gradeLevels": [
+        "elementary"
+      ],
+      "highestDegree": "masters",
+      "degreeField": "Physics",
+      "leadershipYears": 0,
+      "regionsWorked": [
+        "Southeast Asia"
+      ],
+      "coachingCapable": true,
+      "coachingActivities": [
+        "MUN",
+        "Duke of Edinburgh"
+      ],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": true,
+      "dependents": 3,
+      "partnerTeacherId": null,
+      "profileCompleteness": 85,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-07-01",
+      "preferredRegions": [
+        "Latin America",
+        "Africa"
+      ],
+      "salaryExpectationMinUsd": 28000,
+      "salaryExpectationMaxUsd": 80000,
+      "documentsVerified": 6,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 2,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/liezel-dimaculangan",
+      "premiumMember": true,
+      "lastActiveAt": "2026-10-07T00:00:00Z",
+      "createdAt": "2025-12-26T00:00:00Z"
+    },
+    {
+      "id": "tch_0046",
+      "firstName": "Fenna",
+      "lastName": "Oosterhuis",
+      "nationality": "Netherlands",
+      "nationalities": [
+        "Netherlands"
+      ],
+      "currentCity": "Cairo",
+      "currentCountry": "Egypt",
+      "timezone": "Africa/Cairo",
+      "headline": "Spanish Literature teacher, 8 years",
+      "currentSchool": null,
+      "subjects": [
+        "Spanish Literature"
+      ],
+      "curriculumExperience": [
+        "IB_DP"
+      ],
+      "yearsExperience": 8,
+      "yearsInSubject": 7,
+      "gradeLevels": [
+        "high"
+      ],
+      "highestDegree": "bachelors",
+      "degreeField": "Spanish Literature",
+      "leadershipYears": 0,
+      "regionsWorked": [
+        "Europe",
+        "Middle East"
+      ],
+      "coachingCapable": true,
+      "coachingActivities": [
+        "swimming",
+        "cross country"
+      ],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 1,
+      "partnerTeacherId": null,
+      "profileCompleteness": 94,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-07-01",
+      "preferredRegions": [
+        "East Asia",
+        "Africa"
+      ],
+      "salaryExpectationMinUsd": 40000,
+      "salaryExpectationMaxUsd": 46000,
+      "documentsVerified": 0,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 0,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/fenna-oosterhuis",
+      "premiumMember": false,
+      "lastActiveAt": "2026-09-25T00:00:00Z",
+      "createdAt": "2026-01-07T00:00:00Z"
+    },
+    {
+      "id": "tch_0081",
+      "firstName": "Emiliano",
+      "lastName": "Zepeda",
+      "nationality": "Mexico",
+      "nationalities": [
+        "Mexico"
+      ],
+      "currentCity": "Mexico City",
+      "currentCountry": "Mexico",
+      "timezone": "America/Mexico_City",
+      "headline": "Mathematics teacher, 18 years",
+      "currentSchool": null,
+      "subjects": [
+        "Mathematics",
+        "Economics"
+      ],
+      "curriculumExperience": [
+        "Cambridge_IGCSE"
+      ],
+      "yearsExperience": 18,
+      "yearsInSubject": 15,
+      "gradeLevels": [
+        "early_years"
+      ],
+      "highestDegree": "masters",
+      "degreeField": "Mathematics",
+      "leadershipYears": 6,
+      "regionsWorked": [
+        "Latin America"
+      ],
+      "coachingCapable": false,
+      "coachingActivities": [],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 0,
+      "partnerTeacherId": null,
+      "profileCompleteness": 72,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-08-01",
+      "preferredRegions": [
+        "Africa",
+        "East Asia"
+      ],
+      "salaryExpectationMinUsd": 40000,
+      "salaryExpectationMaxUsd": 58000,
+      "documentsVerified": 5,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 0,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/emiliano-zepeda",
+      "premiumMember": false,
+      "lastActiveAt": "2026-09-18T00:00:00Z",
+      "createdAt": "2026-02-06T00:00:00Z"
+    },
+    {
+      "id": "tch_0095",
+      "firstName": "Hanne",
+      "lastName": "Sandberg",
+      "nationality": "Sweden",
+      "nationalities": [
+        "Sweden"
+      ],
+      "currentCity": "Sweden",
+      "currentCountry": "Sweden",
+      "timezone": "Europe/Stockholm",
+      "headline": "Learning Support teacher, 10 years",
+      "currentSchool": null,
+      "subjects": [
+        "Learning Support"
+      ],
+      "curriculumExperience": [
+        "Australian"
+      ],
+      "yearsExperience": 10,
+      "yearsInSubject": 9,
+      "gradeLevels": [
+        "elementary"
+      ],
+      "highestDegree": "bachelors",
+      "degreeField": "Learning Support",
+      "leadershipYears": 0,
+      "regionsWorked": [
+        "Europe"
+      ],
+      "coachingCapable": true,
+      "coachingActivities": [
+        "swimming",
+        "cross country"
+      ],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 0,
+      "partnerTeacherId": null,
+      "profileCompleteness": 88,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-09-01",
+      "preferredRegions": [
+        "Europe",
+        "East Asia"
+      ],
+      "salaryExpectationMinUsd": 52000,
+      "salaryExpectationMaxUsd": 74000,
+      "documentsVerified": 4,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 0,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/hanne-sandberg",
+      "premiumMember": false,
+      "lastActiveAt": "2026-10-07T00:00:00Z",
+      "createdAt": "2026-01-13T00:00:00Z"
+    },
+    {
+      "id": "tch_0113",
+      "firstName": "Cillian",
+      "lastName": "Kavanagh",
+      "nationality": "Ireland",
+      "nationalities": [
+        "Ireland"
+      ],
+      "currentCity": "Nairobi",
+      "currentCountry": "Kenya",
+      "timezone": "Africa/Nairobi",
+      "headline": "Computer Science teacher, 8 years",
+      "currentSchool": null,
+      "subjects": [
+        "Computer Science"
+      ],
+      "curriculumExperience": [
+        "IB_DP"
+      ],
+      "yearsExperience": 8,
+      "yearsInSubject": 5,
+      "gradeLevels": [
+        "elementary"
+      ],
+      "highestDegree": "masters",
+      "degreeField": "Computer Science",
+      "leadershipYears": 0,
+      "regionsWorked": [
+        "Africa",
+        "Europe"
+      ],
+      "coachingCapable": false,
+      "coachingActivities": [],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 0,
+      "partnerTeacherId": null,
+      "profileCompleteness": 80,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-07-01",
+      "preferredRegions": [
+        "Latin America",
+        "Middle East"
+      ],
+      "salaryExpectationMinUsd": 56000,
+      "salaryExpectationMaxUsd": 62000,
+      "documentsVerified": 2,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 0,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/cillian-kavanagh",
+      "premiumMember": false,
+      "lastActiveAt": "2026-09-25T00:00:00Z",
+      "createdAt": "2026-01-07T00:00:00Z"
+    },
+    {
+      "id": "tch_0112",
+      "firstName": "Valentina",
+      "lastName": "Arboleda",
+      "nationality": "Colombia",
+      "nationalities": [
+        "Colombia"
+      ],
+      "currentCity": "Nairobi",
+      "currentCountry": "Kenya",
+      "timezone": "Africa/Nairobi",
+      "headline": "English Literature teacher, 8 years",
+      "currentSchool": null,
+      "subjects": [
+        "English Literature",
+        "English"
+      ],
+      "curriculumExperience": [
+        "IB_DP",
+        "AP"
+      ],
+      "yearsExperience": 8,
+      "yearsInSubject": 6,
+      "gradeLevels": [
+        "early_years"
+      ],
+      "highestDegree": "bachelors",
+      "degreeField": "English Literature",
+      "leadershipYears": 6,
+      "regionsWorked": [
+        "Latin America",
+        "Africa"
+      ],
+      "coachingCapable": true,
+      "coachingActivities": [
+        "Duke of Edinburgh",
+        "debate"
+      ],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 2,
+      "partnerTeacherId": null,
+      "profileCompleteness": 84,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-07-01",
+      "preferredRegions": [
+        "East Asia",
+        "Middle East"
+      ],
+      "salaryExpectationMinUsd": 60000,
+      "salaryExpectationMaxUsd": 62000,
+      "documentsVerified": 2,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 1,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/valentina-arboleda",
+      "premiumMember": false,
+      "lastActiveAt": "2026-10-06T00:00:00Z",
+      "createdAt": "2026-01-07T00:00:00Z"
+    },
+    {
+      "id": "tch_0106",
+      "firstName": "Farai",
+      "lastName": "Gwanzura",
+      "nationality": "Zimbabwe",
+      "nationalities": [
+        "Zimbabwe"
+      ],
+      "currentCity": "Kuala Lumpur",
+      "currentCountry": "Malaysia",
+      "timezone": "Asia/Kuala_Lumpur",
+      "headline": "Learning Support teacher, 2 years",
+      "currentSchool": null,
+      "subjects": [
+        "Learning Support"
+      ],
+      "curriculumExperience": [
+        "IB_PYP",
+        "IB_MYP"
+      ],
+      "yearsExperience": 2,
+      "yearsInSubject": 2,
+      "gradeLevels": [
+        "elementary"
+      ],
+      "highestDegree": "masters",
+      "degreeField": "Learning Support",
+      "leadershipYears": 0,
+      "regionsWorked": [
+        "Africa",
+        "Southeast Asia"
+      ],
+      "coachingCapable": false,
+      "coachingActivities": [],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 0,
+      "partnerTeacherId": null,
+      "profileCompleteness": 61,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-09-01",
+      "preferredRegions": [
+        "Southeast Asia",
+        "North America"
+      ],
+      "salaryExpectationMinUsd": 36000,
+      "salaryExpectationMaxUsd": 46000,
+      "documentsVerified": 5,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 0,
+      "avatarUrl": null,
+      "introVideoUrl": "https://example.cdn/intro.mp4",
+      "linkedinUrl": "https://linkedin.com/in/farai-gwanzura",
+      "premiumMember": false,
+      "lastActiveAt": "2026-09-25T00:00:00Z",
+      "createdAt": "2025-12-20T00:00:00Z"
+    },
+    {
+      "id": "tch_0080",
+      "firstName": "Barasa",
+      "lastName": "Wekesa",
+      "nationality": "Kenya",
+      "nationalities": [
+        "Kenya"
+      ],
+      "currentCity": "Nairobi",
+      "currentCountry": "Kenya",
+      "timezone": "Africa/Nairobi",
+      "headline": "Computer Science teacher, 8 years",
+      "currentSchool": null,
+      "subjects": [
+        "Computer Science"
+      ],
+      "curriculumExperience": [
+        "Australian"
+      ],
+      "yearsExperience": 8,
+      "yearsInSubject": 5,
+      "gradeLevels": [
+        "middle"
+      ],
+      "highestDegree": "bachelors",
+      "degreeField": "Computer Science",
+      "leadershipYears": 2,
+      "regionsWorked": [
+        "Africa"
+      ],
+      "coachingCapable": true,
+      "coachingActivities": [
+        "debate"
+      ],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 3,
+      "partnerTeacherId": null,
+      "profileCompleteness": 85,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2028-01-05",
+      "preferredRegions": [
+        "East Asia",
+        "Southeast Asia"
+      ],
+      "salaryExpectationMinUsd": 60000,
+      "salaryExpectationMaxUsd": 58000,
+      "documentsVerified": 3,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 0,
+      "avatarUrl": null,
+      "introVideoUrl": "https://example.cdn/intro.mp4",
+      "linkedinUrl": "https://linkedin.com/in/barasa-wekesa",
+      "premiumMember": false,
+      "lastActiveAt": "2026-09-29T00:00:00Z",
+      "createdAt": "2026-01-07T00:00:00Z"
+    },
+    {
+      "id": "tch_0052",
+      "firstName": "Eleanor",
+      "lastName": "Whitlock",
+      "nationality": "United Kingdom",
+      "nationalities": [
+        "United Kingdom"
+      ],
+      "currentCity": "Singapore",
+      "currentCountry": "Singapore",
+      "timezone": "Asia/Singapore",
+      "headline": "Health teacher, 4 years",
+      "currentSchool": null,
+      "subjects": [
+        "Health"
+      ],
+      "curriculumExperience": [
+        "IB_MYP",
+        "IB_DP"
+      ],
+      "yearsExperience": 4,
+      "yearsInSubject": 2,
+      "gradeLevels": [
+        "middle",
+        "high"
+      ],
+      "highestDegree": "bachelors",
+      "degreeField": "Health",
+      "leadershipYears": 0,
+      "regionsWorked": [
+        "Southeast Asia",
+        "Europe"
+      ],
+      "coachingCapable": false,
+      "coachingActivities": [],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 0,
+      "partnerTeacherId": null,
+      "profileCompleteness": 80,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2028-01-05",
+      "preferredRegions": [
+        "Latin America",
+        "Southeast Asia"
+      ],
+      "salaryExpectationMinUsd": 56000,
+      "salaryExpectationMaxUsd": 58000,
+      "documentsVerified": 5,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 2,
+      "avatarUrl": null,
+      "introVideoUrl": "https://example.cdn/intro.mp4",
+      "linkedinUrl": "https://linkedin.com/in/eleanor-whitlock",
+      "premiumMember": false,
+      "lastActiveAt": "2026-10-06T00:00:00Z",
+      "createdAt": "2025-12-26T00:00:00Z"
+    },
+    {
+      "id": "tch_0096",
+      "firstName": "Chidinma",
+      "lastName": "Nwachukwu",
+      "nationality": "Nigeria",
+      "nationalities": [
+        "Nigeria"
+      ],
+      "currentCity": "Nigeria",
+      "currentCountry": "Nigeria",
+      "timezone": "Africa/Lagos",
+      "headline": "Counseling teacher, 3 years",
+      "currentSchool": null,
+      "subjects": [
+        "Counseling",
+        "Learning Support"
+      ],
+      "curriculumExperience": [
+        "British_National"
+      ],
+      "yearsExperience": 3,
+      "yearsInSubject": 2,
+      "gradeLevels": [
+        "early_years"
+      ],
+      "highestDegree": "bachelors",
+      "degreeField": "Counseling",
+      "leadershipYears": 0,
+      "regionsWorked": [
+        "Africa"
+      ],
+      "coachingCapable": true,
+      "coachingActivities": [
+        "basketball"
+      ],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": true,
+      "dependents": 3,
+      "partnerTeacherId": null,
+      "profileCompleteness": 75,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-08-01",
+      "preferredRegions": [
+        "North America",
+        "Africa"
+      ],
+      "salaryExpectationMinUsd": 28000,
+      "salaryExpectationMaxUsd": 50000,
+      "documentsVerified": 5,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 2,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/chidinma-nwachukwu",
+      "premiumMember": false,
+      "lastActiveAt": "2026-10-02T00:00:00Z",
+      "createdAt": "2025-12-23T00:00:00Z"
+    },
+    {
+      "id": "tch_0039",
+      "firstName": "Efua",
+      "lastName": "Mensah",
+      "nationality": "Ghana",
+      "nationalities": [
+        "Ghana"
+      ],
+      "currentCity": "Accra",
+      "currentCountry": "Ghana",
+      "timezone": "Africa/Accra",
+      "headline": "Music teacher, 11 years",
+      "currentSchool": null,
+      "subjects": [
+        "Music"
+      ],
+      "curriculumExperience": [
+        "IB_DP"
+      ],
+      "yearsExperience": 11,
+      "yearsInSubject": 10,
+      "gradeLevels": [
+        "early_years"
+      ],
+      "highestDegree": "masters",
+      "degreeField": "Music",
+      "leadershipYears": 0,
+      "regionsWorked": [
+        "Africa"
+      ],
+      "coachingCapable": false,
+      "coachingActivities": [],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 0,
+      "partnerTeacherId": null,
+      "profileCompleteness": 90,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2028-01-05",
+      "preferredRegions": [
+        "Europe",
+        "Southeast Asia"
+      ],
+      "salaryExpectationMinUsd": 48000,
+      "salaryExpectationMaxUsd": 80000,
+      "documentsVerified": 3,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 1,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/efua-mensah",
+      "premiumMember": false,
+      "lastActiveAt": "2026-09-29T00:00:00Z",
+      "createdAt": "2026-01-16T00:00:00Z"
+    },
+    {
+      "id": "tch_0117",
+      "firstName": "Sergio",
+      "lastName": "Bermúdez",
+      "nationality": "Spain",
+      "nationalities": [
+        "Spain"
+      ],
+      "currentCity": "Cairo",
+      "currentCountry": "Egypt",
+      "timezone": "Africa/Cairo",
+      "headline": "Economics teacher, 3 years",
+      "currentSchool": null,
+      "subjects": [
+        "Economics"
+      ],
+      "curriculumExperience": [
+        "Australian"
+      ],
+      "yearsExperience": 3,
+      "yearsInSubject": 1,
+      "gradeLevels": [
+        "elementary"
+      ],
+      "highestDegree": "bachelors",
+      "degreeField": "Economics",
+      "leadershipYears": 0,
+      "regionsWorked": [
+        "Europe",
+        "Middle East"
+      ],
+      "coachingCapable": true,
+      "coachingActivities": [
+        "basketball"
+      ],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 3,
+      "partnerTeacherId": null,
+      "profileCompleteness": 88,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-08-01",
+      "preferredRegions": [
+        "Southeast Asia",
+        "Latin America"
+      ],
+      "salaryExpectationMinUsd": 32000,
+      "salaryExpectationMaxUsd": 68000,
+      "documentsVerified": 6,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 1,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/sergio-bermudez",
+      "premiumMember": false,
+      "lastActiveAt": "2026-10-07T00:00:00Z",
+      "createdAt": "2025-12-23T00:00:00Z"
+    },
+    {
+      "id": "tch_0107",
+      "firstName": "Pieter",
+      "lastName": "Pretorius",
+      "nationality": "South Africa",
+      "nationalities": [
+        "South Africa"
+      ],
+      "currentCity": "South Africa",
+      "currentCountry": "South Africa",
+      "timezone": "Africa/Johannesburg",
+      "headline": "English teacher, 14 years",
+      "currentSchool": null,
+      "subjects": [
+        "English"
+      ],
+      "curriculumExperience": [
+        "Cambridge_IGCSE"
+      ],
+      "yearsExperience": 14,
+      "yearsInSubject": 13,
+      "gradeLevels": [
+        "elementary"
+      ],
+      "highestDegree": "bachelors",
+      "degreeField": "English",
+      "leadershipYears": 1,
+      "regionsWorked": [
+        "Africa"
+      ],
+      "coachingCapable": false,
+      "coachingActivities": [],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 0,
+      "partnerTeacherId": null,
+      "profileCompleteness": 68,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-08-01",
+      "preferredRegions": [
+        "Middle East",
+        "Latin America"
+      ],
+      "salaryExpectationMinUsd": 36000,
+      "salaryExpectationMaxUsd": 68000,
+      "documentsVerified": 2,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 1,
+      "avatarUrl": null,
+      "introVideoUrl": "https://example.cdn/intro.mp4",
+      "linkedinUrl": "https://linkedin.com/in/pieter-pretorius",
+      "premiumMember": false,
+      "lastActiveAt": "2026-10-09T00:00:00Z",
+      "createdAt": "2026-01-25T00:00:00Z"
+    },
+    {
+      "id": "tch_0084",
+      "firstName": "Emeka",
+      "lastName": "Ezenwa",
+      "nationality": "Nigeria",
+      "nationalities": [
+        "Nigeria"
+      ],
+      "currentCity": "Nigeria",
+      "currentCountry": "Nigeria",
+      "timezone": "Africa/Lagos",
+      "headline": "Health teacher, 18 years",
+      "currentSchool": null,
+      "subjects": [
+        "Health"
+      ],
+      "curriculumExperience": [
+        "IB_DP"
+      ],
+      "yearsExperience": 18,
+      "yearsInSubject": 15,
+      "gradeLevels": [
+        "elementary"
+      ],
+      "highestDegree": "doctorate",
+      "degreeField": "Health",
+      "leadershipYears": 0,
+      "regionsWorked": [
+        "Africa"
+      ],
+      "coachingCapable": true,
+      "coachingActivities": [
+        "cross country"
+      ],
+      "languages": [
+        "English"
+      ],
+      "firstTimeInternational": false,
+      "dependents": 0,
+      "partnerTeacherId": null,
+      "profileCompleteness": 88,
+      "profileVisibility": "schools_applied_to",
+      "availableFrom": "2027-07-01",
+      "preferredRegions": [
+        "Middle East",
+        "Africa"
+      ],
+      "salaryExpectationMinUsd": 60000,
+      "salaryExpectationMaxUsd": 50000,
+      "documentsVerified": 1,
+      "documentsTotal": 6,
+      "verifiedSupervisorReferences": 2,
+      "avatarUrl": null,
+      "introVideoUrl": null,
+      "linkedinUrl": "https://linkedin.com/in/emeka-ezenwa",
+      "premiumMember": false,
+      "lastActiveAt": "2026-10-07T00:00:00Z",
+      "createdAt": "2026-02-06T00:00:00Z"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "scenario_leadership_first",
+      "label": "Leadership first (current)",
+      "rationale": "What the Head of School set two days ago: this is a coordinator post, so leadership outranks raw classroom years.",
+      "criteria": [
+        "leadership",
+        "curriculum_match",
+        "years_experience",
+        "advanced_degree",
+        "availability"
+      ],
+      "weights": [
+        0.333,
+        0.267,
+        0.2,
+        0.133,
+        0.067
+      ],
+      "top10": [
+        {
+          "applicationId": "app_0009",
+          "teacherId": "tch_0005",
+          "teacherName": "Hanne Lindqvist",
+          "score": 92,
+          "position": 1,
+          "positionUnderPreviousCriteria": 2,
+          "positionDelta": 1
+        },
+        {
+          "applicationId": "app_0038",
+          "teacherId": "tch_0047",
+          "teacherName": "Regina Rentería",
+          "score": 87,
+          "position": 2,
+          "positionUnderPreviousCriteria": 6,
+          "positionDelta": 4
+        },
+        {
+          "applicationId": "app_0008",
+          "teacherId": "tch_0010",
+          "teacherName": "James Carter",
+          "score": 85,
+          "position": 3,
+          "positionUnderPreviousCriteria": 4,
+          "positionDelta": 1
+        },
+        {
+          "applicationId": "app_0006",
+          "teacherId": "tch_0004",
+          "teacherName": "Marcus Lindqvist",
+          "score": 82,
+          "position": 4,
+          "positionUnderPreviousCriteria": 1,
+          "positionDelta": -3
+        },
+        {
+          "applicationId": "app_0054",
+          "teacherId": "tch_0110",
+          "teacherName": "Wanjiru Chepkwony",
+          "score": 76,
+          "position": 5,
+          "positionUnderPreviousCriteria": 8,
+          "positionDelta": 3
+        },
+        {
+          "applicationId": "app_0062",
+          "teacherId": "tch_0081",
+          "teacherName": "Emiliano Zepeda",
+          "score": 75,
+          "position": 6,
+          "positionUnderPreviousCriteria": 3,
+          "positionDelta": -3
+        },
+        {
+          "applicationId": "app_0033",
+          "teacherId": "tch_0123",
+          "teacherName": "Lihua Huang",
+          "score": 70,
+          "position": 7,
+          "positionUnderPreviousCriteria": 13,
+          "positionDelta": 6
+        },
+        {
+          "applicationId": "app_0065",
+          "teacherId": "tch_0112",
+          "teacherName": "Valentina Arboleda",
+          "score": 67,
+          "position": 8,
+          "positionUnderPreviousCriteria": 26,
+          "positionDelta": 18
+        },
+        {
+          "applicationId": "app_0058",
+          "teacherId": "tch_0067",
+          "teacherName": "Oskar Sandberg",
+          "score": 66,
+          "position": 9,
+          "positionUnderPreviousCriteria": 11,
+          "positionDelta": 2
+        },
+        {
+          "applicationId": "app_0034",
+          "teacherId": "tch_0116",
+          "teacherName": "James Mackenzie",
+          "score": 63,
+          "position": 10,
+          "positionUnderPreviousCriteria": 12,
+          "positionDelta": 2
+        }
+      ]
+    },
+    {
+      "id": "scenario_experience_first",
+      "label": "Experience first (previous)",
+      "rationale": "The original ordering, inherited from the generic teacher template.",
+      "criteria": [
+        "years_experience",
+        "curriculum_match",
+        "subject_specialization",
+        "advanced_degree",
+        "availability"
+      ],
+      "weights": [
+        0.333,
+        0.267,
+        0.2,
+        0.133,
+        0.067
+      ],
+      "top10": [
+        {
+          "applicationId": "app_0006",
+          "teacherId": "tch_0004",
+          "teacherName": "Marcus Lindqvist",
+          "score": 95,
+          "position": 1,
+          "positionUnderPreviousCriteria": 1,
+          "positionDelta": 0
+        },
+        {
+          "applicationId": "app_0009",
+          "teacherId": "tch_0005",
+          "teacherName": "Hanne Lindqvist",
+          "score": 78,
+          "position": 2,
+          "positionUnderPreviousCriteria": 2,
+          "positionDelta": 0
+        },
+        {
+          "applicationId": "app_0062",
+          "teacherId": "tch_0081",
+          "teacherName": "Emiliano Zepeda",
+          "score": 73,
+          "position": 3,
+          "positionUnderPreviousCriteria": 3,
+          "positionDelta": 0
+        },
+        {
+          "applicationId": "app_0008",
+          "teacherId": "tch_0010",
+          "teacherName": "James Carter",
+          "score": 73,
+          "position": 4,
+          "positionUnderPreviousCriteria": 4,
+          "positionDelta": 0
+        },
+        {
+          "applicationId": "app_0007",
+          "teacherId": "tch_0002",
+          "teacherName": "Amara Nwosu",
+          "score": 71,
+          "position": 5,
+          "positionUnderPreviousCriteria": 5,
+          "positionDelta": 0
+        },
+        {
+          "applicationId": "app_0038",
+          "teacherId": "tch_0047",
+          "teacherName": "Regina Rentería",
+          "score": 70,
+          "position": 6,
+          "positionUnderPreviousCriteria": 6,
+          "positionDelta": 0
+        },
+        {
+          "applicationId": "app_0073",
+          "teacherId": "tch_0084",
+          "teacherName": "Emeka Ezenwa",
+          "score": 68,
+          "position": 7,
+          "positionUnderPreviousCriteria": 7,
+          "positionDelta": 0
+        },
+        {
+          "applicationId": "app_0054",
+          "teacherId": "tch_0110",
+          "teacherName": "Wanjiru Chepkwony",
+          "score": 68,
+          "position": 8,
+          "positionUnderPreviousCriteria": 8,
+          "positionDelta": 0
+        },
+        {
+          "applicationId": "app_0041",
+          "teacherId": "tch_0070",
+          "teacherName": "Xiaoyan Zhang",
+          "score": 68,
+          "position": 9,
+          "positionUnderPreviousCriteria": 9,
+          "positionDelta": 0
+        },
+        {
+          "applicationId": "app_0043",
+          "teacherId": "tch_0098",
+          "teacherName": "Fabian Brandtner",
+          "score": 67,
+          "position": 10,
+          "positionUnderPreviousCriteria": 10,
+          "positionDelta": 0
+        }
+      ]
+    },
+    {
+      "id": "scenario_curriculum_first",
+      "label": "Curriculum purity",
+      "rationale": "If the department's priority is MYP fidelity above all else.",
+      "criteria": [
+        "curriculum_match",
+        "years_experience",
+        "leadership",
+        "availability",
+        "advanced_degree"
+      ],
+      "weights": [
+        0.333,
+        0.267,
+        0.2,
+        0.133,
+        0.067
+      ],
+      "top10": [
+        {
+          "applicationId": "app_0009",
+          "teacherId": "tch_0005",
+          "teacherName": "Hanne Lindqvist",
+          "score": 92,
+          "position": 1,
+          "positionUnderPreviousCriteria": 2,
+          "positionDelta": 1
+        },
+        {
+          "applicationId": "app_0038",
+          "teacherId": "tch_0047",
+          "teacherName": "Regina Rentería",
+          "score": 89,
+          "position": 2,
+          "positionUnderPreviousCriteria": 6,
+          "positionDelta": 4
+        },
+        {
+          "applicationId": "app_0006",
+          "teacherId": "tch_0004",
+          "teacherName": "Marcus Lindqvist",
+          "score": 87,
+          "position": 3,
+          "positionUnderPreviousCriteria": 1,
+          "positionDelta": -2
+        },
+        {
+          "applicationId": "app_0008",
+          "teacherId": "tch_0010",
+          "teacherName": "James Carter",
+          "score": 86,
+          "position": 4,
+          "positionUnderPreviousCriteria": 4,
+          "positionDelta": 0
+        },
+        {
+          "applicationId": "app_0054",
+          "teacherId": "tch_0110",
+          "teacherName": "Wanjiru Chepkwony",
+          "score": 77,
+          "position": 5,
+          "positionUnderPreviousCriteria": 8,
+          "positionDelta": 3
+        },
+        {
+          "applicationId": "app_0062",
+          "teacherId": "tch_0081",
+          "teacherName": "Emiliano Zepeda",
+          "score": 70,
+          "position": 6,
+          "positionUnderPreviousCriteria": 3,
+          "positionDelta": -3
+        },
+        {
+          "applicationId": "app_0058",
+          "teacherId": "tch_0067",
+          "teacherName": "Oskar Sandberg",
+          "score": 70,
+          "position": 7,
+          "positionUnderPreviousCriteria": 11,
+          "positionDelta": 4
+        },
+        {
+          "applicationId": "app_0065",
+          "teacherId": "tch_0112",
+          "teacherName": "Valentina Arboleda",
+          "score": 64,
+          "position": 8,
+          "positionUnderPreviousCriteria": 26,
+          "positionDelta": 18
+        },
+        {
+          "applicationId": "app_0073",
+          "teacherId": "tch_0084",
+          "teacherName": "Emeka Ezenwa",
+          "score": 62,
+          "position": 9,
+          "positionUnderPreviousCriteria": 7,
+          "positionDelta": -2
+        },
+        {
+          "applicationId": "app_0007",
+          "teacherId": "tch_0002",
+          "teacherName": "Amara Nwosu",
+          "score": 61,
+          "position": 10,
+          "positionUnderPreviousCriteria": 5,
+          "positionDelta": -5
+        }
+      ]
+    },
+    {
+      "id": "scenario_three_only",
+      "label": "Three criteria only",
+      "rationale": "Demonstrates that weights redistribute when the recruiter removes criteria (50 / 33 / 17).",
+      "criteria": [
+        "leadership",
+        "curriculum_match",
+        "availability"
+      ],
+      "weights": [
+        0.5,
+        0.333,
+        0.167
+      ],
+      "top10": [
+        {
+          "applicationId": "app_0038",
+          "teacherId": "tch_0047",
+          "teacherName": "Regina Rentería",
+          "score": 96,
+          "position": 1,
+          "positionUnderPreviousCriteria": 6,
+          "positionDelta": 5
+        },
+        {
+          "applicationId": "app_0009",
+          "teacherId": "tch_0005",
+          "teacherName": "Hanne Lindqvist",
+          "score": 93,
+          "position": 2,
+          "positionUnderPreviousCriteria": 2,
+          "positionDelta": 0
+        },
+        {
+          "applicationId": "app_0008",
+          "teacherId": "tch_0010",
+          "teacherName": "James Carter",
+          "score": 87,
+          "position": 3,
+          "positionUnderPreviousCriteria": 4,
+          "positionDelta": 1
+        },
+        {
+          "applicationId": "app_0065",
+          "teacherId": "tch_0112",
+          "teacherName": "Valentina Arboleda",
+          "score": 79,
+          "position": 4,
+          "positionUnderPreviousCriteria": 26,
+          "positionDelta": 22
+        },
+        {
+          "applicationId": "app_0006",
+          "teacherId": "tch_0004",
+          "teacherName": "Marcus Lindqvist",
+          "score": 76,
+          "position": 5,
+          "positionUnderPreviousCriteria": 1,
+          "positionDelta": -4
+        },
+        {
+          "applicationId": "app_0054",
+          "teacherId": "tch_0110",
+          "teacherName": "Wanjiru Chepkwony",
+          "score": 76,
+          "position": 6,
+          "positionUnderPreviousCriteria": 8,
+          "positionDelta": 2
+        },
+        {
+          "applicationId": "app_0062",
+          "teacherId": "tch_0081",
+          "teacherName": "Emiliano Zepeda",
+          "score": 71,
+          "position": 7,
+          "positionUnderPreviousCriteria": 3,
+          "positionDelta": -4
+        },
+        {
+          "applicationId": "app_0058",
+          "teacherId": "tch_0067",
+          "teacherName": "Oskar Sandberg",
+          "score": 60,
+          "position": 8,
+          "positionUnderPreviousCriteria": 11,
+          "positionDelta": 3
+        },
+        {
+          "applicationId": "app_0033",
+          "teacherId": "tch_0123",
+          "teacherName": "Lihua Huang",
+          "score": 59,
+          "position": 9,
+          "positionUnderPreviousCriteria": 13,
+          "positionDelta": 4
+        },
+        {
+          "applicationId": "app_0037",
+          "teacherId": "tch_0021",
+          "teacherName": "Minjun Jung",
+          "score": 58,
+          "position": 10,
+          "positionUnderPreviousCriteria": 28,
+          "positionDelta": 18
+        }
+      ]
+    }
+  ]
+}
