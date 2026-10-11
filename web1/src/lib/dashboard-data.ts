@@ -145,6 +145,9 @@ export type PipelineRow = {
   counts: Record<string, number>;
   /** Why this row is flagged, or null when the posting is healthy. */
   trouble: { severity: "caution" | "critical"; label: string; detail: string } | null;
+  /** Whoever the ranking currently puts first, for the link into the list. */
+  topCandidate: { name: string; score: number | null } | null;
+  rankedCount: number;
 };
 
 export function getPipeline(schoolId: string): PipelineRow[] {
@@ -180,12 +183,23 @@ export function getPipeline(schoolId: string): PipelineRow[] {
         };
       }
 
+      const ranked = mine
+        .filter((a) => a.rankable && !TERMINAL.has(a.stage))
+        .sort((x, y) => (y.aiRankScore ?? 0) - (x.aiRankScore ?? 0));
+      const first = ranked[0];
+      const firstTeacher = first && bundle.teachers.find((t) => t.id === first.teacherId);
+
       return {
         id: p.id, title: p.title, status: p.status,
         applicationCount: p.applicationCount, viewCount: p.viewCount,
         daysPosted, openings: p.openingsAvailable, likelihood: p.likelihood,
         salaryMinUsd: p.salaryMinUsd, salaryMaxUsd: p.salaryMaxUsd,
         counts, trouble,
+        topCandidate: firstTeacher
+          ? { name: `${firstTeacher.firstName} ${firstTeacher.lastName}`,
+              score: p.aiRankingEnabled ? first.aiRankScore : null }
+          : null,
+        rankedCount: ranked.length,
       };
     })
     .sort((a, b) => rank(b) - rank(a) || b.applicationCount - a.applicationCount);
@@ -280,6 +294,9 @@ export type Shortlist = {
   ranked: Ranked[];
   byRecency: Ranked[];
   notRankable: { id: string; name: string; completeness: number; reason: string }[];
+  /** Applications the shortlist leaves out, so the counts can be reconciled
+      rather than silently disagreeing with the posting's total. */
+  closed: { rejected: number; withdrawn: number; hired: number };
 };
 
 export function getShortlist(postingId: string): Shortlist {
@@ -318,9 +335,17 @@ export function getShortlist(postingId: string): Shortlist {
     };
   };
 
+  const all = bundle.applications.filter((a) => a.jobPostingId === p.id);
+  const closed = {
+    rejected: all.filter((a) => a.stage === "rejected").length,
+    withdrawn: all.filter((a) => a.stage === "withdrawn").length,
+    hired: all.filter((a) => a.stage === "hired").length,
+  };
+
   const rankable = mine.filter((a) => a.rankable);
   return {
     posting: { id: p.id, title: p.title, applicationCount: p.applicationCount },
+    closed,
     criteria,
     ranked: rankable.map(shape).sort((a, b) => (b.score ?? 0) - (a.score ?? 0)),
     byRecency: rankable.map(shape).sort((a, b) => a.appliedDaysAgo - b.appliedDaysAgo),
@@ -556,4 +581,61 @@ export function getCandidateInterviews(teacherId: string): InterviewRow[] {
       };
     })
     .sort((a, b) => +new Date(a.startsAtUtc) - +new Date(b.startsAtUtc));
+}
+
+/* ==================================================================
+   Shortlists
+   ================================================================== */
+
+export type ShortlistSummary = {
+  posting: {
+    id: string; title: string; status: string;
+    applicationCount: number; aiRankingEnabled: boolean;
+  };
+  criteria: { id: string; label: string; weight: number }[];
+  /** The top slice, ordered by score. */
+  top: Ranked[];
+  /** The same people, ordered by how long each has waited. */
+  topByWait: Ranked[];
+  rankableCount: number;
+  notRankableCount: number;
+  /** Names just past the cut, for the "there is more" row. */
+  peek: string[];
+};
+
+/**
+ * One compact shortlist per posting, small enough to hand the browser all of
+ * them at once so switching postings costs nothing. The full list lives at
+ * /shortlists; this is the slice the dashboard shows.
+ */
+export function getShortlistSummaries(schoolId: string, take = 5): ShortlistSummary[] {
+  return getPostings(schoolId)
+    .filter((p) => p.status !== "draft" && p.applicationCount > 0)
+    .sort((a, b) => b.applicationCount - a.applicationCount)
+    .map((p) => {
+      const full = getShortlist(p.id);
+      // The visible set is fixed by the ranking and then reordered, never
+      // re-sliced: turning ranking off must change the order, not the people.
+      const top = full.ranked.slice(0, take);
+      return {
+        posting: {
+          id: p.id, title: p.title, status: p.status,
+          applicationCount: p.applicationCount, aiRankingEnabled: p.aiRankingEnabled,
+        },
+        criteria: full.criteria,
+        top,
+        topByWait: [...top].sort((a, b) => b.appliedDaysAgo - a.appliedDaysAgo),
+        rankableCount: full.ranked.length,
+        notRankableCount: full.notRankable.length,
+        peek: full.ranked.slice(take, take + 3).map((c) => c.name),
+      };
+    });
+}
+
+/** Everything /shortlists needs: the cards, and the one opened. */
+export function getShortlistsPage(schoolId: string, selectedId?: string) {
+  const summaries = getShortlistSummaries(schoolId, 5);
+  const selected = summaries.find((s) => s.posting.id === selectedId) ?? summaries[0];
+  return { summaries, selected: selected ? getShortlist(selected.posting.id) : null,
+           selectedId: selected?.posting.id ?? null };
 }

@@ -1,60 +1,94 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useFlip } from "@/lib/use-flip";
-import type { Shortlist as Data } from "@/lib/dashboard-data";
+import type { ShortlistSummary } from "@/lib/dashboard-data";
 
 /**
- * Zone 4. The ranked list, with the reasoning visible on every row.
+ * The ranked list, with the reasoning visible on every row.
  *
  * The explanation is derived, never stored prose: each row shows the note for
  * the two highest-weighted criteria of this posting, read as a reason at >=70,
  * a concern below 55, and stated flatly in between. Change the priorities and
  * the sentences change with them.
  *
- * Ranking can be switched off, and then the list is ordered by how long people
- * have waited instead — which is the honest fallback, not an arbitrary one.
- *
- * Candidates below the profile threshold are never scored 0. They sit in their
- * own group, with the reason, because a missing profile is not a weak one.
+ * Five rows, not the whole list. The dashboard is a triage surface — the point
+ * is who is at the top of each posting, and the full lists have their own page.
+ * The row under the five is a real continuation, showing who comes next, so
+ * the cut reads as "more of this" rather than as the end.
  */
 export function Shortlist({
-  data, canEditCriteria, canSeeDocuments,
-}: { data: Data; canEditCriteria: boolean; canSeeDocuments: boolean }) {
+  summaries, canEditCriteria,
+}: {
+  summaries: ShortlistSummary[];
+  canEditCriteria: boolean;
+}) {
+  const [postingId, setPostingId] = useState(summaries[0]?.posting.id ?? "");
   const [ranked, setRanked] = useState(true);
 
-  /* The shortlist is one set of people, shown in two orders. Slicing after
-     sorting — which is what this did — meant turning ranking off swapped in a
-     different eight candidates, so the control was quietly filtering rather
-     than ordering. The brief rules that out, and animating it is what exposed
-     it: only one row ever had somewhere to travel to.
+  const data = summaries.find((s) => s.posting.id === postingId) ?? summaries[0];
+  // Rows travel to their new places rather than blinking into them. Keyed on
+  // both switches so a posting change settles the same way a reorder does.
+  const listRef = useFlip<HTMLOListElement>(`${postingId}:${ranked}`);
 
-     The visible set is fixed by the ranking, then reordered in place. */
-  const SHOWN = 8;
-  const visible = data.ranked.slice(0, SHOWN);
-  const byWait = [...visible].sort((a, b) => b.appliedDaysAgo - a.appliedDaysAgo);
-  const list = ranked ? visible : byWait;
+  if (!data) return null;
 
-  // Rows travel to their new places rather than blinking into them.
-  const listRef = useFlip<HTMLOListElement>(ranked);
+  const list = ranked ? data.top : data.topByWait;
+  const remaining = data.rankableCount - data.top.length;
+  const rankingOn = ranked && data.posting.aiRankingEnabled;
 
   return (
-    <section className="dash-section" aria-labelledby="shortlist">
+    <section className="dash-section shortlist-zone" aria-labelledby="shortlist">
       <div className="dash-head">
-        <h2 id="shortlist">Shortlist · {data.posting.title}</h2>
+        <h2 id="shortlist">
+          Shortlist
+          <span className="sl-sep" aria-hidden="true">·</span>
+          <span className="sl-picker">
+            <select value={postingId} onChange={(e) => setPostingId(e.target.value)}
+                    aria-label="Which posting's shortlist to show">
+              {summaries.map((s) => (
+                <option key={s.posting.id} value={s.posting.id}>
+                  {s.posting.title} ({s.posting.applicationCount})
+                </option>
+              ))}
+            </select>
+            <span className="sl-picker-caret" aria-hidden="true">
+              <svg width="11" height="7" viewBox="0 0 11 7" fill="none">
+                <path d="M1 1.2 5.5 5.6 10 1.2" stroke="currentColor" strokeWidth="1.6"
+                      strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+          </span>
+        </h2>
         <p>
           {data.posting.applicationCount} applications.{" "}
-          {ranked
-            ? "Ranked against this posting's priorities."
-            : "Ranking off — the same candidates, ordered by how long each has waited."}
+          {!data.posting.aiRankingEnabled
+            ? "Ranking is off for this posting."
+            : ranked
+              ? "Top five against this posting's priorities."
+              : "Ranking off — the same five, ordered by how long each has waited."}
         </p>
-        <button type="button" className="btn btn-quiet" aria-pressed={ranked}
-                onClick={() => setRanked((v) => !v)}>
-          {ranked ? "Turn ranking off" : "Turn ranking on"}
-        </button>
+        {/* Both controls act on the ranking, so they sit together. "Change
+            priorities" used to be stapled to the end of the criteria pills,
+            where it read as another criterion rather than as a control, and
+            it made the strip's right edge ragged.
+            Kept visible while ranking is merely switched off, so toggling
+            does not make the header jump. */}
+        {data.posting.aiRankingEnabled && (
+          <div className="sl-actions">
+            <button type="button" className="btn btn-quiet" aria-pressed={ranked}
+                    onClick={() => setRanked((v) => !v)}>
+              {ranked ? "Turn ranking off" : "Turn ranking on"}
+            </button>
+            {canEditCriteria
+              ? <button type="button" className="btn btn-quiet">Change priorities</button>
+              : <span className="readout sl-readonly">Priorities are view-only</span>}
+          </div>
+        )}
       </div>
 
-      {ranked && (
+      {rankingOn && (
         <div className="sl-criteria">
           <span className="label">Priorities</span>
           <ol className="sl-criteria-list">
@@ -65,9 +99,6 @@ export function Shortlist({
               </li>
             ))}
           </ol>
-          {canEditCriteria
-            ? <button type="button" className="btn btn-quiet">Change priorities</button>
-            : <span className="readout sl-readonly">View only</span>}
         </div>
       )}
 
@@ -80,7 +111,7 @@ export function Shortlist({
       <ol className="panel panel-rows sl-list" ref={listRef}>
         {list.map((c, i) => (
           <li key={c.id} className="sl-row" data-flip-key={c.id}>
-            <span className="sl-rank num">{ranked ? i + 1 : "—"}</span>
+            <span className="sl-rank num">{rankingOn ? i + 1 : "—"}</span>
 
             <span className="sl-who">
               <span className="sl-name">{c.name}</span>
@@ -98,7 +129,7 @@ export function Shortlist({
             </ul>
 
             <span className="sl-right">
-              <span className="sl-score" data-on={ranked || undefined} aria-hidden={!ranked}>
+              <span className="sl-score" data-on={rankingOn || undefined} aria-hidden={!rankingOn}>
                 <span className="fig sl-score-fig">{c.score}</span>
                 <span className="readout">score</span>
               </span>
@@ -108,35 +139,35 @@ export function Shortlist({
             </span>
           </li>
         ))}
+
+        {/* Not a button pretending to be a row: a real continuation of the
+            list, naming who comes next, so the cut reads as more of the same. */}
+        {remaining > 0 && (
+          <li className="sl-more-row">
+            <Link href={`/dashboard/shortlists?posting=${data.posting.id}`} className="sl-more">
+              <span className="sl-more-n num">+{remaining}</span>
+              <span className="sl-more-body">
+                <span>more ranked candidates</span>
+                {data.peek.length > 0 && (
+                  <span className="sl-more-peek readout">
+                    next: {data.peek.join(" · ")}
+                  </span>
+                )}
+              </span>
+              <span className="sl-more-go readout" aria-hidden="true">Open the full list &rarr;</span>
+            </Link>
+          </li>
+        )}
       </ol>
 
-      {data.notRankable.length > 0 && (
-        <div className="sl-unrankable">
-          <h3>Not yet rankable · {data.notRankable.length}</h3>
-          <p>
-            These profiles are below the {70}% completeness the ranking needs, so
-            they carry no score. They are candidates, not zeros — the gap is in
-            the profile, not the person.
-          </p>
-          <ul className="sl-unrankable-list">
-            {data.notRankable.map((c) => (
-              <li key={c.id}>
-                <span className="sl-name">{c.name}</span>
-                <span className="bar sl-completeness" role="img"
-                      aria-label={`Profile ${c.completeness}% complete`}>
-                  <span style={{ width: `${c.completeness}%`, background: "var(--stage-screening)" }} />
-                </span>
-                <span className="readout num">{c.completeness}% complete</span>
-                {/* Chasing a profile means seeing which documents are missing,
-                    which is view_documents. Without it the row states the
-                    position and stops there. */}
-                {canSeeDocuments && (
-                  <button type="button" className="btn btn-quiet">Ask for the rest</button>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
+      {data.notRankableCount > 0 && (
+        <p className="sl-unrankable-note">
+          <Link href={`/dashboard/shortlists?posting=${data.posting.id}`}>
+            {data.notRankableCount} more {data.notRankableCount === 1 ? "candidate is" : "candidates are"} below
+            the 70% completeness the ranking needs
+          </Link>{" "}
+          — they carry no score and are listed separately, never as zeros.
+        </p>
       )}
     </section>
   );

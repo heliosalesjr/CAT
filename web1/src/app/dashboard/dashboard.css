@@ -255,13 +255,33 @@
 .pipe-legend { display: flex; flex-wrap: wrap; gap: 12px; }
 .pipe-legend .readout { display: inline-flex; align-items: center; gap: 5px; }
 .pipe-row { padding: 18px; border-left: 3px solid transparent;
-            display: flex; flex-direction: column; gap: 10px; }
+            display: flex; flex-direction: column; gap: 12px; }
 .pipe-row[data-severity="critical"] { border-left-color: var(--critical); }
 .pipe-row[data-severity="caution"]  { border-left-color: var(--caution); }
-.pipe-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
-.pipe-bar-wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
-.pipe-bar { flex: 0 1 300px; min-width: 60px; }
-.pipe-counts { display: flex; flex-wrap: wrap; gap: 12px; font-size: 13px; }
+/* A healthy posting keeps the rail. Absence of colour read as a missing
+   stripe; a quiet green reads as "this one is fine". */
+.pipe-row[data-severity="healthy"]  { border-left-color: var(--positive); }
+
+.pipe-head { display: flex; flex-wrap: wrap; align-items: flex-start;
+             justify-content: space-between; gap: 10px 24px; }
+.pipe-title { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1 1 22em; }
+
+/* The bar now spans the row. At 300px it compared postings badly and left
+   two-thirds of a wide screen empty; full width makes the stacked segments
+   a real chart, and the counts sit under their own colours. */
+.pipe-bar-wrap { display: flex; flex-direction: column; gap: 8px; }
+.pipe-rail { width: 100%; height: 12px; background: var(--surface-sunken); }
+.pipe-fill { display: flex; height: 100%; transform-origin: left center; }
+.pipe-fill > span { display: block; height: 100%; }
+.pipe-counts { display: flex; flex-wrap: wrap; align-items: baseline;
+               gap: 8px 18px; font-size: 13px; }
+/* Pushed to the far right so the row has a right edge to land on. */
+.pipe-share {
+  margin-left: auto; display: inline-flex; align-items: baseline; gap: 5px;
+  padding-left: 16px; border-left: 1px solid var(--rule);
+}
+.pipe-share b { color: var(--ink); font-size: 13px; letter-spacing: 0; }
+.pipe-share-sep { color: var(--ink-subtle); margin-inline: 3px; }
 .pipe-counts b { color: var(--ink); }
 .pipe-empty { color: var(--critical); }
 .pipe-trouble { margin: 0; display: flex; flex-wrap: wrap; align-items: center;
@@ -272,6 +292,7 @@
 .sl-criteria { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;
                padding: 14px 16px; background: var(--surface-raised);
                border: 1px solid var(--rule); border-bottom: 0; }
+.sl-criteria .sl-criteria-list { flex: 1 1 auto; }
 .sl-criteria-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0;
                     list-style: none; }
 .sl-criteria-list li { display: inline-flex; align-items: baseline; gap: 6px;
@@ -279,7 +300,18 @@
                        background: var(--surface); font-size: 12.5px; }
 .sl-criteria-list li.is-top { border-color: var(--accent-deep); color: var(--ink); }
 .sl-criteria-list .num { font-weight: 700; color: var(--accent-ink); }
-.sl-readonly { margin-left: auto; }
+/* The two ranking controls, stacked at the right of the header. Same width
+   so the pair reads as one block rather than two loose buttons. */
+.sl-actions {
+  display: flex; flex-direction: column; align-items: stretch;
+  gap: 8px; flex: 0 0 auto;
+}
+.sl-actions .btn { justify-content: center; }
+.sl-readonly { text-align: center; padding: 10px 0 0; }
+@media (max-width: 620px) {
+  .sl-actions { flex-direction: row; flex-wrap: wrap; width: 100%; }
+  .sl-readonly { text-align: left; padding: 0; align-self: center; }
+}
 .sl-disclaimer { margin: 0 0 14px; padding: 12px 16px; font-size: 13px;
                  background: var(--surface-raised); border: 1px solid var(--rule);
                  border-top: 0; color: var(--ink-muted); }
@@ -563,7 +595,8 @@
 
 /* ---- ratio bars: grow from their own origin on first paint ---------- */
 
-.dash [data-grow] > span {
+.dash [data-grow] > span,
+.dash .pipe-fill[data-grow] {
   transform-origin: left center;
   animation: bar-grow 620ms var(--ease-out) both;
 }
@@ -577,12 +610,12 @@
 
 /* Pipeline bars build down the list, 45ms apart. Short enough to read as one
    gesture rather than a queue of separate animations. */
-.pipe-row:nth-child(1) [data-grow] > span { animation-delay: 0ms; }
-.pipe-row:nth-child(2) [data-grow] > span { animation-delay: 45ms; }
-.pipe-row:nth-child(3) [data-grow] > span { animation-delay: 90ms; }
-.pipe-row:nth-child(4) [data-grow] > span { animation-delay: 135ms; }
-.pipe-row:nth-child(5) [data-grow] > span { animation-delay: 180ms; }
-.pipe-row:nth-child(6) [data-grow] > span { animation-delay: 225ms; }
+.pipe-row:nth-child(1) [data-grow] { animation-delay: 0ms; }
+.pipe-row:nth-child(2) [data-grow] { animation-delay: 45ms; }
+.pipe-row:nth-child(3) [data-grow] { animation-delay: 90ms; }
+.pipe-row:nth-child(4) [data-grow] { animation-delay: 135ms; }
+.pipe-row:nth-child(5) [data-grow] { animation-delay: 180ms; }
+.pipe-row:nth-child(6) [data-grow] { animation-delay: 225ms; }
 
 /* ---- shortlist: the score column leaving and arriving ---------------- */
 
@@ -845,3 +878,322 @@
 @media (prefers-reduced-motion: reduce) {
   .dash .stage-band { animation: none; }
 }
+
+/* ============================================================
+   Shortlist zone
+
+   The one section on the dashboard that is not a status readout: everywhere
+   else reports what happened, this proposes an order and asks to be argued
+   with. It gets a ground of its own and a rule in the accent so the eye files
+   it separately — a change of paper, not a change of volume. Deliberately not
+   a card, a shadow or a coloured border box: the sheet this product is built
+   on separates things with a ground and a hairline.
+   ============================================================ */
+
+.shortlist-zone {
+  position: relative;
+  background: var(--surface-raised);
+  border-top: 2px solid var(--accent-ink);
+  /* Bleeds to the window edge so it reads as a band through the page rather
+     than a panel sitting on it. */
+  margin-inline: -20px;
+  padding-inline: 20px;
+}
+@media (min-width: 900px) {
+  .shortlist-zone { margin-inline: -40px; padding-inline: 40px; }
+}
+.shortlist-zone + .dash-section { border-top-color: var(--rule); }
+.shortlist-zone .panel,
+.shortlist-zone .sl-criteria,
+.shortlist-zone .sl-disclaimer { background: var(--surface); }
+.shortlist-zone .sl-criteria { background: var(--surface); }
+.shortlist-zone .sl-row:hover { background: var(--surface-raised); }
+
+/* ---- the posting picker, inside the heading -------------------------- */
+
+.sl-sep { color: var(--ink-subtle); margin-inline: 8px; font-weight: 400; }
+
+.sl-picker { position: relative; display: inline-flex; align-items: center; }
+.sl-picker select {
+  appearance: none; font: inherit; color: var(--accent-ink);
+  background: transparent; border: 0; border-bottom: 1px dashed var(--border-control);
+  padding: 2px 22px 2px 0; cursor: pointer; max-width: min(68vw, 30em);
+  text-overflow: ellipsis;
+}
+.sl-picker select:hover { border-bottom-color: var(--accent-ink); }
+.sl-picker select:focus-visible { outline: 2px solid var(--accent-deep); outline-offset: 3px; }
+.sl-picker-caret { position: absolute; right: 4px; display: flex;
+                   color: var(--accent-ink); pointer-events: none; }
+
+/* ---- the continuation row -------------------------------------------- */
+
+.sl-more-row { padding: 0; }
+.sl-more {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center;
+  gap: 14px; padding: 16px 18px; text-decoration: none;
+  background: var(--surface);
+  transition: background-color 130ms ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .sl-more:hover { background: var(--surface-sunken); }
+  .sl-more:hover .sl-more-go { color: var(--accent-ink); }
+}
+.sl-more:active { transform: scale(0.995); }
+.sl-more-n {
+  font-family: var(--font-googlesans), sans-serif;
+  font-variation-settings: "wght" 700, "GRAD" 120;
+  font-size: 20px; color: var(--accent-ink); min-width: 34px;
+}
+.sl-more-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sl-more-body > span:first-child { color: var(--ink); font-size: 14px; font-weight: 600; }
+.sl-more-peek { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sl-more-go { white-space: nowrap; transition: color 130ms ease; }
+
+.sl-unrankable-note { margin: 14px 0 0; font-size: 13px; color: var(--ink-muted);
+                      max-width: 54em; }
+.sl-unrankable-note a { color: var(--accent-ink); text-decoration: underline;
+                        text-underline-offset: 3px; }
+
+/* ---- /shortlists ------------------------------------------------------ */
+
+.sl-page { border-top: 0; }
+.slp-cards { display: grid; gap: 1px; background: var(--rule);
+             border: 1px solid var(--rule); }
+@media (min-width: 720px) { .slp-cards { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); } }
+.slp-card {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 5px;
+  padding: 18px; background: var(--surface); text-decoration: none;
+  border-top: 3px solid transparent;
+  transition: background-color 130ms ease, border-color 130ms ease;
+}
+/* The selected card inverts. Rather than overriding each colour inside it —
+   which is how the first pass produced a 3.3:1 number and a chip at 1.5:1 —
+   it re-points the ink tokens to the values the design system already
+   measured against a navy ground, and every child follows. One place to read,
+   one place to change, and nothing can be forgotten.
+
+     ink        #faf8f3  12.6:1      accent     #5bb47e   5.3:1
+     ink-muted  #c3d2e4   8.7:1      sunken     #142742
+     ink-subtle #9fb3cc   6.2:1
+*/
+.slp-card[data-on] {
+  /* Literal, not var(--ink): the tokens below are redefined in this same
+     rule, and a custom property used where it is being redefined resolves to
+     the NEW value — so `background: var(--ink)` painted the card in the
+     inverted ink colour and put #faf8f3 text on an #faf8f3 ground. */
+  background: #19304d;
+  border-top-color: var(--accent);
+
+  --ink:            #faf8f3;
+  --ink-muted:      #c3d2e4;
+  --ink-subtle:     #9fb3cc;
+  --accent:         #5bb47e;
+  --accent-ink:     #86cda2;
+  --surface:        #19304d;
+  --surface-raised: #22395a;
+  --surface-sunken: #142742;
+  --rule:           #3a5578;
+  --border-control: #8aa0bb;
+}
+.slp-card[data-on] .slp-card-title { color: var(--ink); }
+.slp-card[data-on] .slp-card-n     { color: var(--accent); }
+.slp-card[data-on] .readout        { color: var(--ink-subtle); }
+/* The neutral chip needs a ground that separates from navy, not a wash of it. */
+.slp-card[data-on] .chip-neutral   { background: #33486a; color: #dbe5f0; }
+
+/* Hover must not fight the selection. A lighter ground under inverted text is
+   how the first pass erased what little was readable. */
+@media (hover: hover) and (pointer: fine) {
+  .slp-card:not([data-on]):hover { background: var(--surface-raised); }
+}
+.slp-card[data-on]:hover { background: #19304d; }
+
+.slp-card { position: relative; }
+@media (hover: hover) and (pointer: fine) {
+  .slp-card:hover { background: var(--surface-raised); }
+}
+.slp-card:active { transform: scale(0.99); }
+.slp-card-title { font-weight: 600; color: var(--ink); font-size: 14px; line-height: 1.25; }
+.slp-card-n { font-size: 30px; color: var(--ink); }
+.slp-card[data-on] .slp-card-n { color: var(--accent-ink); }
+.slp-detail { margin-top: 26px; display: flex; flex-direction: column; gap: 0; }
+.slp-detail .dash-head { margin-bottom: 14px; }
+
+/* ---- pagination ------------------------------------------------------- */
+
+.slp-pager {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;
+  padding: 14px 0 0;
+}
+.slp-pager .btn:disabled { opacity: .4; cursor: default; }
+.slp-pager .btn:disabled:hover { background: transparent; color: var(--ink);
+                                 border-color: var(--border-control); }
+.slp-dots { display: flex; gap: 5px; margin-left: auto; }
+.slp-dot {
+  width: 7px; height: 7px; padding: 0; border: 0; border-radius: 2px;
+  background: var(--border-control); cursor: pointer;
+  transition: background-color 140ms ease, transform 140ms var(--ease-out);
+}
+.slp-dot[data-on] { background: var(--accent-ink); transform: scaleX(2.4); border-radius: 1px; }
+@media (hover: hover) and (pointer: fine) { .slp-dot:hover { background: var(--ink-muted); } }
+
+/* ---- not yet rankable ------------------------------------------------- */
+
+/* Was a flex row per person, which left two-thirds of a wide screen empty.
+   A grid of small cards fills the width and keeps each person's name, bar and
+   action together as one object instead of a line stretched across a page. */
+.sl-unrankable-grid {
+  margin: 0; padding: 0; list-style: none;
+  display: grid; gap: 1px; background: var(--rule);
+  border: 1px solid var(--rule);
+}
+@media (min-width: 640px) {
+  .sl-unrankable-grid { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+}
+.sl-unrankable-grid > li {
+  background: var(--surface); padding: 16px;
+  display: flex; flex-direction: column; gap: 9px; align-items: flex-start;
+}
+/* The flex shorthand this inherits was written for a row, where the 160px
+   basis meant width. These cards stack in a column, so the same basis lands
+   on the main axis and became a 160px-tall bar. Reset it. */
+.sl-unrankable-grid .sl-completeness { flex: none; width: 100%; height: 8px; }
+.sl-unrankable-grid .btn { margin-top: 2px; }
+
+.slp-detail .dash-head p { flex: 1 1 18em; }
+
+/* ---- the pin ---------------------------------------------------------- */
+
+/* Replaces the triangle. Same job — tie the card to what it opened — said in
+   the hand the rest of the site already uses. */
+.slp-pin {
+  position: absolute; top: 14px; right: 14px;
+  color: var(--accent);
+}
+/* Keeps the title clear of the mark on a narrow card. */
+.slp-card[data-on] .slp-card-title { padding-right: 34px; }
+
+/* ---- page head -------------------------------------------------------- */
+
+.slp-head {
+  display: flex; flex-direction: column; gap: 10px; align-items: flex-start;
+  padding-block: 44px 38px;
+}
+.slp-head h1 { font-size: clamp(38px, 5vw, 58px); line-height: 1; letter-spacing: .002em; }
+.slp-head p { margin: 0; font-size: 15.5px; line-height: 1.6;
+              color: var(--ink-muted); max-width: 40em; }
+.slp-head .pf-back { margin-bottom: 2px; }
+
+.sl-page { padding-block: 32px 44px; }
+.sl-page > .dash-head { margin-bottom: 20px; }
+.slp-cards { margin-bottom: 8px; }
+.slp-detail { margin-top: 38px; }
+.slp-detail .dash-head { margin-bottom: 16px; }
+.slp-detail .sl-criteria { margin-bottom: 0; }
+
+/* ---- pager rail ------------------------------------------------------- */
+
+.slp-pager { padding-top: 18px; gap: 12px 18px; }
+.slp-rail { display: flex; gap: 4px; margin-left: auto; align-items: center; }
+.slp-seg {
+  width: 26px; height: 4px; padding: 0; border: 0; border-radius: 0;
+  background: var(--border-control); opacity: .45; cursor: pointer;
+  transition: opacity 140ms ease, background-color 140ms ease;
+}
+.slp-seg[data-on] { background: var(--accent-ink); opacity: 1; }
+@media (hover: hover) and (pointer: fine) { .slp-seg:hover { opacity: .8; } }
+
+/* ---- not yet rankable, on this page ----------------------------------- */
+
+/* A category of its own, not a verdict. The semantic trio is spoken for —
+   positive, caution, critical all pass judgement — and none of them fits
+   "the profile is unfinished". This takes the map's blue instead: the colour
+   the system uses for things that describe rather than rate. */
+.sl-unrankable-page {
+  background: #eef4fa;
+  border: 1px solid #c9dcee;
+  border-left: 3px solid var(--series-4);
+  margin-top: 30px;
+  padding: 22px;
+}
+.sl-unrankable-page h3 { color: var(--ink); }
+.sl-unrankable-page > p { color: var(--ink-muted); max-width: 54em; }
+.sl-unrankable-page .sl-unrankable-grid { border-color: #c9dcee; background: #c9dcee; }
+.sl-unrankable-page .sl-unrankable-grid > li { background: var(--surface); }
+
+/* ---- foot ------------------------------------------------------------- */
+
+.slp-foot {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 12px 18px; margin-top: 30px; padding-top: 22px;
+  border-top: 1px solid var(--rule);
+}
+
+/* ---- pipeline: the leading candidate ----------------------------------
+   Two different facts were sharing a line — the candidate's score and how
+   many people are ranked — so "92  35 RANKED" read as one number followed by
+   another. The candidate lives here; the counts live under the chart, where
+   the chart is what they describe. */
+
+.pipe-lead {
+  display: flex; flex-direction: column; gap: 2px; align-items: flex-end;
+  text-decoration: none; padding: 8px 10px; margin: -8px -10px;
+  flex: 0 0 auto; max-width: 17em;
+  border-right: 2px solid transparent;
+  transition: background-color 130ms ease, border-color 130ms ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .pipe-lead:hover { background: var(--surface-sunken); border-right-color: var(--accent-ink); }
+  .pipe-lead:hover .pipe-lead-go { opacity: 1; transform: translateX(0); }
+}
+.pipe-lead:active { transform: scale(0.985); }
+.pipe-lead-name {
+  display: inline-flex; align-items: baseline; gap: 6px;
+  font-weight: 600; color: var(--ink); font-size: 14.5px;
+  max-width: 100%;
+}
+.pipe-lead-go {
+  color: var(--accent-ink); opacity: 0; transform: translateX(-3px);
+  transition: opacity 130ms ease, transform 130ms var(--ease-out);
+}
+/* The score gets its own line and its own label, so it cannot be mistaken
+   for a count of people. */
+.pipe-lead-score { display: inline-flex; align-items: baseline; gap: 5px; }
+.pipe-lead-score b {
+  font-family: var(--font-googlesans), sans-serif;
+  font-variation-settings: "wght" 700, "GRAD" 120;
+  font-size: 20px; color: var(--accent-ink); letter-spacing: 0;
+}
+@media (max-width: 640px) {
+  .pipe-lead { align-items: flex-start; max-width: none; border-right: 0;
+               border-left: 2px solid var(--rule); padding-left: 10px; margin-left: 0; }
+}
+
+/* ---- paging ----------------------------------------------------------- */
+
+/* Discreet and directional: the arriving page comes from the side it was
+   reached from, so the motion says "forward" or "back" rather than just
+   "something changed". 8px of travel and 240ms — enough to register at the
+   edge of attention, not enough to wait for.
+   A keyframe rather than a transition because the list remounts; nothing can
+   be interrupted mid-flight, so there is nothing to retarget. */
+.sl-list[data-dir] { animation: page-in 240ms var(--ease-out) both; }
+.sl-list[data-dir="back"] { animation-name: page-in-back; }
+
+@keyframes page-in      { from { opacity: 0; transform: translateX(8px); } }
+@keyframes page-in-back { from { opacity: 0; transform: translateX(-8px); } }
+
+/* The rail fills toward the segment you moved to, so the indicator reads as
+   travel along the list rather than a lamp switching on somewhere else. */
+.slp-seg { transform-origin: center; }
+.slp-seg[data-on] { animation: seg-on 260ms var(--ease-out) both; }
+@keyframes seg-on { from { transform: scaleX(.4); opacity: .5; } }
+
+.slp-reconcile { color: var(--ink-subtle); }
+
+@media (prefers-reduced-motion: reduce) {
+  /* Keep the fade, drop the travel. */
+  .dash .sl-list[data-dir] { animation: page-fade 180ms ease both; }
+  .dash .slp-seg[data-on] { animation: none; }
+}
+@keyframes page-fade { from { opacity: 0; } }

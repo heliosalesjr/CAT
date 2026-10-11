@@ -1,5 +1,6 @@
 import {
-  getInterviews, getPipeline, getQueue, getSchool, getShortlist, getSummary, getViewer,
+  getInterviews, getPipeline, getQueue, getSchool, getShortlistSummaries,
+  getSummary, getViewer,
 } from "@/lib/dashboard-data";
 import { HealthBar } from "@/components/dashboard/HealthBar";
 import { AttentionQueue } from "@/components/dashboard/AttentionQueue";
@@ -18,8 +19,6 @@ export const dynamic = "force-dynamic";
 const SCHOOL_ID = "sch_hangang";
 /** The prospect in the empty state is not Hangang; it has no records at all. */
 const PROSPECT = { school: "Riverbend International Academy", name: "Amara Osei", title: "Director of HR" };
-/** The posting the queue is worst on — the one the shortlist opens to. */
-const FOCUS_POSTING = "job_his_mathco";
 
 export default async function SchoolDashboard({
   searchParams,
@@ -42,7 +41,7 @@ export default async function SchoolDashboard({
   const queue = getQueue(SCHOOL_ID);
   const pipeline = getPipeline(SCHOOL_ID);
   const interviews = getInterviews(SCHOOL_ID);
-  const shortlist = getShortlist(FOCUS_POSTING);
+  const shortlists = getShortlistSummaries(SCHOOL_ID);
 
   return (
     <main className="dash-wrap">
@@ -52,9 +51,8 @@ export default async function SchoolDashboard({
       <HealthBar summary={summary} />
       <AttentionQueue items={queue} />
       <Pipeline rows={pipeline} canSeeSalary={viewer.can("view_salary")} />
-      <Shortlist data={shortlist}
-                 canEditCriteria={viewer.can("edit_ranking_criteria")}
-                 canSeeDocuments={viewer.can("view_documents")} />
+      <Shortlist summaries={shortlists}
+                 canEditCriteria={viewer.can("edit_ranking_criteria")} />
       <Interviews rows={interviews} leadTimezone={school.timezone} perspective="school" />
       <Analytics summary={summary} />
 
