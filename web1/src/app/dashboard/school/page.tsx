@@ -55,7 +55,7 @@ export default async function SchoolDashboard({
       <Shortlist data={shortlist}
                  canEditCriteria={viewer.can("edit_ranking_criteria")}
                  canSeeDocuments={viewer.can("view_documents")} />
-      <Interviews rows={interviews} schoolTimezone={school.timezone} />
+      <Interviews rows={interviews} leadTimezone={school.timezone} perspective="school" />
       <Analytics summary={summary} />
 
       {/* Billing belongs to whoever holds manage_billing. For everyone else

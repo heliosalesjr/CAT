@@ -23,7 +23,18 @@ export const AS_OF = new Date(bundle.schoolDashboardSummary[0].asOf);
 type Teacher = {
   id: string; firstName: string; lastName: string; headline: string;
   currentCity: string; currentCountry: string; timezone: string;
+  currentSchool: string | null; nationality: string | null;
   profileCompleteness: number; yearsExperience: number; leadershipYears: number;
+  avatarUrl: string | null;
+};
+type Doc = {
+  id: string; teacherId: string; type: string; status: string;
+  expiresOn: string | null; rejectionReason: string | null;
+};
+type Ref = {
+  id: string; teacherId: string; refereeName: string; refereeTitle: string | null;
+  refereeSchool: string | null; relationship: string; status: string;
+  requestedAt: string; respondedAt: string | null;
 };
 type Posting = {
   id: string; schoolId: string; title: string; status: string;
@@ -31,12 +42,14 @@ type Posting = {
   rankingCriteria: string[]; aiRankingEnabled: boolean;
   salaryMinUsd: number | null; salaryMaxUsd: number | null;
   openingsAvailable: number; likelihood: string; applyByDate: string | null;
+  startDate: string | null;
 };
 type Application = {
   id: string; teacherId: string; jobPostingId: string; stage: string;
   daysSinceStageChange: number; schoolOwesResponse: boolean; appliedAt: string;
   aiRankScore: number | null; rankable: boolean; notRankableReason: string | null;
   criterionScores: Record<string, number>; criterionNotes: Record<string, string>;
+  rejectionReason: string | null;
 };
 type Interview = {
   id: string; applicationId: string; teacherId: string; schoolId: string;
@@ -44,6 +57,17 @@ type Interview = {
   durationMinutes: number; schoolTimezone: string; teacherTimezone: string;
   structuredFeedback: unknown | null;
 };
+export type TeacherSummary = {
+  teacherId: string; asOf: string; profileCompleteness: number;
+  readiness: { profile: number; documents: number; references: number; overall: number };
+  activeApplications: number; offersOpen: number; interviewsNext7Days: number;
+  schoolsOwingResponse: number;
+  blockers: { kind: string; severity: "critical" | "warning" | "info";
+              entityId: string; label: string; actionLabel: string }[];
+  recommendedJobs: { jobPostingId: string; matchScore: number; whyShown: string[] }[];
+  savedJobIds: string[];
+};
+
 type Bundle = {
   criteriaCatalog: { id: string; label: string; shortLabel: string }[];
   rankingModel: { weightsByCount: Record<string, number[]> };
@@ -54,7 +78,10 @@ type Bundle = {
   jobPostings: Posting[];
   applications: Application[];
   interviews: Interview[];
+  documents: Doc[];
+  references: Ref[];
   schoolDashboardSummary: Summary[];
+  teacherDashboardSummary: TeacherSummary[];
 };
 export type Summary = {
   schoolId: string; asOf: string; openPostings: number; draftPostings: number;
@@ -359,4 +386,128 @@ function tzOffsetHours(at: Date, timeZone: string) {
 
 export function formatIn(at: Date, timeZone: string, opts: Intl.DateTimeFormatOptions = {}) {
   return new Intl.DateTimeFormat("en-GB", { timeZone, ...opts }).format(at);
+}
+
+/* ==================================================================
+   Teacher side
+   ================================================================== */
+
+export type TeacherDoc = {
+  id: string; type: string; status: string;
+  expiresOn: string | null; daysUntilExpiry: number | null;
+  rejectionReason: string | null;
+};
+
+export type TeacherRef = {
+  id: string; refereeName: string; refereeTitle: string | null;
+  refereeSchool: string | null; relationship: string; status: string;
+  daysWaiting: number | null;
+};
+
+export type TeacherApplication = {
+  id: string; stage: string; stageIndex: number; daysSinceStageChange: number;
+  schoolOwesResponse: boolean; rejectionReason: string | null;
+  posting: string; school: string; city: string; country: string;
+  startDate: string | null; applyByDate: string | null;
+  salaryMinUsd: number | null; salaryMaxUsd: number | null;
+};
+
+export type JobCard = {
+  id: string; title: string; school: string; city: string; country: string;
+  startDate: string | null; applyByDate: string | null;
+  salaryMinUsd: number | null; salaryMaxUsd: number | null;
+  matchScore?: number; whyShown?: string[];
+};
+
+export function getTeacher(id: string) {
+  return bundle.teachers.find((t) => t.id === id)!;
+}
+
+/** The full record, for the profile form. */
+export function getTeacherRecord(id: string): Record<string, unknown> {
+  return bundle.teachers.find((t) => t.id === id) as unknown as Record<string, unknown>;
+}
+
+export function getTeacherSummary(id: string): TeacherSummary {
+  return bundle.teacherDashboardSummary.find((s) => s.teacherId === id)!;
+}
+
+export function getTeacherDocuments(id: string): TeacherDoc[] {
+  const order = ["passport", "diploma", "teaching_certificate", "transcript",
+                 "reference_letter", "background_check"];
+  return bundle.documents
+    .filter((d) => d.teacherId === id)
+    .map((d) => ({
+      id: d.id, type: d.type, status: d.status,
+      expiresOn: d.expiresOn ?? null,
+      // Recomputed, never read from the bundle: daysUntilExpiry there was
+      // frozen on the generation date and is wrong on any other day.
+      daysUntilExpiry: d.expiresOn ? daysBetween(AS_OF, new Date(d.expiresOn)) : null,
+      rejectionReason: d.rejectionReason ?? null,
+    }))
+    .sort((a, b) => order.indexOf(a.type) - order.indexOf(b.type));
+}
+
+export function getTeacherReferences(id: string): TeacherRef[] {
+  return bundle.references
+    .filter((r) => r.teacherId === id)
+    .map((r) => ({
+      id: r.id, refereeName: r.refereeName, refereeTitle: r.refereeTitle ?? null,
+      refereeSchool: r.refereeSchool ?? null, relationship: r.relationship,
+      status: r.status,
+      daysWaiting: r.respondedAt ? null : daysBetween(new Date(r.requestedAt), AS_OF),
+    }));
+}
+
+export function getTeacherApplications(id: string): TeacherApplication[] {
+  const order = ["applied", "screening", "interview", "offer"];
+  return bundle.applications
+    .filter((a) => a.teacherId === id)
+    .map((a) => {
+      const j = bundle.jobPostings.find((p) => p.id === a.jobPostingId)!;
+      const s = bundle.schools.find((x) => x.id === j.schoolId)!;
+      return {
+        id: a.id, stage: a.stage, stageIndex: order.indexOf(a.stage),
+        daysSinceStageChange: a.daysSinceStageChange,
+        schoolOwesResponse: a.schoolOwesResponse,
+        rejectionReason: a.rejectionReason ?? null,
+        posting: j.title, school: s.name, city: s.city, country: s.country,
+        startDate: j.startDate, applyByDate: j.applyByDate,
+        salaryMinUsd: j.salaryMinUsd, salaryMaxUsd: j.salaryMaxUsd,
+      };
+    })
+    .sort((a, b) => b.stageIndex - a.stageIndex);
+}
+
+export function getJobCards(ids: string[]): JobCard[] {
+  return ids.map((id) => {
+    const j = bundle.jobPostings.find((p) => p.id === id)!;
+    const s = bundle.schools.find((x) => x.id === j.schoolId)!;
+    return {
+      id: j.id, title: j.title, school: s.name, city: s.city, country: s.country,
+      startDate: j.startDate, applyByDate: j.applyByDate,
+      salaryMinUsd: j.salaryMinUsd, salaryMaxUsd: j.salaryMaxUsd,
+    };
+  });
+}
+
+/** The teacher's own interviews, with their clock leading. */
+export function getTeacherInterviews(teacherId: string): InterviewRow[] {
+  return bundle.interviews
+    .filter((i) => i.teacherId === teacherId && i.status !== "completed" && i.status !== "cancelled")
+    .map((i) => {
+      const s = bundle.schools.find((x) => x.id === i.schoolId)!;
+      const at = new Date(i.startsAtUtc);
+      return {
+        id: i.id, who: s.name, round: i.roundName, status: i.status,
+        startsAtUtc: i.startsAtUtc, durationMinutes: i.durationMinutes,
+        // Swapped on purpose: on this side the teacher's zone is the one that
+        // leads, and the school's is the counterpart.
+        schoolTimezone: i.teacherTimezone, teacherTimezone: i.schoolTimezone,
+        offsetHours: tzOffsetHours(at, i.schoolTimezone) - tzOffsetHours(at, i.teacherTimezone),
+        teacherCity: s.city,
+        daysAway: daysBetween(AS_OF, at),
+      };
+    })
+    .sort((a, b) => +new Date(a.startsAtUtc) - +new Date(b.startsAtUtc));
 }

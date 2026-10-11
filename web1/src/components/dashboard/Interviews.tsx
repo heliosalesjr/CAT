@@ -9,7 +9,14 @@ import { formatIn, type InterviewRow } from "@/lib/dashboard-data";
  * a Doha candidate on a Seoul calendar: 23:00 UTC on the 14th is a civilised
  * 08:00 in Seoul and 02:00 in Doha.
  */
-export function Interviews({ rows, schoolTimezone }: { rows: InterviewRow[]; schoolTimezone: string }) {
+export function Interviews({
+  rows, leadTimezone, perspective = "school",
+}: {
+  rows: InterviewRow[];
+  /** The viewer's own zone — the one shown large. */
+  leadTimezone: string;
+  perspective?: "school" | "teacher";
+}) {
   if (!rows.length) {
     return (
       <section className="dash-section">
@@ -23,13 +30,19 @@ export function Interviews({ rows, schoolTimezone }: { rows: InterviewRow[]; sch
     <section className="dash-section" aria-labelledby="interviews">
       <div className="dash-head">
         <h2 id="interviews">Upcoming interviews</h2>
-        <span className="readout">School time is {schoolTimezone.split("/")[1].replace("_", " ")}</span>
+        <span className="readout">
+          Times shown in {leadTimezone.split("/")[1].replace("_", " ")} — yours
+        </span>
       </div>
 
       <div className="panel panel-rows">
         {rows.map((r) => {
           const at = new Date(r.startsAtUtc);
-          const unsocial = isUnsocial(at, r.teacherTimezone);
+          // Flag whichever side the slot lands badly for, and say which. On the
+          // teacher's own page the 02:00 is HIS 02:00, and calling that "night
+          // for them" would be exactly backwards.
+          const mine = isUnsocial(at, r.schoolTimezone);
+          const theirs = isUnsocial(at, r.teacherTimezone);
           return (
             <article key={r.id} className="iv-row">
               <div className="iv-when">
@@ -50,10 +63,16 @@ export function Interviews({ rows, schoolTimezone }: { rows: InterviewRow[]; sch
                     {formatIn(at, r.teacherTimezone, { hour: "2-digit", minute: "2-digit", hour12: false })}
                   </strong>{" "}
                   in {r.teacherCity} — {offsetWords(r.offsetHours)}
-                  {unsocial && (
+                  {mine && (
+                    <span className="chip chip-critical iv-flag">
+                      <span className="dot" style={{ background: "currentColor" }} />
+                      {mine} for you
+                    </span>
+                  )}
+                  {theirs && (
                     <span className="chip chip-caution iv-flag">
                       <span className="dot" style={{ background: "currentColor" }} />
-                      {unsocial}
+                      {theirs} for {perspective === "school" ? "them" : "the school"}
                     </span>
                   )}
                 </span>
@@ -76,10 +95,10 @@ function offsetWords(h: number) {
   return `${n}h ${h > 0 ? "ahead of" : "behind"} you`;
 }
 
-/** Flags a slot that lands outside waking hours for the candidate. */
+/** Names a slot that lands outside waking hours in the given zone. */
 function isUnsocial(at: Date, tz: string) {
   const hour = Number(formatIn(at, tz, { hour: "2-digit", hour12: false }));
-  if (hour >= 22 || hour < 6) return "Night for them";
-  if (hour < 8) return "Very early for them";
+  if (hour >= 22 || hour < 6) return "Night";
+  if (hour < 8) return "Very early";
   return null;
 }
