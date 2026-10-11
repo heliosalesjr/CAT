@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Archivo, Google_Sans } from "next/font/google";
+import { Archivo } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
 /**
@@ -11,28 +12,31 @@ import "./globals.css";
  * small type read as cartography rather than as UI chrome.
  */
 
-/* Loaded through next/font, which self-hosts the files from this
-   origin. That matters now that it is the shipping heading face:
-   no DNS and TLS round trip to fonts.gstatic.com before the hero can
-   paint, and no third-party request at all — this site serves
-   international schools, so European visitors are the norm and
-   Google Fonts CDN calls are the kind of thing their data officers
-   ask about.
+/* Loaded from a file in this repo rather than through next/font/google.
+   Same self-hosting either way — next/font/google downloads the face at build
+   time and serves it from this origin too — but the local loader reads the
+   fallback metrics out of the file instead of looking the family up in a table
+   that has no entry for it. That lookup is the sole source of the "Failed to
+   find font override values for font `Google Sans`" line Next printed on every
+   compile, and `adjustFontFallback: false` does not silence it under Turbopack.
 
-   The cost is one line on every compile: "Failed to find font
-   override values for font `Google Sans`". Next has no metrics for
-   this family, so it cannot build the fallback face that masks
-   layout shift while the real one loads. It is a warning, not an
-   error, and `adjustFontFallback: false` does not silence it under
-   Turbopack. To trade self-hosting for a quiet terminal, drop this
-   and load the family with a <link> to fonts.googleapis.com. */
-const googleSans = Google_Sans({
+   The warning was cosmetic; what it was failing to build is not. Without those
+   metrics there is no stand-in face matched to Google Sans's proportions, so
+   headings jump when the real file arrives. This produces it properly.
+
+   Licence is OFL — see src/app/fonts/README.md for provenance and how to
+   refresh the file. */
+const googleSans = localFont({
+  src: [{ path: "./fonts/GoogleSans-latin.woff2", weight: "400 700", style: "normal" }],
   variable: "--font-googlesans",
-  subsets: ["latin"],
   display: "swap",
-  /* Weight stops at 700, so headings get their extra mass from GRAD
-     instead; see the type scale in globals.css. */
-  axes: ["GRAD"],
+  /* Arial's metrics are the closest of the two stand-ins Next offers, and
+     naming one is what makes the fallback face get built at all. */
+  adjustFontFallback: "Arial",
+  /* The latin subset's own range. Declaring it lets the browser fall back
+     per glyph for anything outside it, instead of assuming full coverage and
+     rendering tofu. */
+  declarations: [{ prop: "unicode-range", value: "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD" }],
 });
 
 const archivo = Archivo({
