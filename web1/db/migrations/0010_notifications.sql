@@ -8,8 +8,11 @@ CREATE TABLE notifications (
   recipient_type text NOT NULL CHECK (recipient_type IN ('candidate','school_user')),
   recipient_id   text NOT NULL,
   kind           text NOT NULL,
+  -- Four values, not three: the bundle has no severity enum to copy, and it
+  -- uses 'success' as well ("moved you to Offer"). A notification feed that
+  -- cannot say good news is the wrong shape for a two-sided product.
   severity       text NOT NULL DEFAULT 'info'
-                 CHECK (severity IN ('info','warning','critical')),
+                 CHECK (severity IN ('info','success','warning','critical')),
   title          text NOT NULL,
   body           text,
   action_url     text,

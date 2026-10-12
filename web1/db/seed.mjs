@@ -100,6 +100,26 @@ function preflight() {
     if (new Set(j.rankingCriteria).size !== j.rankingCriteria.length)
       note(`${j.id}: duplicate criteria`);
   }
+  // Salary ranges, against the CHECK constraints in 0003 and 0004. 30 of the
+  // 136 candidates carry min > max — generated as two independent draws from
+  // the same pool rather than as an ordered pair — and the database refuses
+  // every one of them. Listed rather than corrected here: the bundle is the
+  // schema contract and fixing it is the generator's job, not the loader's.
+  const inverted = data.teachers.filter((t) =>
+    t.salaryExpectationMinUsd != null && t.salaryExpectationMaxUsd != null &&
+    t.salaryExpectationMaxUsd < t.salaryExpectationMinUsd);
+  if (inverted.length)
+    note(`${inverted.length} candidate(s) expect a salary range that runs backwards ` +
+         `(min > max), which 0003 refuses: ` +
+         inverted.slice(0, 5).map((t) => `${t.id} ${t.salaryExpectationMinUsd}>${t.salaryExpectationMaxUsd}`).join(', ') +
+         (inverted.length > 5 ? `, +${inverted.length - 5} more` : ''));
+  for (const j of data.jobPostings) {
+    if (j.salaryMinUsd != null && j.salaryMaxUsd != null && j.salaryMaxUsd < j.salaryMinUsd)
+      note(`${j.id}: salary range runs backwards (${j.salaryMinUsd} > ${j.salaryMaxUsd})`);
+    if (j.applyByDate && j.startDate && j.applyByDate > j.startDate)
+      note(`${j.id}: applyByDate ${j.applyByDate} is after startDate ${j.startDate}`);
+  }
+
   for (const u of data.schoolUsers) if (!S.has(u.schoolId)) note(`${u.id}: unknown school ${u.schoolId}`);
   for (const s of data.schools) if (s.planId && !P.has(s.planId)) note(`${s.id}: unknown plan ${s.planId}`);
   for (const d of data.documents) if (!T.has(d.teacherId)) note(`${d.id}: unknown candidate ${d.teacherId}`);
@@ -180,6 +200,38 @@ await client.connect();
 const nz = (v) => (v === undefined ? null : v);
 const arr = (v) => (Array.isArray(v) ? v : []);
 
+// ---------------------------------------------------------------------------
+// Decisions 3 and 4 (db/DECISIONS.md): a candidate says what kind of post they
+// want and may want more than one, and work that is not a taught subject is a
+// specialism rather than a subject.
+//
+// The bundle carries neither field — it predates both questions — so the seed
+// derives them from what it does carry. The bundle itself is untouched, and
+// these two values stay a reading of it: the day the profile form asks the
+// question outright, this derivation is deleted rather than migrated.
+//
+// `Counseling` and `Learning Support` also stay in `subjects`, where the
+// bundle put them, because the counsellor posting matches on subjects and
+// rewriting the bundle would break the de-facto schema contract. A profile
+// filled in after this change carries the specialism and no subject.
+// ---------------------------------------------------------------------------
+const SPECIALISMS = new Set(['Counseling', 'Learning Support']);
+
+const specialismsOf = (x) => arr(x.subjects).filter((s) => SPECIALISMS.has(s));
+
+function roleFamiliesOf(t) {
+  const subjects = arr(t.subjects);
+  const families = new Set();
+  if (subjects.some((s) => !SPECIALISMS.has(s))) families.add('teacher');
+  if (subjects.some((s) => SPECIALISMS.has(s))) families.add('support_staff');
+  if ((t.leadershipYears ?? 0) > 0) families.add('administrator');
+  // A profile with nothing to go on declares teaching rather than nothing:
+  // no declaration means unfiltered (see candidate_seeks_posting), and an
+  // empty set would be indistinguishable from never having been asked.
+  if (!families.size) families.add('teacher');
+  return [...families];
+}
+
 async function insert(table, rows, map) {
   if (!rows.length) return 0;
   const cols = Object.keys(map(rows[0]));
@@ -191,7 +243,8 @@ async function insert(table, rows, map) {
 
 const SEEDED = ['document_access_log', 'audit_log', 'notifications', 'messages', 'super_likes',
   'interviews', 'references_', 'documents', 'application_stage_history', 'applications',
-  'job_postings', 'criteria_catalog', 'school_user_grants', 'school_users', 'candidates',
+  'job_postings', 'criteria_catalog', 'school_user_grants', 'school_users',
+  'candidate_role_families', 'candidates',
   'subscriptions', 'schools', 'plans', 'platform_settings'];
 
 /** The bundle's word for the person, in the schema's vocabulary. */
@@ -262,7 +315,8 @@ try {
     avatar_url: t.avatarUrl, intro_video_url: t.introVideoUrl, linkedin_url: t.linkedinUrl,
     current_school: t.currentSchool, current_city: t.currentCity, current_country: t.currentCountry,
     timezone: t.timezone, nationality: t.nationality, nationalities: arr(t.nationalities),
-    languages: arr(t.languages), subjects: arr(t.subjects), grade_levels: arr(t.gradeLevels),
+    languages: arr(t.languages), subjects: arr(t.subjects),
+    specialisms: specialismsOf(t), grade_levels: arr(t.gradeLevels),
     curriculum_experience: arr(t.curriculumExperience), regions_worked: arr(t.regionsWorked),
     preferred_regions: arr(t.preferredRegions), highest_degree: t.highestDegree,
     degree_field: t.degreeField, years_experience: t.yearsExperience ?? 0,
@@ -276,6 +330,11 @@ try {
     profile_visibility: t.profileVisibility ?? 'public', premium_member: t.premiumMember ?? false,
     last_active_at: t.lastActiveAt, created_at: t.createdAt ?? new Date().toISOString(),
   }));
+
+  const declarations = data.teachers.flatMap((t) =>
+    roleFamiliesOf(t).map((family) => ({ candidate: t.id, family })));
+  n.candidate_role_families = await insert('candidate_role_families', declarations,
+    (d) => ({ candidate_id: d.candidate, role_family: d.family }));
 
   // partner_candidate_id is a self-reference, so it waits for every row to exist.
   let couples = 0;
@@ -292,7 +351,8 @@ try {
 
   n.job_postings = await insert('job_postings', data.jobPostings, (j) => ({
     id: j.id, school_id: j.schoolId, created_by_id: j.createdById, title: j.title,
-    role_family: j.roleFamily ?? 'teacher', subjects: arr(j.subjects), division: j.division,
+    role_family: j.roleFamily ?? 'teacher', subjects: arr(j.subjects),
+    specialisms: specialismsOf(j), division: j.division,
     grade_levels: arr(j.gradeLevels), curriculum_required: arr(j.curriculumRequired),
     employment_type: j.employmentType ?? 'full_time', academic_year: j.academicYear,
     status: j.status, likelihood: j.likelihood ?? 'definite', apply_by_date: j.applyByDate,
@@ -303,7 +363,7 @@ try {
     screening_questions: JSON.stringify(j.screeningQuestions ?? []),
     salary_min_usd: j.salaryMinUsd, salary_max_usd: j.salaryMaxUsd,
     housing_provided: j.housingProvided ?? false,
-    dependent_tuition_covered: j.dependentTuitionCovered ?? false,
+    dependent_tuition_covered: j.dependentTuitionCovered ?? 0,
     ranking_criteria: j.rankingCriteria, previous_ranking_criteria: j.previousRankingCriteria,
     ranking_criteria_updated_at: j.rankingCriteriaUpdatedAt,
     ranking_criteria_updated_by_id: j.rankingCriteriaUpdatedById,
@@ -449,6 +509,24 @@ try {
     `SELECT count(*) FROM documents WHERE storage_key IS NOT NULL
        AND storage_key NOT LIKE 'sensitive/%'`, 0);
   await one('per-user permission deltas recorded', 'SELECT count(*) FROM school_user_grants', grants.length);
+  await one('role families declared', 'SELECT count(*) FROM candidate_role_families',
+    declarations.length);
+  await one('candidates declaring no role family',
+    `SELECT count(*) FROM candidates c
+     WHERE NOT EXISTS (SELECT 1 FROM candidate_role_families f WHERE f.candidate_id = c.id)`, 0);
+  await one('candidates wanting more than one kind of post',
+    `SELECT count(*) FROM (SELECT candidate_id FROM candidate_role_families
+                           GROUP BY candidate_id HAVING count(*) > 1) m`,
+    data.teachers.filter((t) => roleFamiliesOf(t).length > 1).length);
+  // Decision 4 is only real if a non-teaching profile is describable: these
+  // are the people the NOT NULL subjects column was said to exclude.
+  await one('student-support candidates with a specialism',
+    `SELECT count(*) FROM candidates c
+     WHERE candidate_seeks(c.id, 'support_staff') AND c.specialisms <> '{}'`,
+    data.teachers.filter((t) => roleFamiliesOf(t).includes('support_staff')).length);
+  await one('support postings naming no specialism',
+    `SELECT count(*) FROM job_postings
+     WHERE role_family = 'support_staff' AND specialisms = '{}'`, 0);
   await one("usr_cai_principal's effective permissions",
     `SELECT count(*) FROM school_user_effective_permissions WHERE school_user_id = 'usr_cai_principal'`,
     data.schoolUsers.find((u) => u.id === 'usr_cai_principal').permissions.length);

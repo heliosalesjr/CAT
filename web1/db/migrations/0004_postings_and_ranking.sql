@@ -41,7 +41,12 @@ CREATE TABLE job_postings (
   salary_min_usd         int,
   salary_max_usd         int,
   housing_provided       boolean NOT NULL DEFAULT false,
-  dependent_tuition_covered boolean NOT NULL DEFAULT false,
+  -- A COUNT, not a flag. The bundle carries 1 or 2 — international schools
+  -- cover tuition for one or two children — and the offer panel already
+  -- compares it against candidates.dependents to say "you have 2; 1 is
+  -- covered". As a boolean this column refused the bundle outright.
+  dependent_tuition_covered int NOT NULL DEFAULT 0
+    CHECK (dependent_tuition_covered >= 0),
 
   -- Ranking. The list is ORDERED; position 1 is the top priority.
   ranking_criteria       text[] NOT NULL,

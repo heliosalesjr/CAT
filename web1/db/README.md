@@ -13,6 +13,7 @@ npm run db:migrate        # apply pending migrations
 npm run db:seed:check     # validate docs/mock-data.json, no database needed
 npm run db:seed           # load the bundle (one transaction)
 npm run db:reset          # truncate the seeded tables, then load
+npm run db:check          # assert the six actor decisions, then roll back
 ```
 
 `db:reset` refuses to run unless `ALLOW_RESET=1`, so a production URL cannot be
@@ -33,6 +34,14 @@ truncated by a stray flag.
 | `0009_billing` | plans and subscriptions; the plan as a ranking ceiling |
 | `0010_notifications` | notification feed |
 | `0011_audit_and_privacy` | audit log, data export and deletion requests |
+| `0012_candidate_role_families` | what kind of post a candidate wants; **specialisms**, so a non-teacher is describable |
+| `0013_referee_access` | the referee's **one-time link** — hashed, expiring, single-use |
+| `0014_platform_staff` | the founders as an actor, and an **append-only** access log |
+
+`0012`–`0014` implement the six actor decisions recorded in
+[`DECISIONS.md`](DECISIONS.md). Two of the six (permissions as a role template
+plus a per-person delta, one person per school) were already what `0002` did,
+so they add no DDL — read that file before reopening any of them.
 
 Each file carries its own `BEGIN`/`COMMIT`, so a failure rolls that file back
 on its own and leaves `schema_migrations` untouched.
@@ -62,6 +71,27 @@ is the whole rule; `document_access_log` records every signed URL issued, and
 refuses to record one the rule would have denied. `storage_key` is constrained
 to the `sensitive/` prefix and is never returned to a client.
 
+## Two more things it enforces rather than documents
+
+**A referee's link is a credential.** `reference_access_tokens.token_sha256`
+takes nothing but a 64-character hex digest, so the plaintext link cannot be
+written there by accident — it exists in the outbound email and nowhere else.
+Every token expires, every token is single-use, and `reference_token_issue()`
+revokes the live one as it issues a replacement, so "resend" cannot leave two
+working links behind. Opening the form is not answering it: that is
+`reference_token_resolve()`, which records `first_opened_at` and consumes
+nothing. Phase 1 stores and does not verify, so `reference_answer()` refuses to
+record `verified` at all.
+
+**The access logs are append-only.** `document_access_log` and `audit_log`
+refuse UPDATE and DELETE from a trigger, not by convention. The one permitted
+edit is the anonymisation `0011` needs — stamping `subject_anonymised_at` and
+clearing `ip` and `user_agent` with it — and the trigger compares the rest of
+the row to make sure that is all it does. `TRUNCATE` is a statement, not a row
+operation, so `db:reset` still works on a scratch branch. This is the condition
+the founders attached to seeing everything: a superuser whose looks are logged
+is only worth anything if the log is not editable by that same superuser.
+
 ## Naming
 
 The bundle is camelCase; these columns are snake_case. Postgres folds unquoted
@@ -77,12 +107,45 @@ The bundle stores several values that were computed on its generation date:
 wrong on every other day. Counters that are expensive to recompute per request
 — `application_count`, `documents_verified` — are kept by trigger instead.
 
-## Not verified against a live server
+## What has actually been run
 
-These migrations parse cleanly under the real Postgres parser, plpgsql function
-bodies included, and the seed's pre-flight passes against the bundle. Nothing
-has been executed: there is no Postgres or Docker on this machine. Run
-`npm run db:migrate` against a scratch Neon branch before trusting it.
+All fourteen migrations have been applied, in order, to a real PostgreSQL
+16.2 — and the bundle loaded into it, all 155 applications and 192 role-family
+declarations, with every post-load check passing. `npm run db:check` then
+asserts the six actor decisions behave (46 assertions, mostly about what the
+database *refuses*), inside a transaction it rolls back.
+
+That run is what turned up the three defects below, none of which the parser or
+the pre-flight could see. It is not a substitute for a scratch Neon branch:
+Neon's own version, extensions and connection limits are untested here, and so
+is anything about pooling.
+
+```bash
+npm run db:migrate && npm run db:seed && npm run db:check
+```
+
+### Three things a live server found
+
+**`dependent_tuition_covered` was a boolean** in `0004` and the bundle carries
+`1` or `2` — international schools cover tuition for one or two children, and
+`OfferPanel.tsx` already compares the number against `candidates.dependents` to
+say "you have 2; 1 is covered". Every posting was refused on insert. Now an
+`int`. `0004` was edited in place rather than patched by a later migration,
+because nothing had been applied anywhere: this is the cheap afternoon the
+`Teacher` → `Candidate` rename was also caught in.
+
+**`notifications.severity` allowed three values** and the bundle uses four — it
+has no severity enum to copy from, and `success` ("moved you to Offer") was
+missed. A notification feed that cannot carry good news is the wrong shape for
+this product. Fixed in `0010`.
+
+**Thirty of the 136 candidates expect a salary range that runs backwards**
+(`min > max` — `tch_0018` wants 60000–50000). The CHECK in `0003` is right and
+the bundle is wrong: the generator drew two numbers from one pool instead of an
+ordered pair. The pre-flight now lists them and refuses the load, because
+`docs/mock-data.json` is the schema contract and quietly swapping values in the
+loader would hide a generator bug that will come back. **This is the one open
+blocker: the bundle cannot be seeded until those thirty rows are regenerated.**
 
 ## Teacher, Candidate
 
@@ -91,6 +154,17 @@ leadership or student-support roles — a coordinator, a head of science, a
 counsellor — and the people applying to them do not all teach. `teacher` is
 still a value of `role_family`, where it means a classroom teaching post; it
 is no longer the name of the person.
+
+The bundle also predates decisions 3 and 4, so it carries neither a declared
+role family nor a specialism. `db/seed.mjs` derives both from what it does
+carry — a subject outside `{Counseling, Learning Support}` means teaching,
+`leadershipYears > 0` means leadership, and those two subjects are a specialism
+— which produces 192 declarations for 136 candidates, 56 of whom want more than
+one kind of post. The two values stay a *reading* of the bundle: the day the
+profile form asks the question outright, the derivation is deleted rather than
+migrated. Those subjects also stay in `subjects`, where the bundle put them,
+because the counsellor posting matches on subjects and rewriting the bundle
+would break the de-facto schema contract.
 
 `docs/mock-data.json` has not been changed and still uses `teachers` and
 `teacherId`. `db/seed.mjs` is the only place the two vocabularies meet: it

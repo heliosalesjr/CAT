@@ -80,14 +80,23 @@ Schools must be able to turn ranking off entirely and view candidates unordered.
 
 ## Core entities
 
-`School` (has many `User` with roles hr / principal / coordinator) · `Teacher` ·
+`School` (has many `User` with roles hr / principal / coordinator, each belonging to exactly
+one school) · `Candidate` — **not** `Teacher`: a third of the postings are leadership or
+student-support roles and not everyone who applies teaches. `teacher` survives as a value of
+`role_family`, where it means a classroom post. A candidate declares one or more role families
+and may carry a `specialism` instead of subjects ·
 `JobPosting` (belongs to School, tied to a Plan tier, carries `rankingCriteria`) ·
-`Application` (Teacher + JobPosting; mandatory stages applied → screening → interview → offer →
-hired/rejected/withdrawn; carries `criterionScores` and `criterionNotes`) ·
+`Application` (Candidate + JobPosting; mandatory stages applied → screening → interview →
+offer → hired/rejected/withdrawn; carries `criterionScores` and `criterionNotes`) ·
 `Document` (diploma / teaching_certificate / passport / transcript / background_check /
 reference_letter) · `Reference` (with verification status) · `Interview` (linked to a Google
 Calendar event) · `Message` (governed by rule 1) · `Plan` / `Subscription` (Stripe) ·
 `Notification`
+
+Two actors have no account and still change things: a `Referee` reaches the product through a
+one-time link, and `PlatformUser` (the two founders) can read anything with every look logged.
+Who may do what is settled in `db/DECISIONS.md` — six decisions, closed on 2026-10-12, in the
+same spirit as the stack table above: do not re-litigate.
 
 ## Phase scope
 
@@ -139,5 +148,6 @@ Design the schema so these slot in without migration pain: nullable `aiRankScore
   becomes a disclosure obligation.
 - **Background-check partner** — Checkr, Sterling, or a country-specific provider for South
   Korea / Colombia / Ghana. Needed before Phase 2.
-- **Reference authenticity** — likely work-email-domain verification or a confirmation link the
-  referee must action. Needs a design pass.
+*(**Reference authenticity** was here. Decided 2026-10-12: a one-time link the referee
+actions, no account — hashed, expiring, single-use. See `db/DECISIONS.md` §5. Phase 1 still
+stores the answer `unverified`; the link proves the referee got the email, not who they are.)*
