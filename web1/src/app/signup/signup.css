@@ -1,0 +1,158 @@
+/* Signup, route-scoped the same way dashboard.css is. Tokens come from
+   globals.css; nothing here redefines a colour. */
+
+.su {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding-block: clamp(32px, 7vh, 72px) 64px;
+}
+
+.su-card {
+  background: var(--color-paper);
+  border: 1px solid var(--color-rule);
+  padding: clamp(22px, 4vw, 40px);
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  max-width: 44rem;
+}
+
+.su-steps {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.su-steps span {
+  height: 3px;
+  width: 36px;
+  background: var(--color-paper-3);
+}
+.su-steps span[data-done] { background: var(--color-teal-ink); }
+
+/* Two ways in. Not a radio list: the choice decides the whole rest of the
+   form, so it gets the weight of a decision rather than of a field. */
+.su-sides { display: grid; gap: 12px; }
+@media (min-width: 640px) { .su-sides { grid-template-columns: 1fr 1fr; } }
+
+.su-side {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+  padding: 18px;
+  background: var(--color-paper-2);
+  border: 1px solid var(--color-rule);
+  cursor: pointer;
+  transition: border-color 140ms var(--ease-out), background-color 140ms var(--ease-out);
+}
+.su-side:hover { background: var(--color-paper-3); }
+.su-side[data-chosen] {
+  border-color: var(--color-teal-ink);
+  background: var(--color-paper);
+  box-shadow: inset 2px 0 0 var(--color-teal-ink);
+}
+.su-side strong { font-family: var(--font-display); font-size: 17px; color: var(--color-navy); }
+.su-side span { font-size: 13.5px; line-height: 1.5; color: var(--color-navy-2); }
+.su-side input { position: absolute; opacity: 0; pointer-events: none; }
+
+.su-fields { display: grid; gap: 16px; }
+@media (min-width: 640px) { .su-fields.two { grid-template-columns: 1fr 1fr; } }
+
+.su-field { display: flex; flex-direction: column; gap: 5px; }
+.su-field > span:first-child {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-navy);
+}
+.su-field input,
+.su-field select {
+  font: inherit;
+  font-size: 15px;
+  color: var(--color-navy);
+  background: var(--color-paper);
+  border: 1px solid var(--color-navy-3);
+  padding: 9px 11px;
+  width: 100%;
+}
+.su-field input:focus-visible,
+.su-field select:focus-visible {
+  outline: 2px solid var(--color-teal-ink);
+  outline-offset: 1px;
+}
+.su-field[data-bad] input { border-color: #b3261e; }
+.su-hint { font-size: 12.5px; line-height: 1.45; color: var(--color-navy-3); }
+.su-bad { font-size: 12.5px; color: #b3261e; }
+
+/* Decision 3's question. Checkboxes, because the answer may be more than one
+   — most international-school leaders still teach. */
+.su-families { display: grid; gap: 10px; }
+.su-family {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 11px;
+  align-items: start;
+  padding: 13px 15px;
+  background: var(--color-paper-2);
+  border: 1px solid var(--color-rule);
+  cursor: pointer;
+}
+.su-family:has(input:checked) {
+  background: var(--color-paper);
+  box-shadow: inset 2px 0 0 var(--color-teal-ink);
+}
+.su-family input { margin-top: 3px; accent-color: var(--color-teal-ink); width: 16px; height: 16px; }
+.su-family strong { font-size: 14.5px; color: var(--color-navy); font-weight: 600; }
+.su-family span { font-size: 13px; line-height: 1.5; color: var(--color-navy-2); }
+
+.su-note {
+  background: var(--color-paper-2);
+  border-left: 3px solid var(--color-teal-ink);
+  padding: 14px 16px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--color-navy-2);
+}
+.su-note strong { color: var(--color-navy); }
+
+.su-error {
+  background: #fdf1f0;
+  border-left: 3px solid #b3261e;
+  padding: 13px 16px;
+  font-size: 13.5px;
+  color: #7f1d17;
+}
+
+.su-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+.su-btn {
+  font-family: var(--font-display);
+  font-size: 14.5px;
+  font-weight: 600;
+  padding: 11px 22px;
+  border: 1px solid var(--color-navy);
+  background: var(--color-navy);
+  color: var(--color-paper);
+  cursor: pointer;
+  transition: opacity 140ms var(--ease-out);
+}
+.su-btn:hover { opacity: 0.88; }
+.su-btn:disabled { opacity: 0.5; cursor: progress; }
+.su-btn-quiet { background: transparent; color: var(--color-navy); }
+
+.su-list { display: grid; gap: 8px; }
+.su-list button {
+  font: inherit;
+  text-align: left;
+  padding: 13px 15px;
+  background: var(--color-paper-2);
+  border: 1px solid var(--color-rule);
+  cursor: pointer;
+}
+.su-list button:hover { background: var(--color-paper-3); }
+.su-list strong { display: block; font-size: 14.5px; color: var(--color-navy); }
+.su-list span { font-size: 12.5px; color: var(--color-navy-3); }
+
+@media (prefers-reduced-motion: reduce) { .su * { transition: none !important; } }

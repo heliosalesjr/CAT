@@ -27,6 +27,14 @@ import {
   updateCandidate,
 } from "../src/lib/db/candidates.ts";
 import {
+  InvalidSignup,
+  finishCandidateSignup,
+  finishSchoolJoin,
+  finishSchoolRegistration,
+  roleForJoiner,
+  schoolOptionsForEmail,
+} from "../src/lib/signup.ts";
+import {
   acceptInvite,
   inviteColleague,
   joinSchool,
@@ -287,6 +295,147 @@ check(
   "... and names what is still missing, for the form to show",
 );
 check(typeof (await readiness("tch_0001")) === "number", "readiness is its own number");
+
+/* ------------------------------------------------------------ signup rules */
+
+// Validation runs before anything is written, so a bad form leaves no rows.
+await refuses(
+  () =>
+    finishCandidateSignup({
+      authUserId: "unused",
+      email: "x@example.test",
+      firstName: "  ",
+      lastName: "Nobody",
+      timezone: "America/Chicago",
+      roleFamilies: ["teacher"],
+    }),
+  "a blank name is refused before the insert",
+);
+await refuses(
+  () =>
+    finishCandidateSignup({
+      authUserId: "unused",
+      email: "x@example.test",
+      firstName: "Someone",
+      lastName: "Nobody",
+      timezone: "Mars/Olympus_Mons",
+      roleFamilies: ["teacher"],
+    }),
+  "a time zone the browser invented is refused",
+);
+await refuses(
+  () =>
+    finishCandidateSignup({
+      authUserId: "unused",
+      email: "x@example.test",
+      firstName: "Someone",
+      lastName: "Nobody",
+      timezone: "UTC",
+      roleFamilies: ["headmaster of everything"],
+    }),
+  "a role family outside the enum counts as none, and none is refused",
+);
+
+const signupIdentity = await makeIdentity("signup@example.test");
+const signedUp = await finishCandidateSignup({
+  authUserId: signupIdentity,
+  email: "signup@example.test",
+  firstName: "Signed",
+  lastName: "Up",
+  timezone: "America/Chicago",
+  roleFamilies: ["teacher", "administrator", "teacher"],
+});
+made.candidates.push(signedUp.candidate.id);
+check(signedUp.families.length === 2, "a duplicated role family is stored once");
+check(
+  (await roleFamiliesFor(signedUp.candidate.id)).length === 2,
+  "... and the declaration reaches the database",
+);
+check(
+  (await actorForIdentity(signupIdentity))?.type === "candidate",
+  "... and the identity now resolves to a candidate",
+);
+
+// The role a self-serve joiner may take.
+check(
+  (await roleForJoiner("sch_hangang", "hr")) === "coordinator",
+  "a school with staff already does not hand out hr to whoever signs up",
+);
+check(
+  (await roleForJoiner(registered.school.id, "hr")) === "hr",
+  "... but somebody has to administer a school with nobody in it yet",
+);
+
+await refuses(
+  () =>
+    finishSchoolJoin({
+      authUserId: "unused",
+      email: "someone@example-his.edu",
+      schoolId: "sch_does_not_exist",
+      firstName: "No",
+      lastName: "School",
+    }),
+  "joining a school that does not exist is refused",
+);
+
+const joinerTwo = await makeIdentity("second.joiner@example-his.edu");
+const joinedTwo = await finishSchoolJoin({
+  authUserId: joinerTwo,
+  email: "second.joiner@example-his.edu",
+  schoolId: "sch_hangang",
+  firstName: "Second",
+  lastName: "Joiner",
+  requestedRole: "hr",
+});
+check(joinedTwo.verified, "a work domain still verifies the join");
+check(joinedTwo.user.role === "coordinator", "... at the role the rule allows, not the one asked");
+
+const domainOptions = await schoolOptionsForEmail("someone@example-cai.edu.co");
+check(domainOptions.outcome === "preselected", "one domain match preselects the school");
+check(
+  (await schoolOptionsForEmail("someone@gmail.com")).outcome === "unknown",
+  "a personal address leaves the school unknown",
+);
+
+const regIdentity = await makeIdentity("head@another-school.test");
+const registeredTwo = await finishSchoolRegistration({
+  authUserId: regIdentity,
+  email: "head@another-school.test",
+  schoolName: "Second Smoke International",
+  country: "Testland",
+  timezone: "UTC",
+  phone: "+1 555 0102",
+  addressLine: "2 Test Street",
+  firstName: "Second",
+  lastName: "Founder",
+});
+made.schools.push(registeredTwo.school.id);
+check(registeredTwo.user.role === "hr", "whoever registers a school administers it");
+check(
+  (await permissionsFor(registeredTwo.user.id)).length === 0,
+  "... and still holds nothing until a human confirms the school",
+);
+
+await refuses(
+  () =>
+    finishSchoolRegistration({
+      authUserId: "unused",
+      email: "head@another-school.test",
+      schoolName: "Missing Phone Academy",
+      country: "Testland",
+      timezone: "UTC",
+      phone: "",
+      addressLine: "3 Test Street",
+      firstName: "No",
+      lastName: "Phone",
+    }),
+  "a school cannot be registered without the details a human will check",
+);
+
+check(
+  new InvalidSignup([{ field: "phone", message: "is required" }]).problems.length === 1,
+  "validation problems come back per field, for the form to show",
+);
 
 /* ----------------------------------------------------------------- cleanup */
 
