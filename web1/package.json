@@ -11,6 +11,9 @@
     "db:migrate:dry": "node db/migrate.mjs --dry-run",
     "db:seed": "node db/seed.mjs",
     "db:check": "node db/check.mjs",
+    "db:types": "node db/types.mjs",
+    "db:types:check": "node db/types.mjs --check",
+    "db:smoke": "node --experimental-strip-types --conditions=react-server --no-warnings db/smoke.ts",
     "db:seed:check": "node db/seed.mjs --check-only",
     "db:reset": "ALLOW_RESET=1 node db/seed.mjs --reset"
   },
@@ -26,6 +29,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "tailwindcss": "^4",

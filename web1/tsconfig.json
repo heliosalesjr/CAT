@@ -6,6 +6,10 @@
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
+    // Imports inside src/lib/db carry explicit .ts specifiers so that Node can
+    // run those exact modules (db/smoke.ts) without a build step. Legal only
+    // with noEmit, which is set above.
+    "allowImportingTsExtensions": true,
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",

@@ -13,8 +13,50 @@ npm run db:migrate        # apply pending migrations
 npm run db:seed:check     # validate docs/mock-data.json, no database needed
 npm run db:seed           # load the bundle (one transaction)
 npm run db:reset          # truncate the seeded tables, then load
-npm run db:check          # assert the six actor decisions, then roll back
+npm run db:check          # assert the eleven decisions, then roll back
+npm run db:types          # regenerate src/lib/db/schema.ts from the live schema
+npm run db:types:check    # fail if those types have drifted from the database
+npm run db:smoke          # run the TypeScript data layer against the database
 ```
+
+## The data layer
+
+`src/lib/db` is the only place the application talks to Postgres. It is not an
+ORM and does not want to be one — CLAUDE.md rules those out and the reasoning
+holds. It adds the two things plain `pg` gets wrong on its own.
+
+**Types that cannot drift.** `db/types.mjs` reads `information_schema` and
+writes `src/lib/db/schema.ts`: one type per table and view, one union per enum,
+nullability included. A hand-written type cannot catch a renamed column,
+because nothing checks it against the database; this can, and
+`npm run db:types:check` fails the build if a migration lands without it being
+regenerated. Run it after every migration.
+
+**Three Postgres types that lie by default**, parsed in `client.ts` and typed
+to match — change the two together or the types start lying:
+
+| | | |
+| --- | --- | --- |
+| `date` | → `string` | node-postgres returns a `Date` at **local** midnight, so `available_from` of 2027-08-01 becomes July 31st on a server west of UTC. Kept as `'YYYY-MM-DD'`. |
+| `numeric` | → `number` | Every numeric here is a small display value; money is `int` USD. Add a numeric money column and this parser has to go. |
+| `int8` | → `string` | bigserial ids exceed exact JS integers, and nothing does arithmetic on them. |
+
+Rows arrive camelCase. The mapping is top-level keys only, and that restriction
+is load-bearing: `criterion_scores` is a jsonb object keyed by criterion id,
+and `safeguarding_references` is one of those ids — walking into it would
+rename the data.
+
+**Rules stay in SQL.** `actors.ts` asks `school_user_has()`,
+`may_read_document()` and `actor_for_identity`; it re-implements none of them.
+Decision 8's third layer — an unverified school user resolves to zero
+permissions — is one condition inside one view, and it only stays true for the
+whole application while the application never asks the question another way.
+
+`npm run db:smoke` exercises all of it against a seeded database: 39 checks
+that the queries parse, the columns exist under the names the types claim, and
+a date comes back as a date. Typechecking proves none of that, because nothing
+typechecks a string of SQL. It writes and cleans up after itself, so point it
+at a scratch branch.
 
 `db:reset` refuses to run unless `ALLOW_RESET=1`, so a production URL cannot be
 truncated by a stray flag.
