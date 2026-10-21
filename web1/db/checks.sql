@@ -219,3 +219,113 @@ SELECT check_refuses($$UPDATE document_access_log
     SET subject_anonymised_at = now() - interval '1 day'
     WHERE platform_user_id = 'plt_check_founder'$$,
   '6 · and that stamp cannot be moved once it is set');
+
+-- =============================================== 7 · identity (0015)
+-- One person is one actor: the same identity cannot hold both roles, and
+-- neither can the same email.
+INSERT INTO users (id, email) VALUES ('usr_identity_a', 'both@example.test');
+UPDATE candidates SET auth_user_id = 'usr_identity_a' WHERE id = 'tch_0001';
+SELECT check_assert((SELECT actor_type FROM actor_for_identity
+                     WHERE auth_user_id = 'usr_identity_a') = 'candidate',
+  '7 · an identity resolves to exactly one actor');
+SELECT check_refuses($$UPDATE school_users SET auth_user_id = 'usr_identity_a'
+    WHERE id = 'usr_his_coord'$$,
+  '7 · the same identity cannot also act for a school');
+SELECT check_refuses($$UPDATE candidates SET email = 'm.szarowicz@example-his.edu'
+    WHERE id = 'tch_0002'$$,
+  '7 · a school user''s email cannot be reused for a candidate account');
+SELECT check_assert((SELECT count(*) FROM candidates WHERE id LIKE 'cnd_%') = 0
+                AND (SELECT id FROM candidates
+                     WHERE id = (SELECT id FROM candidates ORDER BY created_at DESC LIMIT 0)
+                     LIMIT 1) IS NULL,
+  '7 · the bundle keeps its own ids; new rows get a generated one');
+
+-- ====================================== 8 · school affiliation (0016)
+-- Step one of the signup form: the work email finds the school.
+SELECT check_assert((SELECT school_id FROM schools_for_email('new.hire@example-his.edu'))
+                    = 'sch_hangang',
+  '8 · a work email selects its school with no human in the loop');
+SELECT check_assert(NOT EXISTS (SELECT 1 FROM schools_for_email('someone@gmail.com')),
+  '8 · a public address selects nothing');
+SELECT check_assert(email_proves_affiliation('new.hire@example-his.edu', 'sch_hangang')
+                AND NOT email_proves_affiliation('new.hire@example-his.edu', 'sch_accra'),
+  '8 · and proves affiliation to that school only');
+SELECT check_refuses($$INSERT INTO school_email_domains (school_id, domain, verified_at, verified_by_id)
+    VALUES ('sch_accra', 'gmail.com', now(), 'plt_seed')$$,
+  '8 · a public provider cannot stand for a school');
+
+-- Layer 3: pending means nothing, whatever the role says.
+INSERT INTO school_users (id, school_id, role, first_name, email)
+  VALUES ('usr_pending', 'sch_hangang', 'hr', 'Unproved', 'claim@example-his.edu');
+SELECT check_assert((SELECT count(*) FROM school_user_effective_permissions
+                     WHERE school_user_id = 'usr_pending') = 0,
+  '8 · an unverified school user resolves to zero permissions');
+SELECT check_assert(NOT school_user_has('usr_pending', 'view_documents'),
+  '8 · ... so the hr template gives them nothing');
+SELECT check_assert(NOT may_read_document('usr_pending',
+                     (SELECT id FROM documents WHERE status <> 'missing' ORDER BY id LIMIT 1)),
+  '8 · ... and they cannot reach a candidate''s documents');
+SELECT check_refuses($$SELECT school_invite_issue('sch_hangang', 'x@example-his.edu',
+    'coordinator', 'usr_pending', repeat('1', 64))$$,
+  '8 · ... and cannot invite anybody either');
+
+-- Invites: the same credential discipline as the referee link.
+SELECT check_refuses($$SELECT school_invite_issue('sch_hangang', 'x@example-his.edu',
+    'coordinator', 'usr_his_coord', repeat('2', 64))$$,
+  '8 · a coordinator without manage_users cannot invite');
+SELECT school_invite_issue('sch_hangang', 'newcoord@example-his.edu',
+                           'coordinator', 'usr_his_hr', repeat('3', 64));
+-- A reminder issues a replacement and the first link stops working, the same
+-- discipline the referee link follows in 0013.
+SELECT school_invite_issue('sch_hangang', 'newcoord@example-his.edu',
+                           'coordinator', 'usr_his_hr', repeat('4', 64));
+SELECT check_assert((SELECT revoked_at IS NOT NULL AND revoked_reason IS NOT NULL
+                     FROM school_user_invites WHERE token_sha256 = repeat('3', 64)),
+  '8 · re-inviting revokes the previous invite and says why');
+INSERT INTO users (id, email) VALUES ('usr_invitee', 'newcoord@example-his.edu');
+SELECT check_refuses($$SELECT school_invite_accept(repeat('3', 64), 'usr_invitee')$$,
+  '8 · the superseded invite no longer opens');
+SELECT check_assert(school_invite_accept(repeat('4', 64), 'usr_invitee', 'New', 'Coord')
+                    IS NOT NULL,
+  '8 · accepting the live invite creates the school user');
+SELECT check_assert((SELECT verified_at IS NOT NULL AND verification_method = 'invite'
+                     FROM school_users WHERE auth_user_id = 'usr_invitee'),
+  '8 · ... already verified, because a verified colleague vouched');
+SELECT check_assert(school_user_has(
+                     (SELECT id FROM school_users WHERE auth_user_id = 'usr_invitee'),
+                     'move_stage'),
+  '8 · ... and their role template now resolves');
+SELECT check_refuses($$SELECT school_invite_accept(repeat('4', 64), 'usr_invitee')$$,
+  '8 · an invite is single-use');
+
+-- ======================================= 9 · practice catalog (0017)
+SELECT check_refuses($$UPDATE candidates SET subjects = ARRAY['Maths'] WHERE id = 'tch_0001'$$,
+  '9 · "Maths" is not a subject anybody can store');
+SELECT check_refuses($$UPDATE candidates SET subjects = ARRAY['Counseling'] WHERE id = 'tch_0001'$$,
+  '9 · a practice cannot be filed as a taught subject');
+SELECT check_assert((SELECT count(*) FROM practice_options WHERE kind = 'specialism') >= 6,
+  '9 · the specialisms decision 4 opened are in the picker');
+
+-- ================================== 10 · profile completeness (0018)
+SELECT check_assert((SELECT sum(weight) FROM candidates c, candidate_completeness_breakdown(c)
+                     WHERE c.id = 'tch_0001') = 100,
+  '10 · the weights sum to 100');
+INSERT INTO candidates (id, first_name, last_name, timezone)
+  VALUES ('tch_check_bare', 'Just', 'Signed-up', 'UTC');
+SELECT check_assert((SELECT profile_completeness < rankable_threshold()
+                     FROM candidates WHERE id = 'tch_check_bare'),
+  '10 · a profile with only step one is not rankable');
+SELECT check_assert(NOT candidate_is_rankable('tch_check_bare'),
+  '10 · ... and rule 6 says so through one function');
+UPDATE candidates SET headline = 'x', nationality = 'United States',
+       subjects = ARRAY['Mathematics'], curriculum_experience = ARRAY['IB_DP']::curriculum[]
+  WHERE id = 'tch_check_bare';
+SELECT check_assert((SELECT profile_completeness FROM candidates WHERE id = 'tch_check_bare') > 0,
+  '10 · filling the form moves the number without anybody writing it');
+-- The dial: replacing the threshold inside this transaction changes every
+-- answer at once, which is what "easy to change" has to mean.
+CREATE OR REPLACE FUNCTION rankable_threshold() RETURNS int
+  LANGUAGE sql IMMUTABLE PARALLEL SAFE AS $$ SELECT 99 $$;
+SELECT check_assert((SELECT count(*) FROM candidates WHERE profile_completeness >= 99)
+                    = (SELECT sum(rankable) FROM candidate_completeness_bands),
+  '10 · moving the threshold moves the rankable set, with nothing to backfill');

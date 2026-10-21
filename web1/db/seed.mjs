@@ -210,14 +210,22 @@ const arr = (v) => (Array.isArray(v) ? v : []);
 // these two values stay a reading of it: the day the profile form asks the
 // question outright, this derivation is deleted rather than migrated.
 //
-// `Counseling` and `Learning Support` also stay in `subjects`, where the
-// bundle put them, because the counsellor posting matches on subjects and
-// rewriting the bundle would break the de-facto schema contract. A profile
-// filled in after this change carries the specialism and no subject.
+// `Counseling` and `Learning Support` move OUT of `subjects` and into
+// `specialisms` — on candidates and on postings alike, so the two sides still
+// compare like with like and `job_his_counsel` still finds its counsellors.
+// 0017's catalog is what forces the move: it refuses to call counselling a
+// taught subject, which is the whole point of having a controlled vocabulary.
+// Fourteen candidates and one posting come out with no subject at all, which
+// is decision 4 working on real rows rather than on a hypothetical librarian.
+//
+// The bundle file itself is still untouched. What changed is this reading of
+// it, and the day the profile form asks the question outright, the reading is
+// deleted rather than migrated.
 // ---------------------------------------------------------------------------
 const SPECIALISMS = new Set(['Counseling', 'Learning Support']);
 
 const specialismsOf = (x) => arr(x.subjects).filter((s) => SPECIALISMS.has(s));
+const subjectsOf = (x) => arr(x.subjects).filter((s) => !SPECIALISMS.has(s));
 
 function roleFamiliesOf(t) {
   const subjects = arr(t.subjects);
@@ -243,7 +251,8 @@ async function insert(table, rows, map) {
 
 const SEEDED = ['document_access_log', 'audit_log', 'notifications', 'messages', 'super_likes',
   'interviews', 'references_', 'documents', 'application_stage_history', 'applications',
-  'job_postings', 'criteria_catalog', 'school_user_grants', 'school_users',
+  'job_postings', 'criteria_catalog', 'school_user_grants',
+  'school_user_invites', 'school_email_domains', 'school_users', 'platform_users',
   'candidate_role_families', 'candidates',
   'subscriptions', 'schools', 'plans', 'platform_settings'];
 
@@ -283,10 +292,42 @@ try {
     plan_id: s.planId, created_at: s.createdAt ?? new Date().toISOString(),
   }));
 
+  // The verifier of record for everything the bundle asserts about the three
+  // schools. Soft-deleted on purpose: the row exists so verified_by_id has
+  // something honest to point at, and platform_user_is_active() says no, so
+  // this seed artifact cannot read anybody's documents. The address is on the
+  // reserved .invalid TLD and can never belong to a real person.
+  n.platform_users = await insert('platform_users', [{}], () => ({
+    id: 'plt_seed', email: 'seed@classact.invalid', first_name: 'Seed',
+    role: 'staff', deleted_at: new Date().toISOString(),
+  }));
+
+  // 0016: a school user is pending until somebody proves the affiliation, and
+  // a pending user resolves to zero permissions. The bundle's six are
+  // established staff who predate the question, verified by hand.
   n.school_users = await insert('school_users', data.schoolUsers, (u) => ({
     id: u.id, school_id: u.schoolId, role: u.role, first_name: u.firstName,
     last_name: u.lastName, email: u.email, title: u.title, avatar_url: u.avatarUrl,
     last_active_at: u.lastActiveAt,
+    verified_at: u.createdAt ?? new Date().toISOString(),
+    verification_method: 'manual', verified_by_id: 'plt_seed',
+  }));
+
+  // The email-first signup step, demonstrable against the bundle: every user
+  // at a school shares one domain with that school's website, so the domain
+  // is derived rather than invented. A domain is a claim until verified; these
+  // are verified because the bundle's schools are the established ones.
+  const domains = [];
+  for (const s of data.schools) {
+    const seen = new Set();
+    for (const u of data.schoolUsers.filter((x) => x.schoolId === s.id)) {
+      const d = (u.email ?? '').split('@')[1]?.toLowerCase();
+      if (d && !seen.has(d)) { seen.add(d); domains.push({ school: s.id, domain: d }); }
+    }
+  }
+  n.school_email_domains = await insert('school_email_domains', domains, (d) => ({
+    school_id: d.school, domain: d.domain,
+    verified_at: new Date().toISOString(), verified_by_id: 'plt_seed',
   }));
 
   // The per-user delta, derived rather than copied: whatever the role template
@@ -315,7 +356,7 @@ try {
     avatar_url: t.avatarUrl, intro_video_url: t.introVideoUrl, linkedin_url: t.linkedinUrl,
     current_school: t.currentSchool, current_city: t.currentCity, current_country: t.currentCountry,
     timezone: t.timezone, nationality: t.nationality, nationalities: arr(t.nationalities),
-    languages: arr(t.languages), subjects: arr(t.subjects),
+    languages: arr(t.languages), subjects: subjectsOf(t),
     specialisms: specialismsOf(t), grade_levels: arr(t.gradeLevels),
     curriculum_experience: arr(t.curriculumExperience), regions_worked: arr(t.regionsWorked),
     preferred_regions: arr(t.preferredRegions), highest_degree: t.highestDegree,
@@ -351,7 +392,7 @@ try {
 
   n.job_postings = await insert('job_postings', data.jobPostings, (j) => ({
     id: j.id, school_id: j.schoolId, created_by_id: j.createdById, title: j.title,
-    role_family: j.roleFamily ?? 'teacher', subjects: arr(j.subjects),
+    role_family: j.roleFamily ?? 'teacher', subjects: subjectsOf(j),
     specialisms: specialismsOf(j), division: j.division,
     grade_levels: arr(j.gradeLevels), curriculum_required: arr(j.curriculumRequired),
     employment_type: j.employmentType ?? 'full_time', academic_year: j.academicYear,
@@ -527,9 +568,65 @@ try {
   await one('support postings naming no specialism',
     `SELECT count(*) FROM job_postings
      WHERE role_family = 'support_staff' AND specialisms = '{}'`, 0);
+  await one('verified school email domains', 'SELECT count(*) FROM school_email_domains',
+    domains.length);
+  // 0016 layer 3: every seeded user is verified, so nobody resolves to zero.
+  // If this ever reads above 0, somebody lost their permissions silently.
+  await one('verified users resolving zero permissions',
+    `SELECT count(*) FROM school_users u
+     WHERE u.deleted_at IS NULL AND u.verified_at IS NOT NULL
+       AND NOT EXISTS (SELECT 1 FROM school_user_effective_permissions e
+                       WHERE e.school_user_id = u.id)`, 0);
+  await one('subjects or specialisms outside the catalog',
+    `SELECT count(*) FROM candidates c
+     WHERE EXISTS (SELECT 1 FROM unnest(c.subjects) v
+                   WHERE NOT EXISTS (SELECT 1 FROM practice_catalog p
+                                     WHERE p.id = v AND p.kind = 'subject'))
+        OR EXISTS (SELECT 1 FROM unnest(c.specialisms) v
+                   WHERE NOT EXISTS (SELECT 1 FROM practice_catalog p
+                                     WHERE p.id = v AND p.kind = 'specialism'))`, 0);
   await one("usr_cai_principal's effective permissions",
     `SELECT count(*) FROM school_user_effective_permissions WHERE school_user_id = 'usr_cai_principal'`,
     data.schoolUsers.find((u) => u.id === 'usr_cai_principal').permissions.length);
+
+  // -------------------------------------------------------------------------
+  // What 0018's weights do to the bundle.
+  //
+  // profile_completeness is now computed by trigger, so the numbers the bundle
+  // carried are gone — replaced, not corrupted. This prints the difference
+  // rather than hiding it, because the weights are a judgement call and this
+  // is the only honest way to see what they cost. Nothing here fails the load.
+  // -------------------------------------------------------------------------
+  const { rows: computed } = await client.query(
+    'SELECT id, profile_completeness FROM candidates ORDER BY id');
+  const given = new Map(data.teachers.map((t) => [t.id, t.profileCompleteness ?? 0]));
+  const deltas = computed
+    .map((r) => ({ id: r.id, now: r.profile_completeness, was: given.get(r.id) ?? 0 }))
+    .map((d) => ({ ...d, delta: d.now - d.was }));
+  const moved = deltas.filter((d) => d.delta !== 0);
+  const worst = [...moved].sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta)).slice(0, 5);
+
+  const { rows: bands } = await client.query('SELECT * FROM candidate_completeness_bands');
+  const { rows: [thr] } = await client.query('SELECT rankable_threshold() AS t');
+  const { rows: [flip] } = await client.query(
+    `SELECT count(*) AS n FROM applications a JOIN candidates c ON c.id = a.candidate_id
+     WHERE a.rankable IS TRUE AND c.profile_completeness < rankable_threshold()`);
+
+  console.log(`\nCompleteness, recomputed by 0018 (threshold ${thr.t})\n`);
+  console.log(`  ${moved.length} of ${computed.length} candidates moved from the bundle's figure`);
+  if (worst.length) {
+    console.log(`  biggest moves: ${worst.map((d) => `${d.id} ${d.was}→${d.now}`).join(', ')}`);
+  }
+  console.log(`  rankable now: ${bands.reduce((s, b) => s + Number(b.rankable), 0)}` +
+              ` of ${computed.length}`);
+  console.log('  by band: ' +
+    bands.map((b) => `${b.band}-${Number(b.band) + 9}: ${b.candidates}`).join('  '));
+  if (Number(flip.n) > 0) {
+    warn(`${flip.n} application(s) are marked rankable for a candidate who now scores ` +
+         `below the threshold — the bundle's rankable flags were computed against its own ` +
+         `completeness figures, not these`);
+    console.log(`\n  ! ${warnings[warnings.length - 1]}`);
+  }
 
   if (checks.includes(false)) {
     console.error('\nVerification failed — rolling back. Nothing was written.');

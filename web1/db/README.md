@@ -37,11 +37,21 @@ truncated by a stray flag.
 | `0012_candidate_role_families` | what kind of post a candidate wants; **specialisms**, so a non-teacher is describable |
 | `0013_referee_access` | the referee's **one-time link** — hashed, expiring, single-use |
 | `0014_platform_staff` | the founders as an actor, and an **append-only** access log |
+| `0015_auth_identity` | the Auth.js tables, `candidates.email`, and **one person, one actor** |
+| `0016_school_affiliation` | the work email picks the school; **pending means zero permissions**; invites |
+| `0017_practice_catalog` | one controlled vocabulary for subjects and specialisms |
+| `0018_profile_completeness` | rule 6's number, derived and explainable; readiness kept separate |
 
-`0012`–`0014` implement the six actor decisions recorded in
-[`DECISIONS.md`](DECISIONS.md). Two of the six (permissions as a role template
+`0012`–`0018` implement the eleven decisions recorded in
+[`DECISIONS.md`](DECISIONS.md) — six about who acts on the platform, five about
+how they get an account. Two of the first six (permissions as a role template
 plus a per-person delta, one person per school) were already what `0002` did,
-so they add no DDL — read that file before reopening any of them.
+so they add no DDL. Read that file before reopening any of them.
+
+The four tables in `0015` named `users`, `accounts`, `sessions` and
+`verification_token` belong to `@auth/pg-adapter`, not to this schema. Their
+quoted camelCase columns break the naming rule below on purpose; do not rename
+them and do not query them outside Auth.js.
 
 Each file carries its own `BEGIN`/`COMMIT`, so a failure rolls that file back
 on its own and leaves `schema_migrations` untouched.
@@ -109,22 +119,22 @@ wrong on every other day. Counters that are expensive to recompute per request
 
 ## What has actually been run
 
-All fourteen migrations have been applied, in order, to a real PostgreSQL
+All eighteen migrations have been applied, in order, to a real PostgreSQL
 16.2 — and the bundle loaded into it, all 155 applications and 192 role-family
 declarations, with every post-load check passing. `npm run db:check` then
-asserts the six actor decisions behave (46 assertions, mostly about what the
+asserts the eleven decisions behave (73 assertions, mostly about what the
 database *refuses*), inside a transaction it rolls back.
 
-That run is what turned up the three defects below, none of which the parser or
-the pre-flight could see. It is not a substitute for a scratch Neon branch:
-Neon's own version, extensions and connection limits are untested here, and so
-is anything about pooling.
+That run is what turned up the defects below, none of which the parser or the
+pre-flight could see. It is not a substitute for a scratch Neon branch: Neon's
+own version, extensions and connection limits are untested here, and so is
+anything about pooling.
 
 ```bash
 npm run db:migrate && npm run db:seed && npm run db:check
 ```
 
-### Three things a live server found
+### Four things a live server found
 
 **`dependent_tuition_covered` was a boolean** in `0004` and the bundle carries
 `1` or `2` — international schools cover tuition for one or two children, and
@@ -139,13 +149,22 @@ has no severity enum to copy from, and `success` ("moved you to Offer") was
 missed. A notification feed that cannot carry good news is the wrong shape for
 this product. Fixed in `0010`.
 
-**Thirty of the 136 candidates expect a salary range that runs backwards**
-(`min > max` — `tch_0018` wants 60000–50000). The CHECK in `0003` is right and
-the bundle is wrong: the generator drew two numbers from one pool instead of an
-ordered pair. The pre-flight now lists them and refuses the load, because
-`docs/mock-data.json` is the schema contract and quietly swapping values in the
-loader would hide a generator bug that will come back. **This is the one open
-blocker: the bundle cannot be seeded until those thirty rows are regenerated.**
+**Thirty of the 136 candidates expected a salary range that ran backwards**
+(`min > max` — `tch_0018` wanted 60000–50000). The CHECK in `0003` is right and
+the bundle was wrong: the generator drew two numbers from one pool instead of
+an ordered pair. The thirty pairs were swapped in `docs/mock-data.json` on
+2026-10-21 with the founders' go-ahead, and the pre-flight now lists and
+refuses any that come back — the fix belongs in the generator, and this check
+is what will say if it was not made.
+
+**The candidate counters are decorative.** 129 candidates *claim* a verified
+document and 5 have a row in `documents`; 103 claim a verified supervisor
+reference and 5 have one. The counters in the bundle were written as numbers
+with nothing behind them, and the triggers in `0007` and `0008` compute the
+truth from the rows instead. Nothing fails — but any measure built on evidence
+reads the bundle as a population with almost none, which is what shaped
+decision 11. Regenerating documents and references to match the counters is a
+data task nobody has done yet.
 
 ## Teacher, Candidate
 
@@ -162,9 +181,10 @@ carry — a subject outside `{Counseling, Learning Support}` means teaching,
 — which produces 192 declarations for 136 candidates, 56 of whom want more than
 one kind of post. The two values stay a *reading* of the bundle: the day the
 profile form asks the question outright, the derivation is deleted rather than
-migrated. Those subjects also stay in `subjects`, where the bundle put them,
-because the counsellor posting matches on subjects and rewriting the bundle
-would break the de-facto schema contract.
+migrated. Since `0017` those two values also move OUT of `subjects` and into
+`specialisms`, on candidates and postings alike, because the catalog refuses to
+call counselling a taught subject: fourteen candidates and one posting end up
+with no subject at all, which is decision 4 working on real rows.
 
 `docs/mock-data.json` has not been changed and still uses `teachers` and
 `teacherId`. `db/seed.mjs` is the only place the two vocabularies meet: it

@@ -15,7 +15,9 @@
     "db:reset": "ALLOW_RESET=1 node db/seed.mjs --reset"
   },
   "dependencies": {
+    "@auth/pg-adapter": "^1.11.3",
     "next": "16.3.5",
+    "next-auth": "^5.0.0-beta.32",
     "pg": "^8.13.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",

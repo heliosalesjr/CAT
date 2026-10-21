@@ -156,3 +156,166 @@ blocked on them:
 - **Platform staff who are not founders.** `platform_users.role` already
   distinguishes `owner` from `staff`; what `staff` may do differently is not
   yet decided, and decision 6 currently gives them the same reach.
+
+---
+
+# Identity and signup — decided 2026-10-21
+
+Five more, settled the same way and for the same reason: they decide who can
+create an account, what that account can reach, and what the product refuses to
+store. Everything below is in `0015`–`0018`.
+
+| | Decision | Chosen | Lives in |
+| --- | --- | --- | --- |
+| 7 | How does somebody log in? | Magic link by email, both sides. LinkedIn for candidates later | `0015_auth_identity` |
+| 8 | How does a school user prove they work there? | Work email first, and it picks the school | `0016_school_affiliation` |
+| 9 | Can one person be a candidate and a school user? | No — separate account, separate email | `0015_auth_identity` |
+| 10 | Free-text subjects, or a controlled list? | A catalog, one vocabulary, `kind` says which column | `0017_practice_catalog` |
+| 11 | What does profile completeness measure? | The form. Paperwork is readiness, measured separately | `0018_profile_completeness` |
+
+## 7 · Magic link first, LinkedIn later
+
+LinkedIn-only was the original call, on cost: no per-MAU charge. It survives
+for candidates, where the profile prefill is worth real money — a LinkedIn
+profile *is* the CV. It does not survive for schools: an HR officer invited by
+email may not have LinkedIn, and an invite wants an email link anyway.
+
+So both sides start on a magic link and LinkedIn arrives for candidates later.
+The Auth.js adapter tables in `0015` are the same whichever providers are
+enabled, so that later is **a provider entry in the config, not a migration**.
+
+Those four tables — `users`, `accounts`, `sessions`, `verification_token` —
+belong to `@auth/pg-adapter`, and their quoted camelCase columns break this
+schema's own naming rule on purpose: their shape is the library's contract,
+and four tables of quoted identifiers is cheaper than maintaining a fork of
+the adapter. Nothing in the application should query them directly.
+
+With a magic link, **the email is the identity**, so `candidates` finally has
+an email column. It is nullable: the bundle's 136 profiles predate the
+question, and the consequence is exact — a candidate without an email cannot
+log in. Inventing addresses for them would put fake contact details in the one
+table whose purpose is contacting people.
+
+**Cost to accept.** An email sender is now on the critical path for signup, not
+just for referee links and notifications. Pick one, put it behind an interface
+the way `CLAUDE.md` requires of the AI provider, and get the domain's SPF and
+DKIM right: a magic link in a spam folder is a login page that does not work.
+
+## 8 · The work email comes first, and it picks the school
+
+The original proposal was invite-only, administered by hand. The founders'
+version is better and is what got built: the signup form asks for the work
+email **before** it asks for the school, and the email's domain finds the
+school — searchable list, free-text fallback, register-a-new-school path with
+phone and address, confirmed by a human at first.
+
+The hole that opens, and the reason this decision has three layers: picking a
+school from a list is a *claim*. The `hr` template carries `view_documents`, so
+an unchecked claim against a real school reaches the passports and transcripts
+of everyone who applied there and got to screening. Gating the *posting* of
+jobs — the founders' first instinct — protects the advert, and the advert is
+not the dangerous part.
+
+1. **The domain proves it.** `school_email_domains` maps domain to school; a
+   magic link proves control of the address; a match against a **verified**
+   domain proves the affiliation with nobody in the loop. The same reasoning
+   the schema already applies to referees in
+   `references_.email_domain_matches_school`. The table is keyed the other way
+   round from an array on `schools` because the lookup runs domain → school,
+   one school can hold several domains, and one domain can serve several
+   campuses of a group — the form shows the short list and the person picks.
+2. **Anything else waits for a human**, and after that a verified user invites
+   colleagues directly: `school_user_invites`, with the hashed, expiring,
+   single-use, revoked-on-reissue discipline copied from the referee link in
+   `0013`. Only `manage_users` may invite, checked in the function and not in
+   the form.
+3. **Pending means nothing.** An unverified school user resolves to zero
+   permissions whatever their role says — one extra condition inside
+   `school_user_effective_permissions`, which `school_user_has()`,
+   `may_read_document()` and the messaging gate all inherit without being
+   told. This is the layer that matters: if 1 and 2 are ever bypassed, the
+   damage stops at reading job adverts.
+
+`public_email_domains` exists because of layer 1. If `gmail.com` were ever
+attached to a school, every Gmail address on earth would verify into it. A
+trigger refuses it in the schema rather than in the form, because the form will
+not stay the only thing that writes there.
+
+**Not chosen.** Invite-only from the start — it makes every single signup a
+support ticket, and the domain check does the same job for free in the common
+case.
+
+## 9 · One person, one actor
+
+A school user who wants a job creates a separate candidate account, with a
+separate email. Enforced in the database by a trigger on both tables, checking
+the identity **and** the email, so the clash surfaces at signup with a sentence
+somebody can act on rather than at login with a dead end.
+
+The consequence is worth saying out loud, because it is a feature: a head of
+school who is job-hunting uses their work address for the school account and a
+personal one for the candidate account. They would have wanted that anyway.
+
+**Not chosen.** Two nullable unique columns on one identity, hidden in the UI.
+Cheaper now, and it would have made every "who is this request" answer a
+branch instead of a lookup.
+
+## 10 · One vocabulary, catalogued
+
+`subjects` and `specialisms` were free-text arrays, and a free tag input
+produces "Maths", "Mathematics" and "Math" inside a week. Matching compares
+those arrays literally, so the ranking degrades with no error anywhere.
+
+`practice_catalog` holds both, with `kind` saying which column a row belongs
+in, and triggers validate the arrays on write — the same answer `0004` gave for
+`ranking_criteria`, which has the same problem. The 26 subjects are every
+distinct value in the bundle; the specialisms are the two the bundle hides
+inside `subjects` plus the four decision 4 exists to make describable.
+
+It is **not** called `subject_catalog`, because a third of what it holds is not
+a subject. That is the same small lie as calling the person a Teacher, which
+this schema already paid once to rename.
+
+**Consequence.** `seed.mjs` now moves `Counseling` and `Learning Support` out
+of `subjects` and into `specialisms`, on candidates and postings alike, because
+the catalog refuses to call counselling a taught subject. Fourteen candidates
+and one posting come out with no subject at all — decision 4 working on real
+rows rather than on a hypothetical librarian. The bundle file is still
+untouched; what changed is the seed's reading of it.
+
+## 11 · Completeness is the form; paperwork is readiness
+
+Rule 6 — nobody below 70% is ranked — rested on a number with no definition.
+The bundle carried it pre-computed and the profile form approximated it in the
+browser by counting filled fields per section.
+
+Counting fields is the trap: it makes "coaching and activities" weigh the same
+as "the subjects you teach", so the list of fields silently decides who gets
+ranked. The weights in `0018` are instead justified against
+`criteria_catalog.measured_from`, which names the candidate fields each ranking
+criterion actually reads, and `reads_into` records the justification per weight
+so it can be argued with.
+
+**Two measures, not one.** How much of your profile you have filled in is one
+thing; whether your documents and references are in order is another. The
+dashboard already separates them — there is a Readiness panel — and `0007`
+already gates documents to screening. A fully typed profile from somebody who
+has not uploaded a passport is not half empty: a school can read it and decide.
+So `profile_completeness` scores the form and `candidate_readiness()` scores
+the evidence, separately.
+
+**The threshold is a dial and always was.** `rankable_threshold()` from `0003`
+is one function returning one number; moving 70 to 60 is that line, with no
+migration, no backfill and no stored comparison anywhere. `db:check` proves it
+by replacing the function inside a transaction and watching the rankable set
+move. Changing the number itself is a product decision with the co-founder, per
+`CLAUDE.md`; making it cheap to change was the engineering job.
+
+**Still open, and it needs the co-founder.** With this definition every one of
+the bundle's 136 candidates scores 80–99 and all of them are rankable, so the
+"not yet rankable" group that rule 6 describes does not exist in the demo data
+— including `tch_0009`, whom the teacher dashboard shows precisely as that
+case. That is the bundle's doing, not the formula's: its candidates all have
+every profile field filled. Keeping the demo honest means regenerating a
+handful of genuinely sparse profiles, not retuning the weights until the
+picture looks right.
