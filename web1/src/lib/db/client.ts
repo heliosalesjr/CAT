@@ -38,18 +38,23 @@ pg.types.setTypeParser(1700, (v: string) => Number(v));
 
 const url = process.env.DATABASE_URL;
 
+/**
+ * Constructing a Pool opens nothing — node-postgres connects on the first
+ * query — and that is what makes this safe to do at module load.
+ *
+ * It must stay that way. `next build` collects page data for the Auth.js route
+ * handler, which imports this module, so anything that throws here fails the
+ * build. A build has no business holding a database credential: it runs in CI
+ * and in Cloud Run's source deploy, where `DATABASE_URL` is correctly absent.
+ * A missing URL is therefore a runtime error, raised by the first query, with
+ * a message that says what to do.
+ */
 function makePool(): pg.Pool {
-  if (!url) {
-    throw new Error(
-      "DATABASE_URL is not set. The app reads the database directly; " +
-        "point it at a Neon branch (use the -pooler host) and restart.",
-    );
-  }
   return new pg.Pool({
     connectionString: url,
     // Same rule as db/migrate.mjs and db/seed.mjs, so there is one answer to
     // "does this connection use TLS" across the whole project.
-    ssl: url.includes("localhost") ? undefined : { rejectUnauthorized: true },
+    ssl: !url || url.includes("localhost") ? undefined : { rejectUnauthorized: true },
     // Cloud Run scales to zero and runs many instances, so each one keeps a
     // small pool and lets Neon's pooler do the concentrating. A large max here
     // multiplies by instance count and exhausts the free tier's connections.
@@ -69,6 +74,16 @@ if (process.env.NODE_ENV !== "production") globalForDb.__catPool = pool;
 
 type Row = Record<string, unknown>;
 
+/** Called by everything that actually talks to the database. */
+function assertConfigured(): void {
+  if (!url) {
+    throw new Error(
+      "DATABASE_URL is not set. The app reads the database directly; " +
+        "point it at a Neon branch (use the -pooler host) and restart.",
+    );
+  }
+}
+
 const camelKey = (k: string) => k.replace(/_([a-z0-9])/g, (_, c: string) => c.toUpperCase());
 
 /**
@@ -87,6 +102,7 @@ export async function query<R extends Row>(
   text: string,
   params: readonly unknown[] = [],
 ): Promise<Camelize<R>[]> {
+  assertConfigured();
   const result = await pool.query<R>(text, params as unknown[]);
   return result.rows.map(camelize);
 }
@@ -117,6 +133,7 @@ export async function maybeOne<R extends Row>(
 
 /** A single scalar — `SELECT school_user_has($1, $2)` and friends. */
 export async function scalar<T>(text: string, params: readonly unknown[] = []): Promise<T> {
+  assertConfigured();
   const result = await pool.query(text, params as unknown[]);
   if (result.rows.length !== 1) {
     throw new Error(`expected exactly 1 row, got ${result.rows.length}`);
@@ -131,6 +148,7 @@ export async function scalar<T>(text: string, params: readonly unknown[] = []): 
  * and a half-applied signup leaves a school user nobody verified.
  */
 export async function tx<T>(fn: (c: pg.PoolClient) => Promise<T>): Promise<T> {
+  assertConfigured();
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
