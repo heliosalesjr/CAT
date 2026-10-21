@@ -3,6 +3,12 @@ import { maybeOne, query, scalar, tx, txQuery } from "./client.ts";
 import type {
   Camelize,
   CandidatesRow,
+  DocumentStatus,
+  DocumentType,
+  DocumentsWithExpiryRow,
+  ReferenceRelationship,
+  ReferenceStatus,
+  ReferencesWithWaitingRow,
   PracticeKind,
   PracticeOptionsRow,
   RoleFamily,
@@ -10,6 +16,19 @@ import type {
 
 /** The row as the app sees it: camelCase, and nothing renamed by hand. */
 export type Candidate = Camelize<CandidatesRow>;
+
+/* The three types below exist because of one quirk of introspection: a VIEW
+   reports every column nullable, since Postgres cannot prove otherwise through
+   it. These say what the columns behind the views actually guarantee. */
+
+export type PracticeOption = { id: string; kind: PracticeKind; label: string };
+
+export type CandidateDocument = Omit<Camelize<DocumentsWithExpiryRow>, "id" | "type" | "status">
+  & { id: string; type: DocumentType; status: DocumentStatus };
+
+export type CandidateReference =
+  Omit<Camelize<ReferencesWithWaitingRow>, "id" | "refereeName" | "relationship" | "status">
+  & { id: string; refereeName: string; relationship: ReferenceRelationship; status: ReferenceStatus };
 
 export async function candidateById(id: string): Promise<Candidate | null> {
   return maybeOne<CandidatesRow>(
@@ -213,10 +232,46 @@ export async function readiness(candidateId: string): Promise<number> {
  * write, but a picker that only ever offers catalogued values means nobody
  * meets that error in the first place.
  */
-export async function practiceOptions(
-  kind?: PracticeKind,
-): Promise<Camelize<PracticeOptionsRow>[]> {
-  return kind
-    ? query<PracticeOptionsRow>(`SELECT * FROM practice_options WHERE kind = $1`, [kind])
-    : query<PracticeOptionsRow>(`SELECT * FROM practice_options`);
+/**
+ * What the tags input offers. Reading it from the catalog is what stops
+ * "Maths" and "Mathematics" both existing — the trigger in 0017 refuses the
+ * write, but a picker that only ever offers catalogued values means nobody
+ * meets that error in the first place.
+ *
+ * The return type is written out rather than taken from the generated row.
+ * Postgres reports every column of a VIEW as nullable because it cannot prove
+ * otherwise through one, so `PracticeOptionsRow` has `id: string | null` while
+ * the column behind it is a primary key. Narrowing it here, once, with the
+ * reason stated, beats a `?? ""` at every call site.
+ */
+export async function practiceOptions(kind?: PracticeKind): Promise<PracticeOption[]> {
+  const rows = kind
+    ? await query<PracticeOptionsRow>(`SELECT * FROM practice_options WHERE kind = $1`, [kind])
+    : await query<PracticeOptionsRow>(`SELECT * FROM practice_options`);
+  return rows as PracticeOption[];
+}
+
+/* --------------------------------------------------------- the two panels */
+
+/**
+ * Read through the views, not the tables: `daysUntilExpiry` and `daysWaiting`
+ * were stored values in the bundle, computed on its generation date and wrong
+ * on every other day, so 0007 and 0008 made them derived.
+ */
+export async function documentsFor(candidateId: string): Promise<CandidateDocument[]> {
+  return (await query<DocumentsWithExpiryRow>(
+    `SELECT * FROM documents_with_expiry
+     WHERE candidate_id = $1 AND deleted_at IS NULL
+     ORDER BY type`,
+    [candidateId],
+  )) as CandidateDocument[];
+}
+
+export async function referencesFor(candidateId: string): Promise<CandidateReference[]> {
+  return (await query<ReferencesWithWaitingRow>(
+    `SELECT * FROM references_with_waiting
+     WHERE candidate_id = $1
+     ORDER BY requested_at`,
+    [candidateId],
+  )) as CandidateReference[];
 }

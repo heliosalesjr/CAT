@@ -26,6 +26,8 @@ import {
   setRoleFamilies,
   updateCandidate,
 } from "../src/lib/db/candidates.ts";
+import { parseProfileForm } from "../src/lib/profile-fields.ts";
+import { applyProfileSave } from "../src/lib/profile-save.ts";
 import {
   InvalidSignup,
   finishCandidateSignup,
@@ -436,6 +438,156 @@ check(
   new InvalidSignup([{ field: "phone", message: "is required" }]).problems.length === 1,
   "validation problems come back per field, for the form to show",
 );
+
+/* --------------------------------------------------- the profile form parser */
+
+// A pure function, so these run without touching the database — but they run
+// here because the whole point of the parser is that what it produces is what
+// the data layer accepts.
+{
+  const f = new FormData();
+  f.set("headline", "  DP Chemistry teacher  ");
+  f.set("yearsExperience", "9");
+  f.set("availableFrom", "2027-08-01");
+  f.set("languages", "English, Spanish\nFrench");
+  f.append("subjects", "Chemistry");
+  f.append("subjects", "General Science");
+  f.append("curriculumExperience", "IB_DP");
+  f.set("coachingCapable__sent", "1");
+  const { patch, families, problems } = parseProfileForm(f);
+
+  check(problems.length === 0, "a well-filled form parses with no complaints");
+  check(patch.headline === "DP Chemistry teacher", "text is trimmed");
+  check(patch.yearsExperience === 9, "a number arrives as a number");
+  check(patch.availableFrom === "2027-08-01", "a date stays the string the column wants");
+  check(
+    JSON.stringify(patch.languages) === '["English","Spanish","French"]',
+    "a typed list splits on commas and newlines",
+  );
+  check(patch.coachingCapable === false, "an unticked checkbox saves false, not nothing");
+  check(families === null, "a form that did not ask about role families leaves them alone");
+  check(!("firstName" in patch), "a field the form did not send is not in the patch");
+}
+
+{
+  const f = new FormData();
+  f.set("yearsExperience", "nine");
+  f.set("availableFrom", "next August");
+  f.set("highestDegree", "honorary");
+  f.append("curriculumExperience", "IB_MADE_UP");
+  f.set("salaryExpectationMinUsd", "60000");
+  f.set("salaryExpectationMaxUsd", "50000");
+  f.set("roleFamilies__sent", "1");
+  const { problems } = parseProfileForm(f);
+  const named = (field: string) => problems.some((p) => p.field === field);
+
+  check(named("yearsExperience"), "a number that is not a number is refused");
+  check(named("availableFrom"), "a date that is not a date is refused");
+  check(named("highestDegree"), "a degree outside the enum is refused");
+  check(named("curriculumExperience"), "a curriculum outside the list is refused");
+  check(
+    named("salaryExpectationMaxUsd"),
+    "a salary range that runs backwards names the field to fix, not a constraint",
+  );
+  check(named("roleFamilies"), "clearing every role family is refused");
+  check(problems.length === 6, "every problem is reported at once, not one per submit");
+}
+
+// And the patch the parser produces goes through the data layer unchanged.
+{
+  const f = new FormData();
+  f.set("headline", "Parsed end to end");
+  f.append("subjects", "Mathematics");
+  f.set("roleFamilies__sent", "1");
+  f.append("roleFamilies", "teacher");
+  const { patch, families } = parseProfileForm(f);
+  const saved = await updateCandidate(fresh.id, patch);
+  check(saved.headline === "Parsed end to end", "the parsed patch saves");
+  check(
+    JSON.stringify(saved.subjects) === '["Mathematics"]',
+    "... including a catalog-backed list",
+  );
+  if (families) await setRoleFamilies(fresh.id, families);
+  check((await roleFamiliesFor(fresh.id)).length === 1, "... and the families it carried");
+}
+
+/* ------------------------------------------- saving a profile, as the form does */
+
+// What the server action does, minus the session lookup and the revalidate.
+{
+  const f = new FormData();
+  f.set("firstName", "Perfil");
+  f.set("lastName", "Real");
+  f.set("headline", "DP Chemistry teacher, 9 years");
+  f.set("nationality", "United States");
+  f.set("subjects__sent", "1");
+  f.append("subjects", "Chemistry");
+  f.append("subjects", "General Science");
+  f.set("curriculumExperience__sent", "1");
+  f.append("curriculumExperience", "IB_DP");
+  f.set("gradeLevels__sent", "1");
+  f.append("gradeLevels", "high");
+  f.set("yearsExperience", "9");
+  f.set("yearsInSubject", "9");
+  f.set("highestDegree", "masters");
+  f.set("degreeField", "Chemistry Education");
+  f.set("availableFrom", "2027-08-01");
+  f.set("preferredRegions__sent", "1");
+  f.append("preferredRegions", "East Asia");
+  f.set("regionsWorked__sent", "1");
+  f.append("regionsWorked", "Middle East");
+  f.set("languages__sent", "1");
+  f.append("languages", "English");
+  f.set("salaryExpectationMinUsd", "58000");
+  f.set("salaryExpectationMaxUsd", "72000");
+  f.set("roleFamilies__sent", "1");
+  f.append("roleFamilies", "teacher");
+  f.append("roleFamilies", "administrator");
+
+  const before = (await candidateById(fresh.id))!.profileCompleteness;
+  const result = await applyProfileSave(fresh.id, f);
+  check(result?.status === "saved", "a filled form saves");
+
+  const after = await candidateById(fresh.id);
+  check(
+    result?.status === "saved" && result.completeness === after!.profileCompleteness,
+    "the number the form shows is the number the database holds",
+  );
+  check(after!.profileCompleteness > before, "and it went up");
+  check(after!.headline === "DP Chemistry teacher, 9 years", "text landed");
+  check(
+    JSON.stringify(after!.subjects) === '["Chemistry","General Science"]',
+    "a catalog-backed list landed in order",
+  );
+  check(after!.availableFrom === "2027-08-01", "a date landed as a calendar date");
+  check((await roleFamiliesFor(fresh.id)).length === 2, "and both role families landed");
+}
+
+// A refusal leaves the row exactly as it was, because validation runs first.
+{
+  const before = await candidateById(fresh.id);
+  const bad = new FormData();
+  bad.set("headline", "Should not land");
+  bad.set("yearsExperience", "about nine");
+  const result = await applyProfileSave(fresh.id, bad);
+  check(result?.status === "invalid", "a bad field refuses the whole save");
+  const after = await candidateById(fresh.id);
+  check(after!.headline === before!.headline, "... and nothing else in the form was written");
+}
+
+// A value the catalog does not know is refused by the database, not by a
+// second copy of the vocabulary in TypeScript.
+{
+  const bad = new FormData();
+  bad.set("subjects__sent", "1");
+  bad.append("subjects", "Maths");
+  const result = await applyProfileSave(fresh.id, bad);
+  check(result?.status === "error", "an uncatalogued subject comes back as an error");
+  check(
+    result?.status === "error" && /catalog/.test(result.message),
+    "... with the database's own words, which were written to be read",
+  );
+}
 
 /* ----------------------------------------------------------------- cleanup */
 

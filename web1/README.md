@@ -56,11 +56,42 @@ before any of this was written precisely so that stays true.
 signed in, or signed in and signup never finished — so `currentIdentity()`
 separates them.
 
+## The profile form
+
+`PROFILE_SECTIONS` in `src/lib/profile-fields.ts` describes every field a
+candidate may edit, once. The form renders from it and the save action parses
+from it, which is the only thing keeping the two in step — a field added to
+the screen and not to the parser would silently fail to save.
+
+Two rules the form does not own. It does not compute the headline
+completeness: that comes from `candidate_completeness_breakdown`, the same
+rows the ranking reads, so the screen cannot promise what the matching
+denies. And it does not know the subject vocabulary: the options come from
+`practice_catalog`, which is what stops a profile saying "Maths" while a
+posting says "Mathematics". The per-section counts it does compute — those
+are a different claim, about how much of one section is answered.
+
+`?view=` still renders the same component against the sample bundle,
+read-only, so the product can be shown without an account.
+
+## Two things to know before changing this code
+
+**A view's columns all type as nullable.** Postgres cannot prove otherwise
+through a view, so `PracticeOptionsRow.id` is `string | null` over a primary
+key. `src/lib/db/candidates.ts` narrows that where it reads a view, once per
+read, with the reason written down. Do not teach the generator to guess.
+
+**`db/smoke.ts` runs under Node's type stripping**, which erases types and
+emits nothing. Anything in `src/` that it imports has to stay inside that
+subset: no constructor parameter properties, no `enum`, no namespaces. The
+restriction is worth the trade — it is what lets the checks exercise the same
+modules the app bundles, with no build step.
+
 ## Checks
 
 ```bash
 npm run db:check        # what the schema refuses (73 assertions, rolled back)
-npm run db:smoke        # the data layer against a live database (39 checks)
+npm run db:smoke        # the data layer, signup and the profile form (85 checks)
 npm run db:types:check  # fails if src/lib/db/schema.ts has drifted
 npx tsc --noEmit
 ```

@@ -84,6 +84,13 @@ const camel = (s) => s.replace(/_([a-z0-9])/g, (_, ch) => ch.toUpperCase());
  *                         USD. If that ever stops being true, stop parsing.
  *   int8      -> string   bigserial ids. Converting risks precision, and
  *                         nothing does arithmetic on them.
+ *
+ * One limit worth knowing: a VIEW reports every column nullable, because
+ * Postgres cannot prove otherwise through one. So a view row type is wider
+ * than the data — `PracticeOptionsRow.id` is `string | null` over a primary
+ * key. The data layer narrows that where it reads a view, once per read, with
+ * the reason written down. Do not "fix" it here: guessing a view's nullability
+ * from its definition is how a generated type starts lying.
  */
 function tsType(udt) {
   if (udt.startsWith('_')) return `${tsType(udt.slice(1))}[]`;

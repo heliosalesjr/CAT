@@ -1197,3 +1197,103 @@
   .dash .slp-seg[data-on] { animation: none; }
 }
 @keyframes page-fade { from { opacity: 0; } }
+
+/* ------------------------------------------------------------------------
+   Profile form — the controls the mockup did not have, now that it saves.
+   ------------------------------------------------------------------------ */
+
+.pf-head-static { cursor: default; }
+.pf-soon { margin-left: 10px; }
+
+/* A list chosen from a fixed vocabulary. */
+.pf-choices { display: flex; flex-direction: column; gap: 8px; }
+.pf-filter {
+  font: inherit;
+  font-size: 13.5px;
+  padding: 6px 9px;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  color: inherit;
+  max-width: 18rem;
+}
+.pf-group {
+  display: grid;
+  gap: 2px 14px;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  max-height: 15rem;
+  overflow-y: auto;
+}
+.pf-opt {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  align-items: baseline;
+  padding: 4px 2px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.pf-opt input { accent-color: var(--stage-screening); }
+.pf-opt:has(input:checked) { font-weight: 600; }
+.pf-opt:has(input:disabled) { cursor: default; opacity: 0.75; }
+
+/* A list the person types. */
+.pf-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  padding: 5px;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  min-height: 2.4rem;
+}
+.pf-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 4px 3px 9px;
+  background: var(--surface-2);
+  border: 1px solid var(--rule);
+  font-size: 13.5px;
+}
+.pf-chip button {
+  font: inherit;
+  line-height: 1;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: inherit;
+  opacity: 0.55;
+  cursor: pointer;
+}
+.pf-chip button:hover { opacity: 1; }
+.pf-tag-input {
+  font: inherit;
+  font-size: 14px;
+  border: 0;
+  background: none;
+  color: inherit;
+  padding: 4px 6px;
+  flex: 1 1 8rem;
+  min-width: 8rem;
+  outline: none;
+}
+
+.pf-bool { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
+.pf-bool input { accent-color: var(--stage-screening); }
+
+.pf-field select {
+  font: inherit;
+  font-size: 15px;
+  padding: 8px 10px;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  color: inherit;
+}
+
+.pf-field[data-bad] input,
+.pf-field[data-bad] select,
+.pf-field[data-bad] .pf-tags { border-color: var(--critical, #b3261e); }
+
+.pf-problem { font-size: 12.5px; color: var(--critical, #b3261e); }
+.pf-ok { color: var(--positive); }
