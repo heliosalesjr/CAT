@@ -14,7 +14,13 @@
  * be looked at.
  */
 import { pool, query } from "../src/lib/db/client.ts";
-import { actorForIdentity, permissionsFor, schoolUserHas } from "../src/lib/db/actors.ts";
+import {
+  actorForIdentity,
+  claimPlatformSeat,
+  permissionsFor,
+  platformUserIsActive,
+  schoolUserHas,
+} from "../src/lib/db/actors.ts";
 import {
   candidateById,
   completenessBreakdown,
@@ -587,6 +593,58 @@ check(
     result?.status === "error" && /catalog/.test(result.message),
     "... with the database's own words, which were written to be read",
   );
+}
+
+/* ----------------------------------------------- the staff allowlist (0019) */
+
+{
+  // A seat, created the only way there is: from the command line.
+  await query(
+    `INSERT INTO platform_users (id, email, first_name, role)
+     VALUES ('plt_smoke', 'staff.smoke@example.test', 'Smoke', 'owner')`,
+  );
+
+  const identity = await makeIdentity("staff.smoke@example.test");
+  const claimed = await claimPlatformSeat(identity, "staff.smoke@example.test");
+  check(claimed === "plt_smoke", "signing in with a listed address claims the seat");
+  check(
+    (await claimPlatformSeat(identity, "staff.smoke@example.test")) === null,
+    "... and claiming twice is a no-op, so every sign-in can try",
+  );
+
+  const stranger = await makeIdentity("not.staff@example.test");
+  check(
+    (await claimPlatformSeat(stranger, "not.staff@example.test")) === null,
+    "an address nobody listed claims nothing — there is no form to grant yourself this",
+  );
+
+  const actor = await actorForIdentity(identity);
+  check(actor?.type === "platform_user", "a founder resolves to a third kind of actor");
+  check(
+    actor?.type === "platform_user" && actor.schoolId === null,
+    "... belonging to no school, so nothing scopes a query for them",
+  );
+  check(await platformUserIsActive("plt_smoke"), "and they are active");
+
+  // Decision 9 now spans three tables, not two.
+  await refuses(
+    () =>
+      query(
+        `INSERT INTO candidates (email, first_name, last_name, timezone)
+         VALUES ('staff.smoke@example.test', 'Same', 'Address', 'UTC')`,
+      ),
+    "a staff address cannot also be a candidate's",
+  );
+
+  // Removing somebody keeps the row and takes the reach.
+  await query(`UPDATE platform_users SET deleted_at = now() WHERE id = 'plt_smoke'`);
+  check(!(await platformUserIsActive("plt_smoke")), "removing a founder takes their reach away");
+  check(
+    (await actorForIdentity(identity)) === null,
+    "... and they stop resolving to an actor at all",
+  );
+
+  await query(`DELETE FROM platform_users WHERE id = 'plt_smoke'`);
 }
 
 /* ----------------------------------------------------------------- cleanup */

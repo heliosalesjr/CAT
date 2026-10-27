@@ -18,7 +18,9 @@ import type { ActorForIdentityRow, Permission } from "./schema.ts";
 
 export type Actor =
   | { type: "candidate"; id: string; schoolId: null }
-  | { type: "school_user"; id: string; schoolId: string };
+  | { type: "school_user"; id: string; schoolId: string }
+  /** Platform staff. Belongs to no school, so nothing scopes a query for them. */
+  | { type: "platform_user"; id: string; schoolId: null };
 
 /**
  * The first thing a request does after reading the session. Returns null for
@@ -36,9 +38,36 @@ export async function actorForIdentity(authUserId: string): Promise<Actor | null
     [authUserId],
   );
   if (!row) return null;
-  return row.actorType === "candidate"
-    ? { type: "candidate", id: row.actorId!, schoolId: null }
-    : { type: "school_user", id: row.actorId!, schoolId: row.schoolId! };
+  const id = row.actorId!;
+  switch (row.actorType) {
+    case "candidate":
+      return { type: "candidate", id, schoolId: null };
+    case "platform_user":
+      return { type: "platform_user", id, schoolId: null };
+    default:
+      return { type: "school_user", id, schoolId: row.schoolId! };
+  }
+}
+
+/**
+ * Binds a proved address to a seat on the staff list, if there is one waiting
+ * for it. Called once per sign-in; returns null for everybody else, which is
+ * almost everybody.
+ *
+ * The allowlist is `platform_users`, and rows get there from the command line
+ * (`npm run admin`). There is no form, which is the point: nobody grants
+ * themselves platform access by typing an email.
+ */
+export async function claimPlatformSeat(
+  authUserId: string,
+  email: string,
+): Promise<string | null> {
+  return scalar<string | null>(`SELECT claim_platform_seat($1, $2)`, [authUserId, email]);
+}
+
+/** Staff only, and soft-deleted staff are not staff. */
+export async function platformUserIsActive(platformUserId: string): Promise<boolean> {
+  return scalar<boolean>(`SELECT platform_user_is_active($1)`, [platformUserId]);
 }
 
 /** The resolved set, template plus per-person delta, verification included. */

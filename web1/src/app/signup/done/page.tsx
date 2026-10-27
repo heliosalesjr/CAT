@@ -22,6 +22,9 @@ export const metadata: Metadata = { title: "You are in — Class Act Talent" };
 export default async function DonePage() {
   const actor = await currentActor();
   if (!actor) redirect("/signup");
+  // Staff never come through signup — their seat is created from the command
+  // line — so if one lands here it is a stray link, not a flow.
+  if (actor.type === "platform_user") redirect("/admin");
 
   if (actor.type === "candidate") {
     const [lines, rankable] = await Promise.all([

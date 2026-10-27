@@ -1,4 +1,6 @@
 import "server-only";
+import { mkdir, writeFile } from "node:fs/promises";
+import { join } from "node:path";
 
 /**
  * Everything this product sends goes through here.
@@ -76,14 +78,34 @@ function consoleSender(): EmailSender {
     name: "console",
     async send(message) {
       const rule = "─".repeat(72);
+      const link = message.text.match(/https?:\/\/\S+/)?.[0];
+
       process.stderr.write(
         `\n${rule}\n` +
           `EMAIL (not sent — console transport)\n` +
           `  to:      ${message.to}\n` +
           `  subject: ${message.subject}\n` +
           (message.replyTo ? `  reply-to: ${message.replyTo}\n` : "") +
-          `${rule}\n${message.text.trim()}\n${rule}\n\n`,
+          `${rule}\n${message.text.trim()}\n${rule}\n` +
+          // A second, single-line copy of the link. `next dev` prints a great
+          // deal and a URL wrapped inside a paragraph is genuinely hard to
+          // find in it; this line is here to be grepped and double-clicked.
+          (link ? `>>> LINK: ${link}\n\n` : "\n"),
       );
+
+      // And a copy on disk, so signing in is one command instead of hunting
+      // through scrollback. Inside .next because that directory is already
+      // ignored by git and is not watched for application reloads — writing
+      // into the source tree would make the dev server recompile itself.
+      if (link) {
+        try {
+          const dir = join(process.cwd(), ".next");
+          await mkdir(dir, { recursive: true });
+          await writeFile(join(dir, "last-email-link"), `${link}\n`, "utf8");
+        } catch {
+          // Not being able to write the file is not a reason to fail a send.
+        }
+      }
     },
   };
 }

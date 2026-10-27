@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import type { EmailConfig } from "next-auth/providers";
 import PostgresAdapter from "@auth/pg-adapter";
+import { claimPlatformSeat } from "./lib/db/actors.ts";
 import { pool } from "./lib/db/client.ts";
 import { sendEmail } from "./lib/email/index.ts";
 import { magicLinkEmail } from "./lib/email/messages.ts";
@@ -61,6 +62,31 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
 
   providers: [magicLink],
+
+  /**
+   * The staff claim goes in an EVENT, not in the `signIn` callback.
+   *
+   * The callback runs before the adapter has created the `users` row — the
+   * first attempt at this bound a seat to an id that did not exist yet and
+   * died on the foreign key. The event runs after, and Auth.js awaits it, so
+   * by the time the browser is redirected the seat is bound and the first
+   * page render resolves the actor correctly.
+   *
+   * It is idempotent: `claim_platform_seat` only touches a row whose
+   * `auth_user_id` is still null. And a failure must never lock anybody out,
+   * so it is logged and swallowed — the worst case is a founder who resolves
+   * to no actor and signs in again.
+   */
+  events: {
+    async signIn({ user }) {
+      if (!user?.id || !user.email) return;
+      try {
+        await claimPlatformSeat(user.id, user.email);
+      } catch (err) {
+        console.error("could not claim a platform seat:", err);
+      }
+    },
+  },
 
   callbacks: {
     /**

@@ -20,6 +20,13 @@ export const metadata: Metadata = {
  * somebody who has none of those yet, and the worst it can do is show the
  * wrong form to a person who can go back and pick again.
  */
+/** Where each kind of actor belongs once signup is behind them. */
+const HOME = {
+  candidate: "/dashboard/teacher",
+  school_user: "/dashboard/school",
+  platform_user: "/admin",
+} as const;
+
 export default async function FinishPage({ searchParams }: PageProps<"/signup/finish">) {
   const { as } = await searchParams;
 
@@ -44,7 +51,7 @@ export default async function FinishPage({ searchParams }: PageProps<"/signup/fi
   // Already finished. Decision 9 means there is exactly one place to go.
   const actor = await currentActor();
   if (actor) {
-    redirect(actor.type === "candidate" ? "/dashboard/teacher" : "/dashboard/school");
+    redirect(HOME[actor.type]);
   }
 
   if (as === "school") {

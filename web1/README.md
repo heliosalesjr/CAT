@@ -7,12 +7,34 @@ layer, and `db/DECISIONS.md` for the eleven decisions that shaped both.
 ## Running it locally
 
 ```bash
-export DATABASE_URL='postgres://...'          # a Neon branch, or a local Postgres
-export AUTH_SECRET="$(openssl rand -base64 32)"
+# web1/.env.local — gitignored
+DATABASE_URL='postgres://...-pooler.../neondb?sslmode=verify-full'
+AUTH_SECRET='<openssl rand -base64 32>'
 
-npm run db:migrate && npm run db:seed          # once, against a scratch database
+# Schema and sample data, using Neon's DIRECT host (no "-pooler"): the pooled
+# endpoint is PgBouncer in transaction mode — right for the app, awkward for DDL.
+DATABASE_URL='<direct>' npm run db:migrate
+DATABASE_URL='<direct>' npm run db:seed
+
+npm run admin add you@example.com "Your Name" owner   # the staff allowlist
 npm run dev
 ```
+
+Lost? `npm run db:doctor` says where that database stands and what to run
+next. It reads and counts; it never writes.
+
+## Signing in as platform staff
+
+There is no signup for the admin side and there should never be one. A row in
+`platform_users` is created from the command line by somebody holding the
+database URL (`npm run admin`), and signing in with that address binds the
+seat to the identity — `claim_platform_seat` in `0019`, called from the
+`events.signIn` hook. (Not the `signIn` callback: that runs before the adapter
+has created the `users` row, and binding there dies on a foreign key.)
+
+Decision 9 covers three tables now, so one address is one actor. Testing all
+three sides means three addresses; `you+school@`, `you+teacher@` land in the
+same inbox and count as different people.
 
 | | |
 | --- | --- |
@@ -93,5 +115,6 @@ modules the app bundles, with no build step.
 npm run db:check        # what the schema refuses (73 assertions, rolled back)
 npm run db:smoke        # the data layer, signup and the profile form (85 checks)
 npm run db:types:check  # fails if src/lib/db/schema.ts has drifted
+npm run db:doctor       # where this database stands, and what to run next
 npx tsc --noEmit
 ```

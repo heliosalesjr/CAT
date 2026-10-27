@@ -2,7 +2,7 @@
 // Regenerate with `npm run db:types` after every migration;
 // `npm run db:types:check` fails if this file has drifted.
 //
-// 38 relations, 17 enums.
+// 39 relations, 17 enums.
 
 export type Json =
   | string | number | boolean | null
@@ -525,6 +525,15 @@ export type PlansRow = {
   sort_order: number;
 };
 
+/** View `platform_queue`. */
+export type PlatformQueueRow = {
+  schools_pending: string | null;
+  school_users_pending: string | null;
+  domains_claimed: string | null;
+  postings_live: string | null;
+  candidates_total: string | null;
+};
+
 /** Table `platform_settings`. */
 export type PlatformSettingsRow = {
   id: boolean;
@@ -544,6 +553,7 @@ export type PlatformUsersRow = {
   created_at: Date;
   updated_at: Date;
   deleted_at: Date | null;
+  auth_user_id: string | null;
 };
 
 /** Table `practice_catalog`. */

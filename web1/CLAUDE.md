@@ -23,8 +23,8 @@ a migration, not a rewrite.
 | Database | Neon (serverless Postgres), free tier | standard Postgres; Cloud SQL later is a dump/restore |
 | Hosting | Google Cloud Run, source-based deploys | scale-to-zero, no hand-written Dockerfile. Region `us-central1` |
 | File storage | Google Cloud Storage | sensitive docs in a **dedicated bucket**, signed URLs only |
-| Auth | NextAuth.js (Auth.js) | LinkedIn provider only. No per-MAU cost |
-| Payments | Stripe | quantity/tier billing — plans are priced by job-posting count |
+| Auth | NextAuth.js (Auth.js) | magic link by email, both sides (decision 7). LinkedIn for candidates later — a provider entry, not a migration |
+| Payments | Stripe | tier billing — school plans are priced by **total student enrollment** (settled 2026-10-27; `0009_billing` still measures job postings and is out of date) |
 | AI | Claude API | behind internal service interfaces so the provider is swappable |
 | Async jobs | Cloud Tasks / Pub-Sub | notifications explicitly do **not** need to be real-time |
 | Calendar | Google Calendar API | Outlook deferred |
@@ -93,10 +93,14 @@ reference_letter) · `Reference` (with verification status) · `Interview` (link
 Calendar event) · `Message` (governed by rule 1) · `Plan` / `Subscription` (Stripe) ·
 `Notification`
 
-Two actors have no account and still change things: a `Referee` reaches the product through a
-one-time link, and `PlatformUser` (the two founders) can read anything with every look logged.
-Who may do what is settled in `db/DECISIONS.md` — six decisions, closed on 2026-10-12, in the
-same spirit as the stack table above: do not re-litigate.
+One actor has no account at all and still changes things: a `Referee` reaches the product
+through a one-time link, with nothing to sign up for.
+A third has an account and belongs to no school: `PlatformUser` is resolved from the staff
+allowlist in `platform_users`, which is filled from the command line (`npm run admin`) and
+never from a form. One identity is exactly one actor, across all three tables.
+
+Who may do what is settled in `db/DECISIONS.md` — eleven decisions, closed on 2026-10-12 and
+2026-10-21, in the same spirit as the stack table above: do not re-litigate.
 
 ## Phase scope
 
