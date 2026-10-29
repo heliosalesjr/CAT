@@ -329,3 +329,169 @@ CREATE OR REPLACE FUNCTION rankable_threshold() RETURNS int
 SELECT check_assert((SELECT count(*) FROM candidates WHERE profile_completeness >= 99)
                     = (SELECT sum(rankable) FROM candidate_completeness_bands),
   '10 · moving the threshold moves the rankable set, with nothing to backfill');
+
+-- ============================================ 12 · the staff actions (0020)
+-- Three things a founder does by hand, and what each one refuses.
+
+INSERT INTO platform_users (id, email, first_name, role)
+  VALUES ('plt_check_staff', 'queue.staff@example.test', 'Queue', 'owner');
+INSERT INTO platform_users (id, email, first_name, role, deleted_at)
+  VALUES ('plt_check_gone', 'left@example.test', 'Gone', 'staff', now());
+
+-- A school nobody has verified, registered the way the form registers one.
+INSERT INTO schools (id, name, country, timezone, phone, address_line)
+  VALUES ('sch_check_new', 'Check International', 'Testland', 'UTC',
+          '+1 555 0199', '9 Test Street');
+INSERT INTO school_email_domains (school_id, domain)
+  VALUES ('sch_check_new', 'check-international.test');
+INSERT INTO school_users (id, school_id, role, first_name, email)
+  VALUES ('usr_check_new', 'sch_check_new', 'hr', 'Unconfirmed',
+          'head@check-international.test');
+
+SELECT check_assert((SELECT count(*) FROM platform_pending_schools
+                     WHERE school_id = 'sch_check_new') = 1,
+  '12 · a self-registered school lands in the queue');
+SELECT check_assert((SELECT domains_claimed FROM platform_pending_schools
+                     WHERE school_id = 'sch_check_new')
+                    @> ARRAY['check-international.test'],
+  '12 · ... carrying the domain it claims, so one screen is enough to judge it');
+SELECT check_assert((SELECT registered_by_email FROM platform_pending_schools
+                     WHERE school_id = 'sch_check_new') = 'head@check-international.test',
+  '12 · ... and who registered it');
+
+-- Removed staff cannot act, however the request reaches the function.
+SELECT check_refuses($$SELECT platform_verify_school('plt_check_gone', 'sch_check_new')$$,
+  '12 · a founder who was removed cannot verify a school');
+SELECT check_refuses($$SELECT platform_confirm_school_user('plt_check_gone', 'usr_check_new')$$,
+  '12 · ... nor confirm a person');
+SELECT check_refuses(
+  $$SELECT platform_prove_domain('plt_check_gone', 'sch_check_new', 'check-international.test')$$,
+  '12 · ... nor prove a domain');
+
+-- Verifying.
+SELECT check_assert(platform_verify_school('plt_check_staff', 'sch_check_new')
+                    = 'sch_check_new',
+  '12 · staff verify the school');
+SELECT check_assert((SELECT verification_status = 'verified' AND verified_at IS NOT NULL
+                     FROM schools WHERE id = 'sch_check_new'),
+  '12 · ... and it reads back verified');
+SELECT check_assert((SELECT count(*) FROM audit_log
+                     WHERE action = 'school.verified' AND entity_id = 'sch_check_new'
+                       AND actor_type = 'platform_user') = 1,
+  '12 · ... with the founder named in the append-only log');
+SELECT check_refuses($$SELECT platform_verify_school('plt_check_staff', 'sch_check_new')$$,
+  '12 · verifying twice is refused rather than silently repeated');
+SELECT check_refuses($$SELECT platform_verify_school('plt_check_staff', 'sch_nope')$$,
+  '12 · a school that does not exist is refused');
+
+-- Confirming a person is what turns the role template on.
+SELECT check_assert((SELECT count(*) FROM school_user_effective_permissions
+                     WHERE school_user_id = 'usr_check_new') = 0,
+  '12 · an unconfirmed hr user still holds nothing, verified school or not');
+SELECT check_assert(platform_confirm_school_user('plt_check_staff', 'usr_check_new')
+                    = 'usr_check_new',
+  '12 · staff confirm the person');
+SELECT check_assert(school_user_has('usr_check_new', 'view_documents'),
+  '12 · ... and only now does hr mean hr');
+SELECT check_assert((SELECT verification_method = 'manual' AND verified_by_id = 'plt_check_staff'
+                     FROM school_users WHERE id = 'usr_check_new'),
+  '12 · ... recorded as a human decision, not as a domain match');
+SELECT check_refuses($$SELECT platform_confirm_school_user('plt_check_staff', 'usr_check_new')$$,
+  '12 · confirming an already-confirmed person is refused');
+
+-- Proving a domain, the one that keeps acting.
+SELECT check_assert(NOT EXISTS (SELECT 1 FROM schools_for_email('new@check-international.test')),
+  '12 · an unproved domain lets nobody in');
+SELECT check_assert(platform_prove_domain('plt_check_staff', 'sch_check_new',
+                                          'CHECK-INTERNATIONAL.TEST')
+                    = 'check-international.test',
+  '12 · staff prove the domain, case and spacing forgiven');
+SELECT check_assert((SELECT school_id FROM schools_for_email('new@check-international.test'))
+                    = 'sch_check_new',
+  '12 · ... and from now on that address selects this school on its own');
+SELECT check_refuses(
+  $$SELECT platform_prove_domain('plt_check_staff', 'sch_check_new', 'check-international.test')$$,
+  '12 · proving the same domain twice is refused');
+SELECT check_refuses($$SELECT platform_prove_domain('plt_check_staff', 'sch_check_new', 'gmail.com')$$,
+  '12 · a public provider cannot be proved for a school, even by staff');
+
+-- The undo needs a reason, because the log is the only record of why.
+SELECT check_refuses($$SELECT platform_unverify_school('plt_check_staff', 'sch_check_new', '  ')$$,
+  '12 · un-verifying without a reason is refused');
+SELECT check_assert(platform_unverify_school('plt_check_staff', 'sch_check_new',
+                                             'phone number was a mobile') = 0,
+  '12 · with a reason it goes back to pending, parking 0 live postings');
+SELECT check_assert((SELECT count(*) FROM platform_pending_schools
+                     WHERE school_id = 'sch_check_new') = 1,
+  '12 · ... and reappears in the queue');
+
+-- ============================================= 13 · posting a role (0021)
+
+-- sch_accra is pending in the bundle, and its two roles were parked on load.
+SELECT check_assert((SELECT verification_status FROM schools WHERE id = 'sch_accra')
+                    <> 'verified',
+  '13 · the bundle has one school still waiting on us');
+SELECT check_refuses($$UPDATE job_postings SET status = 'posted' WHERE id = 'job_aia_sci'$$,
+  '13 · a pending school cannot put a role back on air');
+SELECT check_assert((SELECT count(*) FROM job_postings j JOIN schools s ON s.id = j.school_id
+                     WHERE j.status = 'posted' AND s.verification_status <> 'verified') = 0,
+  '13 · so no live role anywhere belongs to an unverified school');
+
+-- Drafting is still allowed while waiting.
+UPDATE job_postings SET status = 'draft' WHERE id = 'job_aia_sci';
+SELECT check_assert((SELECT status FROM job_postings WHERE id = 'job_aia_sci') = 'draft',
+  '13 · ... but it may still write them as drafts');
+
+-- Verify the school and the same role goes live.
+INSERT INTO platform_users (id, email, first_name, role)
+  VALUES ('plt_check_post', 'post.staff@example.test', 'Post', 'owner');
+SELECT platform_verify_school('plt_check_post', 'sch_accra');
+UPDATE job_postings SET status = 'posted' WHERE id = 'job_aia_sci';
+SELECT check_assert((SELECT status FROM job_postings WHERE id = 'job_aia_sci') = 'posted',
+  '13 · verifying the school is what lets the role go live');
+
+-- And un-verifying takes them off air again, counting what it parked.
+SELECT check_assert(platform_unverify_school('plt_check_post', 'sch_accra', 'spot check') = 1,
+  '13 · un-verifying parks the live roles and says how many');
+SELECT check_assert((SELECT status FROM job_postings WHERE id = 'job_aia_sci') = 'on_hold',
+  '13 · ... as on_hold, because the school meant to be hiring');
+
+-- The author must hold post_jobs at that school.
+SELECT check_refuses($$INSERT INTO job_postings
+    (school_id, created_by_id, title, ranking_criteria)
+    VALUES ('sch_hangang', 'usr_his_coord', 'Posted by a coordinator',
+            ARRAY['years_experience','curriculum_match','advanced_degree'])$$,
+  '13 · a coordinator cannot be recorded as having posted a role');
+SELECT check_refuses($$INSERT INTO job_postings
+    (school_id, created_by_id, title, ranking_criteria)
+    VALUES ('sch_hangang', 'usr_cai_hr', 'Posted from another school',
+            ARRAY['years_experience','curriculum_match','advanced_degree'])$$,
+  '13 · nor can somebody from a different school');
+
+-- A posting with no author is allowed: an importer has no human behind it.
+INSERT INTO job_postings (id, school_id, title, ranking_criteria)
+  VALUES ('job_check_noauthor', 'sch_hangang', 'Imported role',
+          ARRAY['years_experience','curriculum_match','advanced_degree']);
+SELECT check_assert((SELECT created_by_id IS NULL FROM job_postings
+                     WHERE id = 'job_check_noauthor'),
+  '13 · but no author at all is fine, and honest');
+
+-- The criteria rules from 0004 still hold on this path.
+SELECT check_refuses($$INSERT INTO job_postings (school_id, title, ranking_criteria)
+    VALUES ('sch_hangang', 'Too few', ARRAY['years_experience','curriculum_match'])$$,
+  '13 · fewer than three criteria is refused');
+SELECT check_refuses($$INSERT INTO job_postings (school_id, title, ranking_criteria)
+    VALUES ('sch_hangang', 'Repeated', ARRAY['years_experience','years_experience','local_hire'])$$,
+  '13 · a repeated criterion is refused, because it would double a weight');
+SELECT check_refuses($$INSERT INTO job_postings (school_id, title, ranking_criteria)
+    VALUES ('sch_hangang', 'Invented', ARRAY['vibes','years_experience','local_hire'])$$,
+  '13 · a criterion nobody catalogued is refused');
+
+-- Weights come from position alone, and the generated id works.
+SELECT check_assert((SELECT id FROM job_postings WHERE title = 'Imported role')
+                    LIKE 'job_%',
+  '13 · a posting created without an id gets one');
+SELECT check_assert(criterion_weight(1, 5) = 0.333 AND criterion_weight(5, 5) = 0.067,
+  '13 · first of five is worth five times the last');
+SELECT check_assert(criterion_weight(1, 3) = 0.500,
+  '13 · and first of three is worth half of everything');

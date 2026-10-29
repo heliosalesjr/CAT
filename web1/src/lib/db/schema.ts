@@ -2,7 +2,7 @@
 // Regenerate with `npm run db:types` after every migration;
 // `npm run db:types:check` fails if this file has drifted.
 //
-// 39 relations, 17 enums.
+// 42 relations, 17 enums.
 
 export type Json =
   | string | number | boolean | null
@@ -523,6 +523,49 @@ export type PlansRow = {
   candidate_search_enabled: boolean;
   profile_boost: boolean;
   sort_order: number;
+};
+
+/** View `platform_claimed_domains`. */
+export type PlatformClaimedDomainsRow = {
+  school_id: string | null;
+  school_name: string | null;
+  school_status: string | null;
+  domain: string | null;
+  created_at: Date | null;
+  users_on_domain: number | null;
+};
+
+/** View `platform_pending_school_users`. */
+export type PlatformPendingSchoolUsersRow = {
+  school_user_id: string | null;
+  school_id: string | null;
+  school_name: string | null;
+  school_status: string | null;
+  name: string | null;
+  email: string | null;
+  title: string | null;
+  role: SchoolUserRole | null;
+  created_at: Date | null;
+  email_domain: string | null;
+  domain_proved: boolean | null;
+  domain_claimed_only: boolean | null;
+};
+
+/** View `platform_pending_schools`. */
+export type PlatformPendingSchoolsRow = {
+  school_id: string | null;
+  name: string | null;
+  city: string | null;
+  country: string | null;
+  website: string | null;
+  phone: string | null;
+  address_line: string | null;
+  student_count: number | null;
+  created_at: Date | null;
+  registered_by: string | null;
+  registered_by_email: string | null;
+  users_total: number | null;
+  domains_claimed: string[] | null;
 };
 
 /** View `platform_queue`. */

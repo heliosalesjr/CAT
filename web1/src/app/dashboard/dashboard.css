@@ -1297,3 +1297,77 @@
 
 .pf-problem { font-size: 12.5px; color: var(--critical, #b3261e); }
 .pf-ok { color: var(--positive); }
+
+/* ------------------------------------------------------------------------
+   Opening a role, and the criteria picker.
+   ------------------------------------------------------------------------ */
+
+.np { display: flex; flex-direction: column; gap: 18px; }
+.np .su-field { margin-top: 14px; }
+.np-fieldset { border: 0; padding: 0; margin: 18px 0 0; }
+
+/* Position is the weight, so the chosen list reads as a ranking and the
+   offer list reads as a menu. */
+.cp { display: grid; gap: 18px; }
+@media (min-width: 900px) { .cp { grid-template-columns: 1fr 1fr; align-items: start; } }
+
+.cp-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.cp-head strong { font-family: var(--font-display); font-size: 15px; }
+
+.cp-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+
+.cp-chosen .cp-list li {
+  display: grid;
+  grid-template-columns: 3.2rem 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--rule);
+}
+.cp-weight {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+  color: var(--stage-screening);
+}
+.cp-body { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.cp-body strong { font-size: 14.5px; }
+
+.cp-moves { display: flex; gap: 2px; }
+.cp-moves button {
+  font: inherit;
+  line-height: 1;
+  width: 1.9rem;
+  height: 1.9rem;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  color: inherit;
+  cursor: pointer;
+}
+.cp-moves button:hover:not(:disabled) { background: var(--surface-2); }
+.cp-moves button:disabled { opacity: 0.3; cursor: default; }
+
+.cp-offer li button {
+  font: inherit;
+  width: 100%;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 9px 12px;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  color: inherit;
+  cursor: pointer;
+}
+.cp-offer li button:hover:not(:disabled) { background: var(--surface-2); }
+.cp-offer li button:disabled { opacity: 0.45; cursor: default; }
+.cp-offer strong { font-size: 14px; }
+.cp-offer span { font-size: 12.5px; color: var(--ink-3, inherit); opacity: 0.75; }

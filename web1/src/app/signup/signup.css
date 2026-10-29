@@ -156,3 +156,46 @@
 .su-list span { font-size: 12.5px; color: var(--color-navy-3); }
 
 @media (prefers-reduced-motion: reduce) { .su * { transition: none !important; } }
+
+/* ------------------------------------------------------------------------
+   Admin queues. Same sheet as signup: this side is forms and lists, and it
+   should not grow its own design language before anybody has used it.
+   ------------------------------------------------------------------------ */
+
+.aq-section { margin-top: 40px; display: flex; flex-direction: column; gap: 10px; }
+.aq-section > .body { margin-bottom: 6px; }
+
+.aq-list { display: grid; gap: 14px; }
+
+.aq-card {
+  background: var(--color-paper);
+  border: 1px solid var(--color-rule);
+  border-left: 3px solid var(--color-contour-2);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+/* Proving a domain is not the same size of decision as the other two. */
+.aq-card[data-weight="high"] { border-left-color: var(--color-gold-deep); }
+
+.aq-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.aq-head strong {
+  font-family: var(--font-display);
+  font-size: 17px;
+  color: var(--color-navy);
+}
+
+.aq-facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 16px;
+  margin: 0;
+  font-size: 14px;
+}
+.aq-facts dt { white-space: nowrap; }
+.aq-facts dd { margin: 0; color: var(--color-navy); overflow-wrap: anywhere; }
+.aq-facts a { color: var(--color-teal-ink); }
+
+.aq-act { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+.aq-act .readout { flex: 1 1 16rem; }

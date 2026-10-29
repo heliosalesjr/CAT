@@ -33,6 +33,8 @@ import {
   updateCandidate,
 } from "../src/lib/db/candidates.ts";
 import { parseProfileForm } from "../src/lib/profile-fields.ts";
+import { criterionWeights, parsePostingForm } from "../src/lib/posting-fields.ts";
+import { createPosting, criteriaCatalog, planAllowsRanking } from "../src/lib/db/postings.ts";
 import { applyProfileSave } from "../src/lib/profile-save.ts";
 import {
   InvalidSignup,
@@ -76,11 +78,12 @@ async function refuses(fn: () => Promise<unknown>, what: string) {
   }
 }
 
-const made: { authUsers: string[]; candidates: string[]; schools: string[] } = {
-  authUsers: [],
-  candidates: [],
-  schools: [],
-};
+const made: {
+  authUsers: string[];
+  candidates: string[];
+  schools: string[];
+  postings: string[];
+} = { authUsers: [], candidates: [], schools: [], postings: [] };
 
 async function makeIdentity(email: string): Promise<string> {
   const rows = await query<{ id: string }>(
@@ -647,8 +650,128 @@ check(
   await query(`DELETE FROM platform_users WHERE id = 'plt_smoke'`);
 }
 
+/* ------------------------------------------------- opening a role (day 3) */
+
+{
+  const catalog = await criteriaCatalog();
+  check(catalog.length === 10, "the criteria catalog offers ten");
+
+  // Position is the weight, and the numbers are the ones CLAUDE.md specifies.
+  check(
+    JSON.stringify(criterionWeights(5)) === "[33,27,20,13,7]",
+    "five criteria weigh 33/27/20/13/7 by position",
+  );
+  check(JSON.stringify(criterionWeights(3)) === "[50,33,17]", "three weigh 50/33/17");
+
+  const form = () => {
+    const f = new FormData();
+    f.set("title", "DP Chemistry Teacher");
+    f.set("roleFamily", "teacher");
+    f.append("subjects", "Chemistry");
+    f.append("curriculumRequired", "IB_DP");
+    f.append("gradeLevels", "high");
+    f.set("employmentType", "full_time");
+    f.set("likelihood", "definite");
+    f.set("applyByDate", "2027-03-01");
+    f.set("startDate", "2027-08-01");
+    f.set("openingsAvailable", "1");
+    f.set("salaryMinUsd", "55000");
+    f.set("salaryMaxUsd", "70000");
+    f.set("dependentTuitionCovered", "2");
+    for (const c of ["curriculum_match", "subject_specialization", "years_experience"]) {
+      f.append("rankingCriteria", c);
+    }
+    f.set("status", "posted");
+    return f;
+  };
+
+  const parsed = parsePostingForm(form());
+  check(parsed.ok, "a filled role parses");
+  if (parsed.ok) {
+    check(
+      JSON.stringify(parsed.input.rankingCriteria) ===
+        '["curriculum_match","subject_specialization","years_experience"]',
+      "... keeping the criteria in the order they were picked, because order is weight",
+    );
+  }
+
+  // The refusals, each one a thing somebody will actually do.
+  const without = (drop: string) => {
+    const f = form();
+    f.delete(drop);
+    return f;
+  };
+  const badly = (k: string, v: string) => {
+    const f = form();
+    f.set(k, v);
+    return f;
+  };
+  const named = (r: ReturnType<typeof parsePostingForm>, field: string) =>
+    !r.ok && r.problems.some((p) => p.field === field);
+
+  check(named(parsePostingForm(without("title")), "title"), "a role with no title is refused");
+  check(
+    named(parsePostingForm(without("subjects")), "subjects"),
+    "a teaching role with no subject is refused — nothing could be matched to it",
+  );
+  check(
+    named(parsePostingForm(badly("startDate", "2027-01-01")), "applyByDate"),
+    "applications closing after the role starts is refused",
+  );
+  check(
+    named(parsePostingForm(badly("salaryMaxUsd", "40000")), "salaryMaxUsd"),
+    "a salary range that runs backwards is refused",
+  );
+  const twoCriteria = form();
+  twoCriteria.delete("rankingCriteria");
+  twoCriteria.append("rankingCriteria", "local_hire");
+  twoCriteria.append("rankingCriteria", "advanced_degree");
+  check(
+    named(parsePostingForm(twoCriteria), "rankingCriteria"),
+    "fewer than three criteria is refused",
+  );
+
+  const supportNoSpecialism = form();
+  supportNoSpecialism.set("roleFamily", "support_staff");
+  supportNoSpecialism.delete("subjects");
+  check(
+    named(parsePostingForm(supportNoSpecialism), "specialisms"),
+    "a student-support role with no specialism is refused",
+  );
+
+  // And the whole thing against the database.
+  if (parsed.ok) {
+    const allowed = await planAllowsRanking("sch_hangang");
+    const created = await createPosting({
+      schoolId: "sch_hangang",
+      createdById: "usr_his_hr",
+      aiRankingEnabled: allowed,
+      posting: parsed.input,
+    });
+    made.postings.push(created.id);
+    check(created.id.startsWith("job_"), "the role saves with a generated id");
+    check(created.status === "posted", "... live, because Hangang is verified");
+    check(created.postedAt instanceof Date, "... stamped with when it went live");
+    check(
+      JSON.stringify(created.rankingCriteria) === JSON.stringify(parsed.input.rankingCriteria),
+      "... with the criteria in the order the recruiter chose",
+    );
+
+    // The plan is the ceiling, never the floor.
+    const ceiling = await createPosting({
+      schoolId: "sch_hangang",
+      createdById: "usr_his_hr",
+      aiRankingEnabled: false,
+      posting: { ...parsed.input, title: "Ranking off", status: "draft" },
+    });
+    made.postings.push(ceiling.id);
+    check(ceiling.aiRankingEnabled === false, "a role may switch ranking off");
+  }
+}
+
 /* ----------------------------------------------------------------- cleanup */
 
+await query(`DELETE FROM job_postings WHERE id = ANY($1)`, [made.postings]);
 await query(`DELETE FROM candidate_role_families WHERE candidate_id = ANY($1)`, [made.candidates]);
 await query(`DELETE FROM candidates WHERE id = ANY($1)`, [made.candidates]);
 // Invites first: accepted_school_user_id points at users made below, and the

@@ -123,6 +123,14 @@ only) · persistent conversation history · Outlook sync · multi-region infra.
 Design the schema so these slot in without migration pain: nullable `aiRankScore`,
 `verificationStatus` on references, `backgroundCheckStatus` on documents.
 
+## Where the project actually is
+
+**Read `STATUS.md` first.** This file says what the product is meant to be;
+that one says what exists today, which screens are real and which are still
+the sample bundle, what the database refuses on its own, and what is not built
+yet. It is the cheapest way to avoid rebuilding something that already works
+or trusting a mockup.
+
 ## Reference material in this repo
 
 - `docs/mock-data.json` — 136 teachers, 155 applications, 10 postings, shaped to this schema.

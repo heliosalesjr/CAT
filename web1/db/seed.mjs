@@ -120,6 +120,34 @@ function preflight() {
       note(`${j.id}: applyByDate ${j.applyByDate} is after startDate ${j.startDate}`);
   }
 
+  // 0021: the author of a posting must hold post_jobs at that school. One
+  // posting in the bundle names a coordinator, whose template is move_stage
+  // and send_feedback — they could not have created it. Loaded with no author
+  // rather than with a false one: the trigger allows NULL precisely because an
+  // importer has no human behind it, and "we do not know" is the true answer.
+  const cannotPost = data.jobPostings.filter((j) => {
+    if (!j.createdById) return false;
+    const u = data.schoolUsers.find((x) => x.id === j.createdById);
+    return !u || !(u.permissions ?? []).includes('post_jobs');
+  });
+  if (cannotPost.length)
+    warn(`${cannotPost.length} posting(s) name an author who does not hold post_jobs ` +
+         `(${cannotPost.map((j) => `${j.id} by ${j.createdById}`).join(', ')}) — loaded ` +
+         `with no author, because 0021 refuses to record one who could not have done it`);
+
+  // 0021: a posting may be live only while its school is verified. The bundle
+  // has sch_accra pending with two posted roles — the generator did not model
+  // the rule. Warned rather than refused, and parked on load (below): this is
+  // demo data, and blocking the only seed over it buys nothing.
+  const unverified = new Set(
+    data.schools.filter((s) => s.verificationStatus !== 'verified').map((s) => s.id));
+  const liveAtPending = data.jobPostings.filter(
+    (j) => j.status === 'posted' && unverified.has(j.schoolId));
+  if (liveAtPending.length)
+    warn(`${liveAtPending.length} posting(s) are live at a school that is not verified ` +
+         `(${liveAtPending.map((j) => j.id).join(', ')}) — loaded as on_hold, because 0021 ` +
+         `refuses a live role at a pending school`);
+
   for (const u of data.schoolUsers) if (!S.has(u.schoolId)) note(`${u.id}: unknown school ${u.schoolId}`);
   for (const s of data.schools) if (s.planId && !P.has(s.planId)) note(`${s.id}: unknown plan ${s.planId}`);
   for (const d of data.documents) if (!T.has(d.teacherId)) note(`${d.id}: unknown candidate ${d.teacherId}`);
@@ -222,6 +250,12 @@ const arr = (v) => (Array.isArray(v) ? v : []);
 // it, and the day the profile form asks the question outright, the reading is
 // deleted rather than migrated.
 // ---------------------------------------------------------------------------
+const canPost = new Set(
+  data.schoolUsers.filter((u) => (u.permissions ?? []).includes('post_jobs')).map((u) => u.id));
+
+const unverifiedSchools = new Set(
+  data.schools.filter((s) => s.verificationStatus !== 'verified').map((s) => s.id));
+
 const SPECIALISMS = new Set(['Counseling', 'Learning Support']);
 
 const specialismsOf = (x) => arr(x.subjects).filter((s) => SPECIALISMS.has(s));
@@ -391,12 +425,18 @@ try {
   }));
 
   n.job_postings = await insert('job_postings', data.jobPostings, (j) => ({
-    id: j.id, school_id: j.schoolId, created_by_id: j.createdById, title: j.title,
+    id: j.id, school_id: j.schoolId, title: j.title,
+    // No author beats a false one — see the pre-flight warning.
+    created_by_id: j.createdById && canPost.has(j.createdById) ? j.createdById : null,
     role_family: j.roleFamily ?? 'teacher', subjects: subjectsOf(j),
     specialisms: specialismsOf(j), division: j.division,
     grade_levels: arr(j.gradeLevels), curriculum_required: arr(j.curriculumRequired),
     employment_type: j.employmentType ?? 'full_time', academic_year: j.academicYear,
-    status: j.status, likelihood: j.likelihood ?? 'definite', apply_by_date: j.applyByDate,
+    // Parked rather than live where the school is still pending. The bundle's
+    // own intent — this school IS unverified — is what wins; the posting
+    // status was the part the generator got wrong.
+    status: unverifiedSchools.has(j.schoolId) && j.status === 'posted' ? 'on_hold' : j.status,
+    likelihood: j.likelihood ?? 'definite', apply_by_date: j.applyByDate,
     start_date: j.startDate, contract_length_years: j.contractLengthYears,
     openings_available: j.openingsAvailable ?? 1, min_years_experience: j.minYearsExperience ?? 0,
     excluded_nationalities: arr(j.excludedNationalities),
@@ -585,6 +625,13 @@ try {
         OR EXISTS (SELECT 1 FROM unnest(c.specialisms) v
                    WHERE NOT EXISTS (SELECT 1 FROM practice_catalog p
                                      WHERE p.id = v AND p.kind = 'specialism'))`, 0);
+  await one('postings whose author may not post',
+    `SELECT count(*) FROM job_postings j
+     WHERE j.created_by_id IS NOT NULL
+       AND NOT school_user_has(j.created_by_id, 'post_jobs')`, 0);
+  await one('live postings at an unverified school',
+    `SELECT count(*) FROM job_postings j JOIN schools s ON s.id = j.school_id
+     WHERE j.status = 'posted' AND s.verification_status <> 'verified'`, 0);
   await one("usr_cai_principal's effective permissions",
     `SELECT count(*) FROM school_user_effective_permissions WHERE school_user_id = 'usr_cai_principal'`,
     data.schoolUsers.find((u) => u.id === 'usr_cai_principal').permissions.length);

@@ -41,11 +41,16 @@ logs/
 *.log
 
 # Variáveis de ambiente
-.env
-.env*.local
-.env.development.local
-.env.test.local
-.env.production.local
+# Everything, then one exception. The Next default listed `.env` and
+# `.env*.local` and let `.env.production` through — which is precisely the file
+# a production connection string ends up in. An allowlist of one is safer than
+# a denylist somebody has to remember to extend.
+.env*
+!.env.example
+
+# The dev email transport writes the last magic link here, which is a working
+# credential. .next/ is ignored above; this says why it has to stay that way.
+.next/last-email-link
 
 # Vercel
 .vercel

@@ -319,3 +319,58 @@ case. That is the bundle's doing, not the formula's: its candidates all have
 every profile field filled. Keeping the demo honest means regenerating a
 handful of genuinely sparse profiles, not retuning the weights until the
 picture looks right.
+
+---
+
+# Posting a role — decided 2026-10-29
+
+Two rules the product had been claiming and not enforcing. Neither was a new
+idea: both are written in the drafted terms of service and in the admin copy.
+What changed is that `0020` made them reachable. Giving staff separate buttons
+for "verify this school" and "confirm this person" created the state they
+guard against, so they stopped being true by accident.
+
+| | Decision | Chosen | Lives in |
+| --- | --- | --- | --- |
+| 12 | May a school that is not verified show roles to candidates? | No. It may draft them | `0021_posting_a_role` |
+| 13 | May a posting record an author who could not have posted it? | No, and no author is allowed | `0021_posting_a_role` |
+
+## 12 · A role is live only while its school is verified
+
+**Evidence.** Nothing stopped it. A pending school with a confirmed user —
+reachable in two clicks on the admin side built the same day — could publish
+to candidates. The drafted terms say "we verify a school as an institution
+before its postings go live", and the admin screen said the same thing while
+the schema did not.
+
+Drafting stays open: a school waiting on us can write its roles and publish
+them the moment it is verified, with no re-entry. And `platform_unverify_school`
+now parks live roles as `on_hold` and returns how many, because sending a
+school back to pending while its roles stay visible would leave exactly the
+state this rule exists to prevent — and the trigger watches postings, not
+schools.
+
+**Consequence for the bundle.** `sch_accra` is pending with two live roles.
+The seed loads them as `on_hold` and warns. The bundle's explicit intent —
+this school is unverified — wins; the posting status is the part the generator
+did not model.
+
+**Not chosen.** Blocking the school's users instead. Verification is about the
+institution; whether one person works there is decision 8 and a separate
+question, and conflating them means a legitimate employee is punished for the
+school's paperwork.
+
+## 13 · The author of a posting must hold `post_jobs`
+
+**Evidence.** `job_his_ey` in the bundle was created by `usr_his_coord`, a
+coordinator, whose template is `move_stage` and `send_feedback`. The
+permission existed and nothing checked it on this path.
+
+NULL is allowed, and that is the interesting half: an importer or a scheduled
+job has no human behind it, and recording nobody is more honest than inventing
+somebody. What is refused is naming a person who could not have done it. The
+seed loads that posting with no author and says so.
+
+**Not chosen.** Granting coordinators `post_jobs`. The three role templates
+were settled in decision 1 against the bundle's own data, and widening one to
+fit a defect in that same bundle would be backwards.

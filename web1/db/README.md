@@ -13,7 +13,7 @@ npm run db:migrate        # apply pending migrations
 npm run db:seed:check     # validate docs/mock-data.json, no database needed
 npm run db:seed           # load the bundle (one transaction)
 npm run db:reset          # truncate the seeded tables, then load
-npm run db:check          # assert the eleven decisions, then roll back
+npm run db:check          # assert what the schema refuses, then roll back
 npm run db:types          # regenerate src/lib/db/schema.ts from the live schema
 npm run db:types:check    # fail if those types have drifted from the database
 npm run db:smoke          # run the TypeScript data layer against the database
@@ -52,7 +52,7 @@ Decision 8's third layer — an unverified school user resolves to zero
 permissions — is one condition inside one view, and it only stays true for the
 whole application while the application never asks the question another way.
 
-`npm run db:smoke` exercises all of it against a seeded database: 39 checks
+`npm run db:smoke` exercises all of it against a seeded database: 110 checks
 that the queries parse, the columns exist under the names the types claim, and
 a date comes back as a date. Typechecking proves none of that, because nothing
 typechecks a string of SQL. It writes and cleans up after itself, so point it
@@ -83,10 +83,13 @@ truncated by a stray flag.
 | `0016_school_affiliation` | the work email picks the school; **pending means zero permissions**; invites |
 | `0017_practice_catalog` | one controlled vocabulary for subjects and specialisms |
 | `0018_profile_completeness` | rule 6's number, derived and explainable; readiness kept separate |
+| `0019_platform_identity` | the founders can sign in; the staff list is an allowlist, not a form |
+| `0020_platform_actions` | verify a school, confirm a user, prove a domain — each logged |
+| `0021_posting_a_role` | a role is live only at a verified school; its author must hold `post_jobs` |
 
-`0012`–`0018` implement the eleven decisions recorded in
+`0012`–`0021` implement the thirteen decisions recorded in
 [`DECISIONS.md`](DECISIONS.md) — six about who acts on the platform, five about
-how they get an account. Two of the first six (permissions as a role template
+how they get an account, two about opening a role. Two of the first six (permissions as a role template
 plus a per-person delta, one person per school) were already what `0002` did,
 so they add no DDL. Read that file before reopening any of them.
 
@@ -161,10 +164,10 @@ wrong on every other day. Counters that are expensive to recompute per request
 
 ## What has actually been run
 
-All eighteen migrations have been applied, in order, to a real PostgreSQL
-16.2 — and the bundle loaded into it, all 155 applications and 192 role-family
+All twenty-one migrations have been applied, in order, to a real PostgreSQL
+18.6 on Neon and 16.2 locally — and the bundle loaded into it, all 155 applications and 192 role-family
 declarations, with every post-load check passing. `npm run db:check` then
-asserts the eleven decisions behave (73 assertions, mostly about what the
+asserts the thirteen decisions behave (113 assertions, mostly about what the
 database *refuses*), inside a transaction it rolls back.
 
 That run is what turned up the defects below, none of which the parser or the
@@ -176,7 +179,7 @@ anything about pooling.
 npm run db:migrate && npm run db:seed && npm run db:check
 ```
 
-### Four things a live server found
+### Five things a live server found
 
 **`dependent_tuition_covered` was a boolean** in `0004` and the bundle carries
 `1` or `2` — international schools cover tuition for one or two children, and
@@ -198,6 +201,14 @@ an ordered pair. The thirty pairs were swapped in `docs/mock-data.json` on
 2026-10-21 with the founders' go-ahead, and the pre-flight now lists and
 refuses any that come back — the fix belongs in the generator, and this check
 is what will say if it was not made.
+
+**Two rules the bundle predates.** One posting (`job_his_ey`) names a
+coordinator as its author, and a coordinator holds `move_stage` and
+`send_feedback` — they could not have posted it. And `sch_accra` is pending
+with two live roles. `0021` refuses both. The seed loads the first with no
+author and the second as `on_hold`, warning on each: the bundle's explicit
+intent wins where it has one, and the part the generator did not model gives
+way.
 
 **The candidate counters are decorative.** 129 candidates *claim* a verified
 document and 5 have a row in `documents`; 103 claim a verified supervisor

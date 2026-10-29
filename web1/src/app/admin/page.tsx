@@ -2,9 +2,16 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { one } from "@/lib/db/client";
-import type { PlatformQueueRow, PlatformUsersRow } from "@/lib/db/schema";
+import {
+  claimedDomains,
+  pendingSchoolUsers,
+  pendingSchools,
+  platformQueue,
+} from "@/lib/db/platform";
+import type { PlatformUsersRow } from "@/lib/db/schema";
 import { currentActor, currentIdentity } from "@/lib/session";
 import { ClaimSeat } from "./ClaimSeat";
+import { DomainQueue, SchoolQueue, UserQueue } from "./Queues";
 
 export const metadata: Metadata = { title: "Platform — Class Act Talent" };
 export const dynamic = "force-dynamic";
@@ -52,9 +59,12 @@ export default async function AdminPage() {
     );
   }
 
-  const [me, queue] = await Promise.all([
+  const [me, queue, schools, users, domains] = await Promise.all([
     one<PlatformUsersRow>(`SELECT * FROM platform_users WHERE id = $1`, [actor.id]),
-    one<PlatformQueueRow>(`SELECT * FROM platform_queue`),
+    platformQueue(),
+    pendingSchools(),
+    pendingSchoolUsers(),
+    claimedDomains(),
   ]);
 
   const rows: { label: string; value: number; note: string }[] = [
@@ -88,13 +98,16 @@ export default async function AdminPage() {
   return (
     <>
       <header style={{ maxWidth: "36rem", marginBottom: 26 }}>
-        <span className="label label-teal">Platform</span>
+        {/* The role belongs in the eyebrow, where a middot between two labels
+            reads as a separator. Inside the sentence below it read as a
+            stumble: "signed in as an address · owner." */}
+        <span className="label label-teal">Platform &middot; {me.role}</span>
         <h1 className="display-md" style={{ marginBlock: "10px 12px" }}>
           {me.firstName ? `Hello, ${me.firstName}` : "Platform staff"}
         </h1>
         <p className="lede">
-          Signed in as {me.email} · {me.role}. Everything you can read here is
-          logged against your name, including anybody&rsquo;s documents.
+          Signed in as {me.email}. Everything you can read here is logged
+          against your name, including anybody&rsquo;s documents.
         </p>
       </header>
 
@@ -127,12 +140,39 @@ export default async function AdminPage() {
             </li>
           ))}
         </ul>
-        <p className="su-note">
-          Verifying a school, confirming a user and proving a domain are the
-          next things to build here. Until then they are SQL — which is fine
-          for four days of testing and not fine after that.
-        </p>
       </div>
+
+      {/* The order is the order of consequence, lightest first. Proving a
+          domain is last because it is the one that keeps letting people in
+          after the person who clicked it has stopped paying attention. */}
+      <section className="aq-section">
+        <h2 className="title">Schools waiting</h2>
+        <p className="body measure">
+          A school cannot post a role until it is verified. You are deciding
+          whether the institution is real — not whether the person who signed
+          it up works there, which is the next queue down.
+        </p>
+        <SchoolQueue schools={schools} />
+      </section>
+
+      <section className="aq-section">
+        <h2 className="title">People waiting</h2>
+        <p className="body measure">
+          Each of these holds <strong>no permissions at all</strong> until
+          confirmed, whatever their role says. Confirming is what turns the
+          role template on.
+        </p>
+        <UserQueue users={users} />
+      </section>
+
+      <section className="aq-section">
+        <h2 className="title">Domains claimed</h2>
+        <p className="body measure">
+          The highest-leverage thing on this page, and the only one that keeps
+          acting after you close the tab.
+        </p>
+        <DomainQueue domains={domains} />
+      </section>
     </>
   );
 }

@@ -1,8 +1,11 @@
 # Class Act Talent — web
 
-Next.js (App Router, self-hosted), Postgres, Auth.js. See `CLAUDE.md` for the
-stack and the business rules, `db/README.md` for the schema and the data
-layer, and `db/DECISIONS.md` for the eleven decisions that shaped both.
+Next.js (App Router, self-hosted), Postgres, Auth.js.
+
+**`STATUS.md` says where the project is** — what is real, what is still a
+mockup, and what is not built. Start there. Then `CLAUDE.md` for the stack and
+the business rules, `db/README.md` for the schema and the data layer, and
+`db/DECISIONS.md` for the thirteen decisions that shaped both.
 
 ## Running it locally
 
@@ -112,8 +115,8 @@ modules the app bundles, with no build step.
 ## Checks
 
 ```bash
-npm run db:check        # what the schema refuses (73 assertions, rolled back)
-npm run db:smoke        # the data layer, signup and the profile form (85 checks)
+npm run db:check        # what the schema refuses (113 assertions, rolled back)
+npm run db:smoke        # the data layer, signup, profiles and postings (110 checks)
 npm run db:types:check  # fails if src/lib/db/schema.ts has drifted
 npm run db:doctor       # where this database stands, and what to run next
 npx tsc --noEmit
