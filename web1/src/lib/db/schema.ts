@@ -2,7 +2,7 @@
 // Regenerate with `npm run db:types` after every migration;
 // `npm run db:types:check` fails if this file has drifted.
 //
-// 42 relations, 17 enums.
+// 44 relations, 17 enums.
 
 export type Json =
   | string | number | boolean | null
@@ -185,6 +185,7 @@ export type ApplicationsRow = {
   docs_unlocked_at: Date | null;
   created_at: Date;
   updated_at: Date;
+  last_moved_by_id: string | null;
 };
 
 /** Table `audit_log`. */
@@ -200,6 +201,30 @@ export type AuditLogRow = {
   after: Json | null;
   ip: string | null;
   at: Date;
+};
+
+/** View `candidate_applications`. */
+export type CandidateApplicationsRow = {
+  application_id: string | null;
+  candidate_id: string | null;
+  stage: ApplicationStage | null;
+  stage_changed_at: Date | null;
+  applied_at: Date | null;
+  rankable: boolean | null;
+  not_rankable_reason: string | null;
+  rejection_reason: string | null;
+  feedback_sent_at: Date | null;
+  can_message: boolean | null;
+  posting_id: string | null;
+  title: string | null;
+  role_family: RoleFamily | null;
+  subjects: string[] | null;
+  specialisms: string[] | null;
+  posting_status: JobPostingStatus | null;
+  school_id: string | null;
+  school_name: string | null;
+  city: string | null;
+  country: string | null;
 };
 
 /** View `candidate_completeness_bands`. */
@@ -597,6 +622,31 @@ export type PlatformUsersRow = {
   updated_at: Date;
   deleted_at: Date | null;
   auth_user_id: string | null;
+};
+
+/** View `posting_applications`. */
+export type PostingApplicationsRow = {
+  application_id: string | null;
+  job_posting_id: string | null;
+  school_id: string | null;
+  stage: ApplicationStage | null;
+  stage_changed_at: Date | null;
+  applied_at: Date | null;
+  shortlisted: boolean | null;
+  rankable: boolean | null;
+  not_rankable_reason: string | null;
+  ai_rank_score: number | null;
+  school_owes_response: boolean | null;
+  candidate_id: string | null;
+  candidate_name: string | null;
+  headline: string | null;
+  profile_completeness: number | null;
+  years_experience: number | null;
+  leadership_years: number | null;
+  subjects: string[] | null;
+  specialisms: string[] | null;
+  curriculum_experience: Curriculum[] | null;
+  current_country: string | null;
 };
 
 /** Table `practice_catalog`. */

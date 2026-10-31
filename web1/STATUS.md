@@ -1,4 +1,4 @@
-# Where this is, 2026-10-29
+# Where this is, 2026-10-31
 
 A map, not a tour. `CLAUDE.md` says what the product is, `db/DECISIONS.md` why
 the schema is shaped as it is, `db/README.md` how the database and data layer
@@ -10,10 +10,12 @@ something that is already there, or trusting a screen that is a mockup.
 
 ## In one paragraph
 
-A candidate or a school user can sign up with a magic link, finish a profile,
-and — for a school — have that school verified by a founder and open a role
-with ranking criteria. Platform staff have a working admin side. **Nothing can
-apply to a role yet**, and the three original dashboards are still the sample
+The loop closes. A candidate signs up with a magic link, fills in a profile,
+browses live roles and applies; the school sees them in the pipeline and moves
+them along or ends it with a reason the candidate reads. A founder verifies
+the school that made the role possible. **What is still missing is the
+ranking itself** — an application is born unscored and waits for a job that
+does not exist yet — and the three original dashboards are still the sample
 bundle rather than the signed-in person's data.
 
 ## Routes, and what is real
@@ -26,6 +28,8 @@ bundle rather than the signed-in person's data.
 | `/signup/done` | database | Real. Shows the person their own completeness |
 | `/admin` | database | Real. Staff queues: verify school, confirm user, prove domain |
 | `/dashboard/school/postings` | database | Real. The school's own roles |
+| `/dashboard/school/postings/[id]` | database | Real. The pipeline for one role, one step at a time |
+| `/dashboard/teacher/jobs` | database | Real. Live roles, why you cannot apply, and where your applications stand |
 | `/dashboard/school/postings/new` | database | Real. The role form with the ordered criteria picker |
 | `/dashboard/teacher/profile` | database **and** bundle | Real when signed in as a candidate; `?view=` renders the bundle read-only for demos |
 | `/dashboard/school` | **bundle only** | Mockup. A real school user sees sample data |
@@ -57,6 +61,11 @@ button, a script — inherits every rule for free.
 | Only active staff verify, confirm or prove | `0020` | `platform_assert_staff()` inside each function |
 | A role is live only while its school is verified | `0021` | `job_postings_live_needs_verified_school` |
 | A posting's author must hold `post_jobs` there | `0021` | `job_postings_enforce_author` |
+| One application per candidate per role | `0005` | a unique index |
+| Stages move one step forward, or out | `0005` | `stage_transition_allowed` |
+| Only `move_stage`, and only at your own school | `0022` | `move_application_stage()` |
+| Ending an application needs a reason the candidate reads | `0022` | the same function |
+| A work permit blocks, a second passport unblocks | `0022` | `posting_excludes_candidate()` |
 | Subjects and specialisms come from one catalog | `0017` | `validate_practice_arrays` |
 | Ranking criteria: 3–5, distinct, catalogued | `0004` | `job_postings_validate_criteria` |
 | The plan is a ceiling on ranking, never a floor | `0009` | `job_postings_enforce_plan` |
@@ -68,8 +77,8 @@ Thirty-one triggers in total. `db/check.mjs` asserts the refusals.
 ## What is checked, and how
 
 ```bash
-npm run db:check        # 113 assertions about what the schema refuses
-npm run db:smoke        # 110 assertions about the TypeScript that talks to it
+npm run db:check        # 139 assertions about what the schema refuses
+npm run db:smoke        # 126 assertions about the TypeScript that talks to it
 npm run db:types:check  # fails if src/lib/db/schema.ts has drifted
 npx tsc --noEmit        # needs a build first: Next generates PageProps
 ```
@@ -84,10 +93,12 @@ the local 16.2.
 
 Roughly in the order it will hurt:
 
-- **Applying to a role.** Blocked on a decision, not on code:
-  `rankable_has_score` requires either a score or a not-rankable reason, and
-  nothing produces either. A fresh application needs `rankable = false` with a
-  reason, and the bundle's vocabulary has only `profile_incomplete`.
+- **The ranking itself.** Every application is born
+  `rankable = false, not_rankable_reason = 'awaiting_ranking'` and nothing
+  flips it. The weights, the criteria and the explainability rules are all
+  settled; what is missing is the job that scores an application against the
+  ten criteria and writes `criterion_scores`, `criterion_notes` and
+  `ai_rank_score`. Until it exists every pipeline is in applied order.
 - **The three mockup dashboards**, above.
 - **Email.** `EMAIL_TRANSPORT=console` prints to the terminal and writes the
   link to `.next/last-email-link` (`npm run signin`). It refuses to start in

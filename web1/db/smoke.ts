@@ -35,6 +35,14 @@ import {
 import { parseProfileForm } from "../src/lib/profile-fields.ts";
 import { criterionWeights, parsePostingForm } from "../src/lib/posting-fields.ts";
 import { createPosting, criteriaCatalog, planAllowsRanking } from "../src/lib/db/postings.ts";
+import {
+  applicationsForCandidate,
+  applicationsForPosting,
+  applyToPosting,
+  moveApplicationStage,
+  openPostings,
+  whyCannotApply,
+} from "../src/lib/db/applications.ts";
 import { applyProfileSave } from "../src/lib/profile-save.ts";
 import {
   InvalidSignup,
@@ -769,8 +777,104 @@ check(
   }
 }
 
+/* -------------------------------------------- applying and moving (day 4) */
+
+{
+  const open = await openPostings();
+  check(open.length > 0, "there are live roles to apply to");
+  check(
+    open.every((p) => p.status === "posted"),
+    "... and only live ones are offered",
+  );
+
+  // A candidate created by the signup path, applying for real.
+  const applicantId = await makeIdentity("applicant@example.test");
+  const applicant = await createCandidate({
+    authUserId: applicantId,
+    email: "applicant@example.test",
+    firstName: "Real",
+    lastName: "Applicant",
+    timezone: "UTC",
+  });
+  made.candidates.push(applicant.id);
+
+  const target = open[0];
+  check(
+    (await whyCannotApply(applicant.id, target.id)) === null,
+    "a new candidate may apply even with an unfinished profile",
+  );
+
+  const appId = await applyToPosting({ candidateId: applicant.id, postingId: target.id });
+  check(appId.startsWith("app_"), "the application is created");
+  check(
+    (await whyCannotApply(applicant.id, target.id))?.includes("already applied") === true,
+    "... and the second attempt is refused with a sentence, not a crash",
+  );
+
+  const mine = await applicationsForCandidate(applicant.id);
+  check(mine.length === 1 && mine[0].stage === "applied", "the candidate sees it at applied");
+  check(
+    mine[0].notRankableReason === "profile_incomplete",
+    "... told their profile is what is holding the ordering, because it is",
+  );
+
+  const rows = await applicationsForPosting(target.id);
+  const theirs = rows.find((r) => r.applicationId === appId);
+  check(!!theirs, "the school sees the application on its own posting");
+  check(theirs?.schoolOwesResponse === true, "... flagged as owing them an answer");
+  check(
+    typeof theirs?.profileCompleteness === "number",
+    "... with the completeness the ordering would use",
+  );
+
+  // Moving it. usr_his_hr holds move_stage at Hangang; the target may be
+  // another school's posting, so ask for a mover that belongs to it.
+  const movers = await query<{ id: string }>(
+    `SELECT u.id FROM school_users u
+     WHERE u.school_id = $1 AND u.deleted_at IS NULL
+       AND school_user_has(u.id, 'move_stage') LIMIT 1`,
+    [target.schoolId],
+  );
+  if (movers.length) {
+    const mover = movers[0].id;
+    check(
+      (await moveApplicationStage({ schoolUserId: mover, applicationId: appId, to: "screening" }))
+        === "screening",
+      "a school user with move_stage moves it one step",
+    );
+    const after = await applicationsForCandidate(applicant.id);
+    check(after[0].stage === "screening", "... and the candidate sees the move");
+
+    await refuses(
+      () =>
+        moveApplicationStage({ schoolUserId: mover, applicationId: appId, to: "hired" }),
+      "... but nobody skips from screening to hired",
+    );
+    await refuses(
+      () =>
+        moveApplicationStage({ schoolUserId: mover, applicationId: appId, to: "rejected" }),
+      "... and ending it without a reason is refused",
+    );
+    check(
+      (await moveApplicationStage({
+        schoolUserId: mover,
+        applicationId: appId,
+        to: "rejected",
+        reason: "post filled internally",
+      })) === "rejected",
+      "... with a reason it ends, and the candidate is told why",
+    );
+    const ended = await applicationsForCandidate(applicant.id);
+    check(
+      ended[0].rejectionReason === "post filled internally",
+      "... in the candidate's own view, not only in an internal note",
+    );
+  }
+}
+
 /* ----------------------------------------------------------------- cleanup */
 
+await query(`DELETE FROM applications WHERE candidate_id = ANY($1)`, [made.candidates]);
 await query(`DELETE FROM job_postings WHERE id = ANY($1)`, [made.postings]);
 await query(`DELETE FROM candidate_role_families WHERE candidate_id = ANY($1)`, [made.candidates]);
 await query(`DELETE FROM candidates WHERE id = ANY($1)`, [made.candidates]);

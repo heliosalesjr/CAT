@@ -330,6 +330,14 @@ SELECT check_assert((SELECT count(*) FROM candidates WHERE profile_completeness 
                     = (SELECT sum(rankable) FROM candidate_completeness_bands),
   '10 · moving the threshold moves the rankable set, with nothing to backfill');
 
+-- Put it back. These all run in one transaction, so a dial left turned here
+-- is a dial turned for every section below — which is exactly how section 14
+-- first reported that a complete profile was not rankable.
+CREATE OR REPLACE FUNCTION rankable_threshold() RETURNS int
+  LANGUAGE sql IMMUTABLE PARALLEL SAFE AS $$ SELECT 70 $$;
+SELECT check_assert(rankable_threshold() = 70,
+  '10 · ... and the dial goes back where it was, for the checks that follow');
+
 -- ============================================ 12 · the staff actions (0020)
 -- Three things a founder does by hand, and what each one refuses.
 
@@ -495,3 +503,113 @@ SELECT check_assert(criterion_weight(1, 5) = 0.333 AND criterion_weight(5, 5) = 
   '13 · first of five is worth five times the last');
 SELECT check_assert(criterion_weight(1, 3) = 0.500,
   '13 · and first of three is worth half of everything');
+
+-- =============================================== 14 · applying (0022)
+
+-- A candidate with nothing to their name yet, and a live role.
+INSERT INTO candidates (id, first_name, last_name, timezone, email)
+  VALUES ('tch_check_apply', 'Wants', 'A Job', 'UTC', 'wants@example.test');
+INSERT INTO candidate_role_families (candidate_id, role_family)
+  VALUES ('tch_check_apply', 'teacher');
+
+SELECT check_assert(NOT candidate_is_rankable('tch_check_apply'),
+  '14 · a half-filled profile is below the threshold');
+
+-- Applying is allowed anyway: rule 6 holds them out of the ORDERING, not out
+-- of the product.
+SELECT check_assert(why_cannot_apply('tch_check_apply', 'job_his_chem') IS NULL,
+  '14 · ... and may still apply, because rule 6 orders rather than excludes');
+SELECT check_assert(apply_to_posting('tch_check_apply', 'job_his_chem') LIKE 'app_%',
+  '14 · the application is created with a generated id');
+SELECT check_assert((SELECT rankable IS FALSE AND not_rankable_reason = 'profile_incomplete'
+                     FROM applications
+                     WHERE candidate_id = 'tch_check_apply' AND job_posting_id = 'job_his_chem'),
+  '14 · ... not rankable, and the reason says what to fix');
+SELECT check_assert((SELECT stage = 'applied' AND school_owes_response
+                     FROM applications
+                     WHERE candidate_id = 'tch_check_apply' AND job_posting_id = 'job_his_chem'),
+  '14 · ... at applied, with the school owing a reply');
+SELECT check_assert((SELECT count(*) FROM application_stage_history h
+                     JOIN applications a ON a.id = h.application_id
+                     WHERE a.candidate_id = 'tch_check_apply') = 1,
+  '14 · ... and the pipeline recorded the first step');
+
+SELECT check_refuses($$SELECT apply_to_posting('tch_check_apply', 'job_his_chem')$$,
+  '14 · applying twice to the same role is refused');
+
+-- A finished profile gets the other reason, which asks nothing of them.
+SELECT check_assert(candidate_is_rankable('tch_0001'),
+  '14 · a complete profile is above the threshold');
+SELECT check_assert(apply_to_posting('tch_0001', 'job_his_dt') LIKE 'app_%',
+  '14 · ... applies');
+SELECT check_assert((SELECT not_rankable_reason = 'awaiting_ranking' FROM applications
+                     WHERE candidate_id = 'tch_0001' AND job_posting_id = 'job_his_dt'),
+  '14 · ... and waits on the ranking rather than on themselves');
+SELECT check_refuses($$UPDATE applications SET not_rankable_reason = 'because'
+    WHERE candidate_id = 'tch_0001' AND job_posting_id = 'job_his_dt'$$,
+  '14 · a reason outside the vocabulary is refused');
+
+-- A role that is not open.
+SELECT check_assert(why_cannot_apply('tch_0002', 'job_his_draft') IS NOT NULL,
+  '14 · a draft role takes no applications');
+SELECT check_refuses($$SELECT apply_to_posting('tch_0002', 'job_his_draft')$$,
+  '14 · ... and says so rather than failing quietly');
+
+-- Work permits, read the way a work permit works.
+UPDATE job_postings SET excluded_nationalities = ARRAY['United States']
+  WHERE id = 'job_cai_span';
+INSERT INTO candidates (id, first_name, last_name, timezone, nationality, nationalities)
+  VALUES ('tch_check_us', 'Only', 'American', 'UTC', 'United States', ARRAY['United States']);
+INSERT INTO candidates (id, first_name, last_name, timezone, nationality, nationalities)
+  VALUES ('tch_check_dual', 'Two', 'Passports', 'UTC', 'United States',
+          ARRAY['United States', 'Ireland']);
+SELECT check_assert(posting_excludes_candidate('job_cai_span', 'tch_check_us'),
+  '14 · an excluded nationality blocks the application');
+SELECT check_assert(NOT posting_excludes_candidate('job_cai_span', 'tch_check_dual'),
+  '14 · ... but a second passport is enough to be hirable');
+SELECT check_assert(why_cannot_apply('tch_check_us', 'job_cai_span')
+                    LIKE '%work permit%',
+  '14 · ... and the refusal explains the permit, not the person');
+
+-- Moving somebody along: who may, and from where.
+SELECT check_refuses(format($$SELECT move_application_stage('usr_cai_hr', %L, 'screening')$$,
+    (SELECT id FROM applications WHERE candidate_id = 'tch_0001'
+      AND job_posting_id = 'job_his_dt')),
+  '14 · somebody from another school cannot move the pipeline');
+SELECT check_refuses(format($$SELECT move_application_stage('usr_his_head', %L, 'offer')$$,
+    (SELECT id FROM applications WHERE candidate_id = 'tch_0001'
+      AND job_posting_id = 'job_his_dt')),
+  '14 · and nobody skips a stage');
+
+SELECT check_assert(move_application_stage('usr_his_coord',
+    (SELECT id FROM applications WHERE candidate_id = 'tch_0001'
+      AND job_posting_id = 'job_his_dt'), 'screening') = 'screening',
+  '14 · a coordinator may move one step forward');
+SELECT check_assert((SELECT docs_unlocked_at IS NOT NULL FROM applications
+                     WHERE candidate_id = 'tch_0001' AND job_posting_id = 'job_his_dt'),
+  '14 · ... and reaching screening is what unlocks their documents');
+SELECT check_assert((SELECT changed_by_id = 'usr_his_coord' FROM application_stage_history h
+                     JOIN applications a ON a.id = h.application_id
+                     WHERE a.candidate_id = 'tch_0001' AND a.job_posting_id = 'job_his_dt'
+                       AND h.stage = 'screening'),
+  '14 · ... recorded against the person who did it');
+
+SELECT check_refuses(format($$SELECT move_application_stage('usr_his_coord', %L, 'rejected')$$,
+    (SELECT id FROM applications WHERE candidate_id = 'tch_0001'
+      AND job_posting_id = 'job_his_dt')),
+  '14 · ending an application without a reason is refused');
+SELECT check_assert(move_application_stage('usr_his_coord',
+    (SELECT id FROM applications WHERE candidate_id = 'tch_0001'
+      AND job_posting_id = 'job_his_dt'), 'rejected', 'post withdrawn') = 'rejected',
+  '14 · with a reason it ends');
+SELECT check_refuses(format($$SELECT move_application_stage('usr_his_coord', %L, 'interview')$$,
+    (SELECT id FROM applications WHERE candidate_id = 'tch_0001'
+      AND job_posting_id = 'job_his_dt')),
+  '14 · and a terminal application stays terminal');
+
+-- Rule 3, made structural rather than remembered.
+SELECT check_assert(NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'candidate_applications'
+      AND column_name IN ('shortlisted', 'internal_notes')),
+  '14 · the candidate-facing view cannot leak a shortlist, by construction');

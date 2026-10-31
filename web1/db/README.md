@@ -52,7 +52,7 @@ Decision 8's third layer — an unverified school user resolves to zero
 permissions — is one condition inside one view, and it only stays true for the
 whole application while the application never asks the question another way.
 
-`npm run db:smoke` exercises all of it against a seeded database: 110 checks
+`npm run db:smoke` exercises all of it against a seeded database: 126 checks
 that the queries parse, the columns exist under the names the types claim, and
 a date comes back as a date. Typechecking proves none of that, because nothing
 typechecks a string of SQL. It writes and cleans up after itself, so point it
@@ -86,10 +86,11 @@ truncated by a stray flag.
 | `0019_platform_identity` | the founders can sign in; the staff list is an allowlist, not a form |
 | `0020_platform_actions` | verify a school, confirm a user, prove a domain — each logged |
 | `0021_posting_a_role` | a role is live only at a verified school; its author must hold `post_jobs` |
+| `0022_applying` | applying, the pipeline move, and the two kinds of unscored |
 
-`0012`–`0021` implement the thirteen decisions recorded in
+`0012`–`0022` implement the fifteen decisions recorded in
 [`DECISIONS.md`](DECISIONS.md) — six about who acts on the platform, five about
-how they get an account, two about opening a role. Two of the first six (permissions as a role template
+how they get an account, two about opening a role, two about applying to one. Two of the first six (permissions as a role template
 plus a per-person delta, one person per school) were already what `0002` did,
 so they add no DDL. Read that file before reopening any of them.
 
@@ -164,10 +165,10 @@ wrong on every other day. Counters that are expensive to recompute per request
 
 ## What has actually been run
 
-All twenty-one migrations have been applied, in order, to a real PostgreSQL
+All twenty-two migrations have been applied, in order, to a real PostgreSQL
 18.6 on Neon and 16.2 locally — and the bundle loaded into it, all 155 applications and 192 role-family
 declarations, with every post-load check passing. `npm run db:check` then
-asserts the thirteen decisions behave (113 assertions, mostly about what the
+asserts the fifteen decisions behave (139 assertions, mostly about what the
 database *refuses*), inside a transaction it rolls back.
 
 That run is what turned up the defects below, none of which the parser or the

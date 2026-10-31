@@ -374,3 +374,60 @@ seed loads that posting with no author and says so.
 **Not chosen.** Granting coordinators `post_jobs`. The three role templates
 were settled in decision 1 against the bundle's own data, and widening one to
 fit a defect in that same bundle would be backwards.
+
+---
+
+# Applying — decided 2026-10-31
+
+| | Decision | Chosen | Lives in |
+| --- | --- | --- | --- |
+| 14 | What does a brand-new application carry, when nothing has scored it? | Not rankable, with a reason that distinguishes the two cases | `0022_applying` |
+| 15 | Does an excluded nationality block somebody who holds two passports? | No. One usable nationality is enough | `0022_applying` |
+
+## 14 · An application is born unscored, and says which kind of unscored
+
+**Evidence.** `rankable_has_score` from `0005` insists an application carries
+either a score or a reason it has none. A new one has neither: the AI has not
+run and must not run inside the request, because `CLAUDE.md` puts ranking
+behind async jobs and nobody should wait on a model to learn their application
+arrived.
+
+Two reasons, not one:
+
+- `profile_incomplete` — rule 6. They are below the threshold, held out of the
+  ordering entirely, and **they can fix it**.
+- `awaiting_ranking` — we have not scored it yet. They can do nothing, and
+  being told so is the difference between patience and anxiety.
+
+Collapsing them would mean telling somebody to fix a profile that is already
+finished. The column now has a CHECK listing exactly these two, so a third
+spelling cannot appear by accident.
+
+**Consequence.** Until the ranking job exists, every pipeline is in applied
+order and every application reads `awaiting_ranking`. That is honest, and it
+is visible on both sides rather than hidden behind an empty column.
+
+**Not chosen.** Relaxing the constraint. It is the one thing keeping rule 6
+true — that a candidate below the threshold is never scored zero, only held
+out — and loosening it to make a form easier would have traded a product
+promise for an afternoon.
+
+## 15 · A second passport is enough
+
+**Evidence.** A posting may exclude nationalities for work-permit reasons, and
+the bundle's postings carry the column. The naive reading — exclude anybody
+who holds an excluded nationality — turns a permit rule into a nationality
+bar, and it is wrong on the facts: somebody with Irish and American passports
+can be hired on the Irish one.
+
+So a candidate is blocked only when **every** nationality they hold is
+excluded. A profile that has not answered yet is not blocked either: treating
+silence as a disqualifying answer would punish an unfinished field.
+
+This also settles half of the "nationality exclusions" open question in
+`CLAUDE.md`. The other half — reject silently, explain, or block upfront — is
+answered by `why_cannot_apply()`, which returns a sentence saying the school
+cannot sponsor a permit and that nothing about their profile is at fault. The
+candidate reads it **before** applying. The landing page promises zero
+silence; a refusal with no reason would be the smallest version of the thing
+this platform exists to replace.

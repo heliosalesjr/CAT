@@ -71,7 +71,9 @@ export default async function PostingsPage({
             {postings.map((p) => (
               <li key={p.id} style={{ display: "grid", gap: 4 }}>
                 <span style={{ display: "flex", gap: 10, alignItems: "baseline" }}>
-                  <strong>{p.title}</strong>
+                  <Link href={`/dashboard/school/postings/${p.id}`}>
+                    <strong>{p.title}</strong>
+                  </Link>
                   <span className={`chip chip-${p.status === "posted" ? "positive" : "neutral"}`}>
                     {STATUS_WORD[p.status] ?? p.status}
                   </span>
