@@ -1169,6 +1169,88 @@
                border-left: 2px solid var(--rule); padding-left: 10px; margin-left: 0; }
 }
 
+/* ---- the real school dashboard ----------------------------------------
+   Three classes, because the signed-in dashboard reuses the sample one's
+   queue and pipeline rows and needed only a top zone and a way out of a
+   row. Anything it needs twice goes above this block, not here. */
+
+/* A summary strip, built like .health: one-pixel gutters over the rule
+   colour, so the cells read as panes of one surface rather than as three
+   floating cards. */
+.strip {
+  display: grid; gap: 1px; background: var(--rule);
+  border: 1px solid var(--rule);
+}
+@media (min-width: 760px) { .strip { grid-template-columns: repeat(3, 1fr); } }
+.strip > div {
+  background: var(--surface); padding: 22px 24px 20px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.strip .fig { font-size: clamp(38px, 6vw, 52px); color: var(--ink); }
+/* The one figure that can be bad is the one the school owes. It takes the
+   critical colour only when it is not zero — a red 0 would be a scold for
+   having nothing wrong. */
+.strip > div[data-bad] .fig { color: var(--critical); }
+.strip-sub { margin: 0; font-size: 13px; color: var(--ink-subtle); }
+
+/* The way into a role, at the right edge where the eye lands last. Takes
+   .pipe-lead's shape without its score furniture, since nothing is ranked
+   yet and an empty score slot would read as a missing number. */
+.pipe-go {
+  display: inline-flex; align-items: baseline; gap: 7px; flex: 0 0 auto;
+  text-decoration: none; padding: 8px 10px; margin: -8px -10px;
+  border-right: 2px solid transparent;
+  transition: background-color 130ms ease, border-color 130ms ease;
+}
+.pipe-go > span[aria-hidden] { color: var(--accent-ink); }
+@media (hover: hover) and (pointer: fine) {
+  .pipe-go:hover { background: var(--surface-sunken); border-right-color: var(--accent-ink); }
+}
+.pipe-go:active { transform: scale(0.985); }
+@media (max-width: 640px) {
+  .pipe-go { border-right: 0; border-left: 2px solid var(--rule);
+             padding-left: 10px; margin-left: 0; }
+}
+
+/* ---- a plain list row -------------------------------------------------
+   For the lists that are not a pipeline: your roles, your applications.
+   They were grids with a 4px gap and no padding, which is what "everything
+   stacked on top of itself" actually was. The measurements match .queue-row
+   so a person moving between screens is not re-learning the rhythm. */
+
+.lrow {
+  display: grid; grid-template-columns: 1fr auto; align-items: center;
+  gap: 6px 16px; padding: 16px 18px;
+  border-left: 3px solid transparent;
+}
+.lrow[data-state="live"]  { border-left-color: var(--positive); }
+.lrow[data-state="quiet"] { border-left-color: var(--rule); }
+.lrow[data-state="over"]  { border-left-color: var(--caution); }
+.lrow-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.lrow-title {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px;
+  font-weight: 600; color: var(--ink); font-size: 15px;
+}
+.lrow-title a { text-decoration: none; }
+@media (hover: hover) and (pointer: fine) {
+  .lrow-title a:hover { text-decoration: underline; text-underline-offset: 3px; }
+}
+/* Two separate facts per row, on their own lines: what the row IS, and what
+   is true about it right now. On one line they ran together into a string of
+   middots nobody reads to the end. */
+.lrow-meta { font-size: 13.5px; color: var(--ink-muted); }
+.lrow-note { font-size: 13px; color: var(--ink-subtle); }
+.lrow-side { display: flex; align-items: baseline; gap: 8px; justify-self: end; }
+.lrow-fig {
+  font-family: var(--font-googlesans), sans-serif;
+  font-variation-settings: "wght" 700, "GRAD" 120;
+  font-size: 20px; color: var(--ink); font-variant-numeric: tabular-nums;
+}
+@media (max-width: 620px) {
+  .lrow { grid-template-columns: 1fr; }
+  .lrow-side { justify-self: start; }
+}
+
 /* ---- paging ----------------------------------------------------------- */
 
 /* Discreet and directional: the arriving page comes from the side it was
@@ -1303,7 +1385,95 @@
    ------------------------------------------------------------------------ */
 
 .np { display: flex; flex-direction: column; gap: 18px; }
+/* ---- the candidate's job browser -------------------------------------
+   Was five `aq-` classes that live in signup.css and so did nothing here.
+   Each row is the form that applies to that role, which is why it is a
+   <form> and not a card: the button belongs to the row it is in. */
+
+.job-row {
+  display: grid; grid-template-columns: 1fr auto; align-items: start;
+  gap: 12px 20px; padding: 18px;
+  border-left: 3px solid transparent;
+}
+.job-row[data-blocked] { border-left-color: var(--rule); }
+.job-body { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.job-who {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px;
+  font-weight: 600; color: var(--ink); font-size: 15px;
+}
+.job-where { font-size: 13.5px; color: var(--ink-muted); }
+.job-act { display: flex; flex-direction: column; align-items: flex-end;
+           gap: 8px; justify-self: end; }
+.job-act .pf-bool { font-size: 12.5px; }
+/* The reason sits where the button would be, at the same width, so it reads
+   as the answer to "can I apply" rather than as a footnote. */
+.job-blocked {
+  margin: 0; justify-self: end; max-width: 20em; text-align: right;
+  font-size: 13px; color: var(--ink-muted);
+  padding-left: 14px; border-left: 1px solid var(--rule);
+}
+@media (max-width: 760px) {
+  .job-row { grid-template-columns: 1fr; }
+  .job-act, .job-blocked { grid-column: 1; justify-self: start; text-align: left;
+                           align-items: flex-start; max-width: none;
+                           padding-left: 0; border-left: 0; }
+}
+
+/* ---- the posting form's fields ----------------------------------------
+   These names begin with `su-` because the form was written against
+   signup.css, and only `.np .su-field` had been carried over — so on this
+   route a labelled field had no layout, a hint no size and an error no
+   colour. Ported here in the dashboard's own tokens rather than renamed,
+   because renaming means editing a 350-line form to no visible benefit.
+   The prefix is wrong and the rendering is not; the rename is a tidy-up for
+   a day when the form is being changed anyway. */
+
+.su-card {
+  background: var(--surface); border: 1px solid var(--rule);
+  padding: clamp(20px, 3vw, 32px);
+  display: flex; flex-direction: column; gap: 22px; max-width: 44rem;
+}
+.su-field { display: flex; flex-direction: column; gap: 5px; }
 .np .su-field { margin-top: 14px; }
+.su-field > span:first-child {
+  font-family: var(--font-googlesans), sans-serif;
+  font-size: 13px; font-weight: 600; color: var(--ink);
+}
+.su-field input, .su-field select {
+  font: inherit; font-size: 15px; color: var(--ink);
+  background: var(--surface); border: 1px solid var(--border-control);
+  padding: 9px 11px; width: 100%;
+}
+.su-field input:focus-visible, .su-field select:focus-visible {
+  outline: 2px solid var(--accent-deep); outline-offset: 1px;
+}
+.su-field[data-bad] input, .su-field[data-bad] select {
+  border-color: var(--critical);
+}
+.su-fields { display: grid; gap: 16px; }
+@media (min-width: 640px) { .su-fields.two { grid-template-columns: 1fr 1fr; } }
+.su-hint { font-size: 12.5px; line-height: 1.45; color: var(--ink-subtle); }
+.su-bad  { font-size: 12.5px; color: var(--critical); }
+.su-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+/* The role-family picker: one choice per card, the chosen one marked with a
+   rail rather than a fill, so the unchosen ones do not read as disabled. */
+.su-families { display: grid; gap: 10px; }
+.su-family {
+  display: grid; grid-template-columns: auto 1fr; gap: 11px;
+  align-items: start; padding: 13px 15px;
+  background: var(--surface-raised); border: 1px solid var(--rule);
+  cursor: pointer;
+}
+.su-family:has(input:checked) {
+  background: var(--surface); box-shadow: inset 2px 0 0 var(--accent-ink);
+}
+.su-family input {
+  margin-top: 3px; accent-color: var(--stage-screening);
+  width: 16px; height: 16px;
+}
+.su-family strong { font-size: 14.5px; color: var(--ink); font-weight: 600; }
+.su-family span { font-size: 13px; line-height: 1.5; color: var(--ink-muted); }
 .np-fieldset { border: 0; padding: 0; margin: 18px 0 0; }
 
 /* Position is the weight, so the chosen list reads as a ranking and the
@@ -1372,13 +1542,71 @@
 .cp-offer strong { font-size: 14px; }
 .cp-offer span { font-size: 12.5px; color: var(--ink-3, inherit); opacity: 0.75; }
 
-.aq-end { display: flex; gap: 8px; flex: 1 1 22rem; }
-.aq-end input {
-  font: inherit;
-  font-size: 14px;
-  flex: 1;
-  padding: 8px 10px;
-  border: 1px solid var(--rule);
-  background: var(--surface);
+/* ---- one role's pipeline ----------------------------------------------
+   This screen was written against signup.css and rendered on a route that
+   does not load it, so every class on it did nothing. These are the same
+   measurements as .queue-row and .lrow, for the same reason: it is the third
+   list a recruiter reads today and it should have the rhythm of the other
+   two. */
+
+.cand-row {
+  display: grid; grid-template-columns: 64px 1fr auto;
+  align-items: start; gap: 10px 18px; padding: 18px;
+  border-left: 3px solid transparent;
+}
+/* The rail is the one thing the school owes, not the candidate's quality. */
+.cand-row[data-owed] { border-left-color: var(--caution); }
+.cand-row[data-closed] { border-left-color: var(--rule); }
+.cand-row[data-closed] .cand-who { color: var(--ink-muted); }
+
+/* The score column. A dash rather than a zero when nothing is scored yet:
+   rule 6 says an unranked candidate is held out of the ordering, never
+   scored low, and a 0 in this slot would say the opposite. */
+.cand-score { display: flex; flex-direction: column; gap: 1px; }
+.cand-score b {
+  font-family: var(--font-googlesans), sans-serif;
+  font-variation-settings: "wght" 700, "GRAD" 120;
+  font-size: 24px; line-height: 1; color: var(--accent-ink);
+  font-variant-numeric: tabular-nums;
+}
+.cand-score[data-unranked] b { color: var(--ink-subtle); }
+
+.cand-body { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.cand-who {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px;
+  font-weight: 600; color: var(--ink); font-size: 15px;
+}
+.cand-headline { margin: 0; font-size: 13.5px; color: var(--ink-muted); }
+
+/* Facts as a row of label-over-value pairs rather than a two-column dl: at
+   three facts the grid left a wide empty gutter and read as a table with one
+   row in it. */
+.cand-facts { display: flex; flex-wrap: wrap; gap: 4px 22px; margin: 2px 0 0; }
+.cand-facts > div { display: flex; flex-direction: column; gap: 1px; }
+.cand-facts dd { margin: 0; font-size: 13.5px; color: var(--ink); }
+
+.cand-act { display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+            justify-self: end; }
+.cand-closed { margin: 0; justify-self: end; max-width: 14em; text-align: right; }
+
+.cand-end { display: flex; gap: 8px; flex: 1 1 20rem; }
+.cand-end input {
+  font: inherit; font-size: 14px; flex: 1; padding: 8px 10px;
+  border: 1px solid var(--border-control); background: var(--surface);
   color: inherit;
 }
+.cand-end input:focus-visible { outline: 2px solid var(--accent-deep); outline-offset: 1px; }
+
+@media (max-width: 760px) {
+  .cand-row { grid-template-columns: 52px 1fr; }
+  .cand-act, .cand-closed { grid-column: 2; justify-self: start; text-align: left; }
+}
+
+/* A sentence the page says back to you after an action. One class with a
+   flag, not two: the two differ only in which edge colour they carry. */
+.note {
+  margin: 0 0 18px; padding: 12px 14px; font-size: 14px;
+  background: var(--surface-raised); border: 1px solid var(--rule);
+  border-left: 3px solid var(--accent-ink); color: var(--ink);
+}
+.note[data-bad] { border-left-color: var(--critical); }

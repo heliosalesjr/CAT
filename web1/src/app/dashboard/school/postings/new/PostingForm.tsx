@@ -275,10 +275,10 @@ export function PostingForm({
       </section>
 
       {state && "error" in state && (
-        <p className="su-error" role="alert">{state.error}</p>
+        <p className="note" data-bad role="alert">{state.error}</p>
       )}
       {state && "problems" in state && (
-        <p className="su-error" role="alert">
+        <p className="note" data-bad role="alert">
           {state.problems.length} field{state.problems.length > 1 ? "s need" : " needs"} a
           fix — see the notes above.
         </p>

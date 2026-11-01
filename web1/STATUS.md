@@ -1,4 +1,4 @@
-# Where this is, 2026-10-31
+# Where this is, 2026-11-01
 
 A map, not a tour. `CLAUDE.md` says what the product is, `db/DECISIONS.md` why
 the schema is shaped as it is, `db/README.md` how the database and data layer
@@ -13,10 +13,11 @@ something that is already there, or trusting a screen that is a mockup.
 The loop closes. A candidate signs up with a magic link, fills in a profile,
 browses live roles and applies; the school sees them in the pipeline and moves
 them along or ends it with a reason the candidate reads. A founder verifies
-the school that made the role possible. **What is still missing is the
-ranking itself** — an application is born unscored and waits for a job that
-does not exist yet — and the three original dashboards are still the sample
-bundle rather than the signed-in person's data.
+the school that made the role possible, and the school's own dashboard is now
+the school's own data, honest empty states included. **What is still missing
+is the ranking itself** — an application is born unscored and waits for a job
+that does not exist yet — and two of the three original dashboards are still
+the sample bundle rather than the signed-in person's data.
 
 ## Routes, and what is real
 
@@ -32,15 +33,36 @@ bundle rather than the signed-in person's data.
 | `/dashboard/teacher/jobs` | database | Real. Live roles, why you cannot apply, and where your applications stand |
 | `/dashboard/school/postings/new` | database | Real. The role form with the ordered criteria picker |
 | `/dashboard/teacher/profile` | database **and** bundle | Real when signed in as a candidate; `?view=` renders the bundle read-only for demos |
-| `/dashboard/school` | **bundle only** | Mockup. A real school user sees sample data |
+| `/dashboard/school` | database **and** bundle | Real when signed in as a school user; `?view=` renders the bundle read-only for demos |
 | `/dashboard/teacher` | **bundle only** | Mockup. Same |
 | `/dashboard/shortlists` | **bundle only** | Mockup, and the ranking showcase |
 | `/hero-lab` | — | Design scratchpad |
 
-The three mockups are the biggest trap in the repo. They are good mockups —
-they are what the product is supposed to feel like — and a signed-in school
-user clicking "back to the dashboard" from a real page lands in one and sees
-somebody else's candidates. Porting them is the largest piece of work left.
+A page that needs a session bounces to `/signup?next=<path>`, the sign-in
+page says which page it was and the magic link lands there instead of on the
+dashboard. `safeNext()` in `src/lib/next-path.ts` is what makes `next` safe to
+redirect to — it allows a path on this origin and nothing else, because the
+value arrives in a query string and `redirectTo` is where Auth.js sends
+somebody the instant they are authenticated.
+
+Every route under `/signup`, `/dashboard` and `/admin` carries a session bar
+from its layout: who you are signed in as, which actor that resolves to, and
+Sign out. It renders nothing when nobody is signed in. Testing the three sides
+means signing in and out constantly, and the state it exists to make visible
+is the one that otherwise looks like success — an identity with no actor
+behind it, which is a signup that stopped half way.
+
+The two remaining mockups are the biggest trap in the repo. They are good
+mockups — they are what the product is supposed to feel like — and a signed-in
+candidate clicking "back to the dashboard" from a real page lands in one and
+sees somebody else's applications. Porting them is the largest piece of
+front-end work left.
+
+`/dashboard/school` was the third, and was ported on 2026-11-01 after a real
+school signup landed on it and read Melissa's pipeline as its own. The pattern
+it now follows is the one to copy for the other two: no `?view=` means the
+signed-in person's data, `?view=` means the bundle read-only, and the demo
+switch lives only on the demo path.
 
 ## What the database refuses on its own
 
@@ -66,6 +88,7 @@ button, a script — inherits every rule for free.
 | Only `move_stage`, and only at your own school | `0022` | `move_application_stage()` |
 | Ending an application needs a reason the candidate reads | `0022` | the same function |
 | A work permit blocks, a second passport unblocks | `0022` | `posting_excludes_candidate()` |
+| An unconfirmed school user sees no pipeline | `0016`, page | zero permissions resolved in SQL; the page tests the set, not `verified_at` |
 | Subjects and specialisms come from one catalog | `0017` | `validate_practice_arrays` |
 | Ranking criteria: 3–5, distinct, catalogued | `0004` | `job_postings_validate_criteria` |
 | The plan is a ceiling on ranking, never a floor | `0009` | `job_postings_enforce_plan` |
@@ -78,7 +101,7 @@ Thirty-one triggers in total. `db/check.mjs` asserts the refusals.
 
 ```bash
 npm run db:check        # 139 assertions about what the schema refuses
-npm run db:smoke        # 126 assertions about the TypeScript that talks to it
+npm run db:smoke        # 144 assertions about the TypeScript that talks to it
 npm run db:types:check  # fails if src/lib/db/schema.ts has drifted
 npx tsc --noEmit        # needs a build first: Next generates PageProps
 ```
@@ -99,7 +122,8 @@ Roughly in the order it will hurt:
   settled; what is missing is the job that scores an application against the
   ten criteria and writes `criterion_scores`, `criterion_notes` and
   `ai_rank_score`. Until it exists every pipeline is in applied order.
-- **The three mockup dashboards**, above.
+- **The two mockup dashboards**, above: `/dashboard/teacher` and
+  `/dashboard/shortlists`.
 - **Email.** `EMAIL_TRANSPORT=console` prints to the terminal and writes the
   link to `.next/last-email-link` (`npm run signin`). It refuses to start in
   production. A real transport needs a verified domain, not an address.
@@ -145,6 +169,25 @@ people. A staff address can never be a candidate.
 including `tch_0009`, whom the teacher dashboard shows as exactly that case.
 That is the bundle's doing — its candidates all filled everything in — and
 keeping the demo honest means regenerating a few sparse profiles.
+
+**Route-scoped stylesheets do not travel, and an undefined class is not an
+error.** `dashboard/layout.tsx` imports only `dashboard.css` and
+`signup/layout.tsx` only `signup.css`; `globals.css` comes from the root. Six
+screens under `/dashboard` had been written against signup.css — **sixteen
+classes that matched no rule on their own route**, so the posting form had no
+field layout, the pipeline no rows and the job browser no cards. Nothing
+catches this: the build passes, the markup is valid, the page is simply naked.
+Fixed on 2026-11-01 — `su-note`/`su-error`/`su-btn` swapped for the
+dashboard's `.note` and `.btn`, the form's `su-*` field classes ported into
+`dashboard.css` (the prefix is still wrong; renaming is a tidy-up for when the
+form is next edited), and the two list screens rebuilt on `.cand-row` and
+`.job-row`.
+
+The audit that found it is worth re-running after any new dashboard screen:
+collect every `className` under `src/app/dashboard` and `src/components/dashboard`
+and check each one has a rule in `dashboard.css` or `globals.css`. Ten names
+survive it as deliberate hooks — `queue`, `pipe-meta`, `health-primary`,
+`cp-available` and similar — because a parent rule does their layout.
 
 **`npm run` is always from `web1/`.** There is no `package.json` at the repo
 root.

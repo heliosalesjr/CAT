@@ -105,3 +105,75 @@ export async function createPosting(input: {
     ],
   );
 }
+
+/* ------------------------------------------------- what the dashboard reads */
+
+export type PostingWithPipeline = {
+  id: string;
+  title: string;
+  status: string;
+  roleFamily: string;
+  applied: number;
+  screening: number;
+  interview: number;
+  offer: number;
+  hired: number;
+  closed: number;
+  owedResponse: number;
+};
+
+/**
+ * Every role at a school with its pipeline counted, in one query.
+ *
+ * One query rather than one per posting: a dashboard that fires a query per
+ * row is the thing that feels fine on seed data and falls over on a school
+ * with forty roles. The counts come from the applications themselves rather
+ * than from `application_count`, because that counter is kept by trigger for
+ * the posting as a whole and says nothing about where people are.
+ */
+export async function postingsWithPipeline(schoolId: string): Promise<PostingWithPipeline[]> {
+  const rows = await query<{
+    id: string;
+    title: string;
+    status: string;
+    role_family: string;
+    applied: string;
+    screening: string;
+    interview: string;
+    offer: string;
+    hired: string;
+    closed: string;
+    owed_response: string;
+  }>(
+    `SELECT p.id, p.title, p.status::text, p.role_family::text,
+            count(a.*) FILTER (WHERE a.stage = 'applied')   AS applied,
+            count(a.*) FILTER (WHERE a.stage = 'screening') AS screening,
+            count(a.*) FILTER (WHERE a.stage = 'interview') AS interview,
+            count(a.*) FILTER (WHERE a.stage = 'offer')     AS offer,
+            count(a.*) FILTER (WHERE a.stage = 'hired')     AS hired,
+            count(a.*) FILTER (WHERE a.stage IN ('rejected','withdrawn')) AS closed,
+            count(a.*) FILTER (WHERE a.school_owes_response) AS owed_response
+     FROM   job_postings p
+     LEFT   JOIN applications a ON a.job_posting_id = p.id
+     WHERE  p.school_id = $1 AND p.deleted_at IS NULL
+     GROUP  BY p.id, p.title, p.status, p.role_family, p.created_at
+     ORDER  BY CASE p.status WHEN 'posted' THEN 0 WHEN 'draft' THEN 1 ELSE 2 END,
+               p.created_at DESC`,
+    [schoolId],
+  );
+
+  const n = (v: string | null) => Number(v ?? 0);
+  return rows.map((r) => ({
+    id: r.id,
+    title: r.title,
+    status: r.status,
+    roleFamily: r.roleFamily,
+    applied: n(r.applied),
+    screening: n(r.screening),
+    interview: n(r.interview),
+    offer: n(r.offer),
+    hired: n(r.hired),
+    closed: n(r.closed),
+    owedResponse: n(r.owedResponse),
+  }));
+}

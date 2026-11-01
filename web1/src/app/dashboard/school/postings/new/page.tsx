@@ -7,6 +7,7 @@ import { criteriaCatalog, planAllowsRanking } from "@/lib/db/postings";
 import { one } from "@/lib/db/client";
 import type { SchoolsRow } from "@/lib/db/schema";
 import { currentActor } from "@/lib/session";
+import { signInPath } from "@/lib/next-path";
 import { PostingForm } from "./PostingForm";
 
 export const metadata: Metadata = { title: "Open a role — Class Act Talent" };
@@ -14,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 export default async function NewPostingPage() {
   const actor = await currentActor();
-  if (!actor) redirect("/signup");
+  if (!actor) redirect(signInPath("/dashboard/school/postings/new"));
   if (actor.type !== "school_user") redirect("/dashboard/teacher");
 
   const [school, mayPost, criteria, subjects, specialisms, rankingAllowed] =
@@ -38,7 +39,7 @@ export default async function NewPostingPage() {
             role themselves.
           </p>
           <div className="su-actions">
-            <Link className="su-btn su-btn-quiet" href="/dashboard/school">
+            <Link className="btn btn-quiet" href="/dashboard/school">
               Back to the dashboard
             </Link>
           </div>
@@ -62,7 +63,7 @@ export default async function NewPostingPage() {
       </header>
 
       {!verified && (
-        <p className="su-note" style={{ marginBottom: 20 }}>
+        <p className="note" style={{ marginBottom: 20 }}>
           {school.name} is still waiting on us to verify it, so this role can
           be written and saved but <strong>not published</strong> yet. Nothing
           is lost — publishing is one click once the school is verified.

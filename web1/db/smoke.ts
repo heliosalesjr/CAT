@@ -33,11 +33,18 @@ import {
   updateCandidate,
 } from "../src/lib/db/candidates.ts";
 import { parseProfileForm } from "../src/lib/profile-fields.ts";
+import { safeNext, signInPath } from "../src/lib/next-path.ts";
 import { criterionWeights, parsePostingForm } from "../src/lib/posting-fields.ts";
-import { createPosting, criteriaCatalog, planAllowsRanking } from "../src/lib/db/postings.ts";
+import {
+  createPosting,
+  criteriaCatalog,
+  planAllowsRanking,
+  postingsWithPipeline,
+} from "../src/lib/db/postings.ts";
 import {
   applicationsForCandidate,
   applicationsForPosting,
+  applicationsOwedResponse,
   applyToPosting,
   moveApplicationStage,
   openPostings,
@@ -870,6 +877,138 @@ check(
       "... in the candidate's own view, not only in an internal note",
     );
   }
+}
+
+/* ------------------------------------- what the school dashboard reads */
+
+/**
+ * The two reads behind `/dashboard/school`. They are asserted here rather
+ * than trusted because both aggregate, and an aggregate that is quietly wrong
+ * is the kind of thing a page renders confidently for a year. The counts are
+ * compared against the applications themselves, not against the posting's own
+ * `application_count` — that counter is maintained by a trigger and proving a
+ * trigger right with its own output proves nothing.
+ */
+{
+  const [busy] = await query<{ school_id: string }>(
+    `SELECT school_id FROM job_postings WHERE deleted_at IS NULL
+     GROUP BY school_id ORDER BY count(*) DESC LIMIT 1`,
+  );
+
+  const rows = await postingsWithPipeline(busy.schoolId);
+  const expected = await query<{ n: string }>(
+    `SELECT count(*) AS n FROM job_postings
+     WHERE school_id = $1 AND deleted_at IS NULL`,
+    [busy.schoolId],
+  );
+  check(rows.length === Number(expected[0].n), "the dashboard lists every role at the school");
+  check(
+    rows.length > 1 && rows.every((r) => typeof r.applied === "number"),
+    "... with counts as numbers, not the strings count() returns",
+  );
+
+  const live = rows.findIndex((r) => r.status === "posted");
+  const notLive = rows.findIndex((r) => r.status !== "posted");
+  check(
+    live === -1 || notLive === -1 || live < notLive,
+    "... live roles first, because those are the ones candidates can see",
+  );
+
+  let totalsAgree = true;
+  let owedAgree = true;
+  for (const r of rows) {
+    const [real] = await query<{ n: string; owed: string }>(
+      `SELECT count(*) AS n, count(*) FILTER (WHERE school_owes_response) AS owed
+       FROM applications WHERE job_posting_id = $1`,
+      [r.id],
+    );
+    const summed = r.applied + r.screening + r.interview + r.offer + r.hired + r.closed;
+    if (summed !== Number(real.n)) totalsAgree = false;
+    if (r.owedResponse !== Number(real.owed)) owedAgree = false;
+  }
+  check(totalsAgree, "... and the stage counts account for every application, none twice");
+  check(owedAgree, "... including the ones owing the candidate an answer");
+
+  const owed = await applicationsOwedResponse(busy.schoolId, 5);
+  check(owed.length > 0 && owed.length <= 5, "the school sees who is waiting on it, capped");
+  check(
+    owed.every((a) => a.postingTitle.length > 0 && a.candidateName.length > 0),
+    "... with the role and the person named, not two ids",
+  );
+  check(
+    owed.every((a, i) => i === 0 || +new Date(a.appliedAt) >= +new Date(owed[i - 1].appliedAt)),
+    "... oldest first: the number that matters is how long they have waited",
+  );
+  const answered = await query<{ id: string }>(
+    `SELECT id FROM applications WHERE school_id = $1 AND NOT school_owes_response`,
+    [busy.schoolId],
+  );
+  const answeredIds = new Set(answered.map((a) => a.id));
+  check(
+    answered.length > 0 && !owed.some((a) => answeredIds.has(a.applicationId)),
+    "... and nobody who has already been answered appears in it",
+  );
+
+  // The state that was being rendered as somebody else's data: a school that
+  // has just signed up. Both reads have to come back empty rather than fall
+  // over, because that empty is what the new account is shown.
+  if (made.schools.length) {
+    const fresh = made.schools[made.schools.length - 1];
+    check(
+      (await postingsWithPipeline(fresh)).length === 0,
+      "a school that has just registered has no roles, and that is not an error",
+    );
+    check(
+      (await applicationsOwedResponse(fresh)).length === 0,
+      "... and owes nobody a response",
+    );
+  }
+}
+
+/* --------------------------------- where to land after signing in */
+
+/**
+ * `safeNext` decides whether a string from a query parameter is allowed to
+ * become a redirect, and it is the only thing standing between `?next=` and
+ * an open redirect. It is pure, so these are the cheapest assertions in the
+ * file and the ones most worth having: the failure mode is a link that looks
+ * like ours, authenticates the person for real, and then hands them to
+ * somebody else's login form.
+ */
+{
+  check(safeNext("/admin") === "/admin", "a path on this origin is allowed through");
+  check(
+    safeNext("/dashboard/school/postings/job_x") === "/dashboard/school/postings/job_x",
+    "... including a deep one",
+  );
+  check(
+    signInPath("/admin") === "/signup?next=%2Fadmin",
+    "... and it is carried encoded, so a path with a & in it cannot add a parameter",
+  );
+
+  const refused = [
+    "https://evil.example",      // absolute
+    "http://evil.example",
+    "//evil.example",            // scheme-relative: a browser reads it as a host
+    "/\\evil.example",           // backslash, which some parsers fold to a slash
+    "mailto:someone@evil.example",
+    "javascript:alert(1)",
+    "evil.example",              // no leading slash at all
+    "",
+    "\u0000/admin",
+    "/admin\n",                  // a newline, to split a header further down
+  ];
+  check(
+    refused.every((v) => safeNext(v) === null),
+    "everything that is not a path on this origin is refused",
+  );
+  check(
+    refused.every((v) => signInPath(v) === "/signup"),
+    "... and the caller falls back to plain /signup rather than to the input",
+  );
+  check(safeNext("/" + "a".repeat(600)) === null, "an absurdly long one is refused too");
+  check(safeNext(undefined) === null && safeNext(42) === null,
+        "a missing or non-string parameter is refused rather than coerced");
 }
 
 /* ----------------------------------------------------------------- cleanup */

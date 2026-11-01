@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { signIn } from "@/auth";
 import { currentIdentity } from "@/lib/session";
+import { safeNext } from "@/lib/next-path";
 import { searchSchools } from "@/lib/db/schools";
 import {
   InvalidSignup,
@@ -53,9 +54,23 @@ export async function startSignup(_prev: FormState, form: FormData): Promise<For
     return { problems: [{ field: "email", message: "is too long" }] };
   }
 
+  // Where to land. `safeNext` is not a formality here: `redirectTo` is where
+  // Auth.js sends somebody the instant they are authenticated, so a value
+  // that reached it unchecked would be an open redirect wearing a real
+  // session. Anything that is not a path on this origin is dropped.
+  const next = safeNext(field(form, "next"));
+  const finish = `/signup/finish?as=${side}`;
+
   // Sending the link IS the signup. Nothing about this person is stored until
   // they prove the address, so an address typed by mistake leaves no trace.
-  await signIn("magic-link", { email, redirectTo: `/signup/finish?as=${side}` });
+  //
+  // The link always lands on `/signup/finish`, even for somebody who already
+  // has an account: that page is the one place that knows whether a profile
+  // exists, and it forwards an existing actor on without drawing anything.
+  await signIn("magic-link", {
+    email,
+    redirectTo: next ? `${finish}&next=${encodeURIComponent(next)}` : finish,
+  });
   return null;
 }
 

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { currentActor, currentIdentity } from "@/lib/session";
+import { safeNext } from "@/lib/next-path";
 import { schoolOptionsForEmail } from "@/lib/signup";
 import { CandidateFinish } from "./CandidateFinish";
 import { SchoolFinish } from "./SchoolFinish";
@@ -28,7 +29,7 @@ const HOME = {
 } as const;
 
 export default async function FinishPage({ searchParams }: PageProps<"/signup/finish">) {
-  const { as } = await searchParams;
+  const { as, next } = await searchParams;
 
   const identity = await currentIdentity();
   if (!identity?.email) {
@@ -48,10 +49,16 @@ export default async function FinishPage({ searchParams }: PageProps<"/signup/fi
     );
   }
 
-  // Already finished. Decision 9 means there is exactly one place to go.
+  // Already finished — this was a sign-in, not a signup. Decision 9 means
+  // there is exactly one home to fall back to, and a remembered destination
+  // wins over it so that bouncing off a page and coming back lands there.
+  //
+  // It is not checked against the actor on purpose: `/admin` reached by a
+  // candidate renders the page that explains why it is not theirs, which is a
+  // better answer than being silently rerouted to a dashboard.
   const actor = await currentActor();
   if (actor) {
-    redirect(HOME[actor.type]);
+    redirect(safeNext(next) ?? HOME[actor.type]);
   }
 
   if (as === "school") {

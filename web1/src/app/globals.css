@@ -559,6 +559,79 @@
 }
 .field-input::placeholder { color: var(--color-navy-3); }
 .field-input:focus { border-color: var(--color-navy-2); }
+
+/* ============================================================
+   Session bar
+
+   Sits in the three route layouts rather than on each page, and
+   borrows nothing from dashboard.css or signup.css: those two
+   redefine .label and .readout differently, so a shared strip that
+   used them would change weight and colour as you walked between
+   sides. Its own four class names, the global tokens, nothing else.
+   ============================================================ */
+.sbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 18px;
+  padding-block: 7px 8px;
+  border-bottom: 1px solid var(--color-rule);
+}
+
+.sbar-who, .sbar-acts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.sbar-tag {
+  font-variation-settings: "wdth" 76;
+  font-weight: 600;
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-navy);
+  background: var(--color-paper-3);
+  border: 1px solid var(--color-rule);
+  padding: 2px 7px;
+}
+
+/* An identity with no actor behind it is the one state worth a colour:
+   it looks like being signed in and behaves like being a stranger. */
+.sbar-tag[data-unfinished] {
+  background: var(--color-gold);
+  border-color: var(--color-gold-deep);
+}
+
+.sbar-mail {
+  font-size: 13px;
+  color: var(--color-navy-2);
+  overflow-wrap: anywhere;
+}
+
+.sbar-acts a, .sbar-acts button {
+  font-variation-settings: "wdth" 80;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-navy-2);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--color-rule);
+}
+
+.sbar-acts a:hover, .sbar-acts button:hover {
+  color: var(--color-navy);
+  text-decoration-color: var(--color-gold-deep);
+}
 }
 
 @keyframes char-in {

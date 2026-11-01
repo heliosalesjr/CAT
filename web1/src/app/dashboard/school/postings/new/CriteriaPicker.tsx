@@ -63,7 +63,7 @@ export function CriteriaPicker({
         </div>
 
         {chosen.length === 0 ? (
-          <p className="su-note">
+          <p className="note">
             Nothing picked yet. The first one you choose carries the most
             weight — with five criteria the top one is worth five times the
             bottom one, so the order is a real decision, not a tidy-up.

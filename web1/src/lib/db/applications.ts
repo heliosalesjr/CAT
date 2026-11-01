@@ -117,3 +117,54 @@ export async function moveApplicationStage(input: {
     input.reason ?? null,
   ]);
 }
+
+export type OwedApplication = {
+  applicationId: string;
+  postingId: string;
+  postingTitle: string;
+  candidateId: string;
+  candidateName: string;
+  headline: string | null;
+  stage: ApplicationStage;
+  appliedAt: Date;
+  rankable: boolean;
+  notRankableReason: string | null;
+};
+
+/**
+ * Everybody across the school who is waiting to hear something.
+ *
+ * `school_owes_response` is set true when the application arrives and false by
+ * `move_application_stage()` — moving IS the response — so this is not a
+ * derived guess, it is the flag the pipeline itself maintains. Oldest first,
+ * because the number that matters to a candidate is how long they have been
+ * waiting, and the dashboard should surface the person who has waited longest
+ * rather than the one who applied most recently.
+ */
+export async function applicationsOwedResponse(
+  schoolId: string,
+  limit = 12,
+): Promise<OwedApplication[]> {
+  return query<{
+    application_id: string;
+    posting_id: string;
+    posting_title: string;
+    candidate_id: string;
+    candidate_name: string;
+    headline: string | null;
+    stage: ApplicationStage;
+    applied_at: Date;
+    rankable: boolean;
+    not_rankable_reason: string | null;
+  }>(
+    `SELECT a.application_id, a.job_posting_id AS posting_id, p.title AS posting_title,
+            a.candidate_id, a.candidate_name, a.headline, a.stage, a.applied_at,
+            a.rankable, a.not_rankable_reason
+     FROM   posting_applications a
+     JOIN   job_postings p ON p.id = a.job_posting_id
+     WHERE  a.school_id = $1 AND a.school_owes_response
+     ORDER  BY a.applied_at
+     LIMIT  $2`,
+    [schoolId, limit],
+  ) as Promise<OwedApplication[]>;
+}

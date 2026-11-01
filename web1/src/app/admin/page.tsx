@@ -10,6 +10,7 @@ import {
 } from "@/lib/db/platform";
 import type { PlatformUsersRow } from "@/lib/db/schema";
 import { currentActor, currentIdentity } from "@/lib/session";
+import { signInPath } from "@/lib/next-path";
 import { ClaimSeat } from "./ClaimSeat";
 import { DomainQueue, SchoolQueue, UserQueue } from "./Queues";
 
@@ -27,7 +28,7 @@ export const dynamic = "force-dynamic";
  */
 export default async function AdminPage() {
   const identity = await currentIdentity();
-  if (!identity) redirect("/signup");
+  if (!identity) redirect(signInPath("/admin"));
 
   const actor = await currentActor();
   if (actor?.type !== "platform_user") {

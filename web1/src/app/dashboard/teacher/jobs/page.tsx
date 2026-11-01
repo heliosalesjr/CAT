@@ -5,6 +5,7 @@ import { openPostings, whyCannotApply, applicationsForCandidate } from "@/lib/db
 import { query } from "@/lib/db/client";
 import type { SchoolsRow } from "@/lib/db/schema";
 import { currentActor } from "@/lib/session";
+import { signInPath } from "@/lib/next-path";
 import { JobList } from "./JobList";
 
 export const metadata: Metadata = { title: "Open roles — Class Act Talent" };
@@ -18,7 +19,7 @@ const money = (min: number | null, max: number | null) =>
 
 export default async function JobsPage() {
   const actor = await currentActor();
-  if (!actor) redirect("/signup");
+  if (!actor) redirect(signInPath("/dashboard/teacher/jobs"));
   if (actor.type !== "candidate") redirect("/dashboard/school");
 
   const [postings, mine] = await Promise.all([
@@ -78,18 +79,29 @@ export default async function JobsPage() {
           </div>
           <ul className="panel panel-rows">
             {mine.map((a) => (
-              <li key={a.applicationId} style={{ display: "grid", gap: 3 }}>
-                <span style={{ display: "flex", gap: 10, alignItems: "baseline" }}>
-                  <strong>{a.title}</strong>
-                  <span className="readout">{a.schoolName}</span>
-                </span>
-                <span className="readout">
-                  {a.stage}
-                  {a.notRankableReason === "awaiting_ranking" &&
-                    " · not scored yet — nothing for you to do"}
-                  {a.notRankableReason === "profile_incomplete" &&
-                    " · your profile is below the ranking threshold, so you are shown separately"}
-                  {a.rejectionReason && ` · ${a.rejectionReason}`}
+              <li key={a.applicationId} className="lrow"
+                  data-state={a.stage === "rejected" || a.stage === "withdrawn"
+                    ? "quiet" : "live"}>
+                <span className="lrow-body">
+                  <span className="lrow-title">
+                    {a.title}
+                    <span className="chip chip-neutral">{a.stage}</span>
+                  </span>
+                  <span className="lrow-meta">{a.schoolName}</span>
+                  {a.notRankableReason === "awaiting_ranking" && (
+                    <span className="lrow-note">
+                      Not scored yet — nothing for you to do.
+                    </span>
+                  )}
+                  {a.notRankableReason === "profile_incomplete" && (
+                    <span className="lrow-note">
+                      Your profile is below the ranking threshold, so you are
+                      shown separately rather than ordered.
+                    </span>
+                  )}
+                  {a.rejectionReason && (
+                    <span className="lrow-note">{a.rejectionReason}</span>
+                  )}
                 </span>
               </li>
             ))}

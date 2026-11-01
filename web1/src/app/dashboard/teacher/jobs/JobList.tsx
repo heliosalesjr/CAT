@@ -40,63 +40,46 @@ export function JobList({ jobs }: { jobs: Job[] }) {
   return (
     <>
       {state && (
-        <p className={"ok" in state ? "su-note" : "su-error"} role="status">
+        <p className="note" data-bad={"ok" in state ? undefined : true} role="status">
           {"ok" in state ? state.ok : state.error}
         </p>
       )}
 
-      <div className="aq-list">
+      <div className="panel panel-rows">
         {jobs.map((j) => (
-          <form key={j.id} action={action} className="aq-card">
+          <form key={j.id} action={action} className="job-row"
+                data-blocked={j.blocked ? true : undefined}>
             <input type="hidden" name="postingId" value={j.id} />
             <input type="hidden" name="title" value={j.title} />
 
-            <div className="aq-head">
-              <strong>{j.title}</strong>
-              <span className="readout">
+            <div className="job-body">
+              <span className="job-who">
+                {j.title}
+                <span className="chip chip-outline">
+                  {j.roleFamily.replace(/_/g, " ")}
+                </span>
+              </span>
+              <span className="job-where">
                 {j.schoolName}
                 {j.where && ` · ${j.where}`}
               </span>
+
+              <dl className="cand-facts">
+                <Fact label="Subjects" value={j.subjects.join(", ")} />
+                <Fact label="Specialism" value={j.specialisms.join(", ")} />
+                <Fact label="Salary" value={j.salary} />
+                <Fact label="Starts" value={j.startDate} />
+                <Fact label="Closes" value={j.applyBy} />
+              </dl>
             </div>
 
-            <dl className="aq-facts">
-              {j.subjects.length > 0 && (
-                <>
-                  <dt className="readout">Subjects</dt>
-                  <dd>{j.subjects.join(", ")}</dd>
-                </>
-              )}
-              {j.specialisms.length > 0 && (
-                <>
-                  <dt className="readout">Specialism</dt>
-                  <dd>{j.specialisms.join(", ")}</dd>
-                </>
-              )}
-              {j.salary && (
-                <>
-                  <dt className="readout">Salary</dt>
-                  <dd>{j.salary}</dd>
-                </>
-              )}
-              {j.startDate && (
-                <>
-                  <dt className="readout">Starts</dt>
-                  <dd>{j.startDate}</dd>
-                </>
-              )}
-              {j.applyBy && (
-                <>
-                  <dt className="readout">Closes</dt>
-                  <dd>{j.applyBy}</dd>
-                </>
-              )}
-            </dl>
-
+            {/* Never a disabled button with no explanation: where the reason
+                would go, the reason goes. */}
             {j.blocked ? (
-              <p className="su-note">{j.blocked}</p>
+              <p className="job-blocked">{j.blocked}</p>
             ) : (
-              <div className="aq-act">
-                <button className="su-btn" type="submit" disabled={pending}>
+              <div className="job-act">
+                <button className="btn btn-accent" type="submit" disabled={pending}>
                   {pending ? "Applying…" : "Apply"}
                 </button>
                 <label className="pf-bool">
@@ -109,5 +92,16 @@ export function JobList({ jobs }: { jobs: Job[] }) {
         ))}
       </div>
     </>
+  );
+}
+
+/** Nothing is drawn for a fact the posting did not state. */
+function Fact({ label, value }: { label: string; value: string | null }) {
+  if (!value) return null;
+  return (
+    <div>
+      <dt className="readout">{label}</dt>
+      <dd>{value}</dd>
+    </div>
   );
 }

@@ -13,7 +13,7 @@ import { Problems } from "./Problems";
  * either side it is the login, which means nothing about a person is stored
  * until they have proved the address.
  */
-export function StartForm() {
+export function StartForm({ next }: { next: string | null }) {
   const [side, setSide] = useState<"candidate" | "school">("candidate");
   const [state, action, pending] = useActionState<FormState, FormData>(startSignup, null);
 
@@ -21,6 +21,11 @@ export function StartForm() {
 
   return (
     <form action={action} className="su-card">
+      {/* Carried as a field rather than read from the URL in the action:
+          a server action has no request to read, and the value is validated
+          again there regardless of which way it arrived. */}
+      {next && <input type="hidden" name="next" value={next} />}
+
       <div className="su-steps" aria-hidden>
         <span data-done />
         <span />
