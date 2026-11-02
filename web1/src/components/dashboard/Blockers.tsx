@@ -12,6 +12,8 @@ const WHY: Record<string, string> = {
     "Schools filter on verified paperwork. Each one you upload widens the set of roles that can consider you.",
   reference_wrong_relationship:
     "Schools weigh a reference from someone who managed you far more heavily than one from a peer. A peer reference rarely counts towards safeguarding.",
+  references_missing:
+    "A reference is checked, not collected — so it takes time the end of a hiring process does not have. Naming a supervisor now is what stops it becoming the thing holding up an offer.",
   profile_incomplete:
     "Below 70% you are excluded from ranked lists entirely, so schools never see you ordered against other candidates.",
 };

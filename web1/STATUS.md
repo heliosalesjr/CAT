@@ -1,4 +1,4 @@
-# Where this is, 2026-11-01
+# Where this is, 2026-11-02
 
 A map, not a tour. `CLAUDE.md` says what the product is, `db/DECISIONS.md` why
 the schema is shaped as it is, `db/README.md` how the database and data layer
@@ -16,7 +16,7 @@ them along or ends it with a reason the candidate reads. A founder verifies
 the school that made the role possible, and the school's own dashboard is now
 the school's own data, honest empty states included. **What is still missing
 is the ranking itself** — an application is born unscored and waits for a job
-that does not exist yet — and two of the three original dashboards are still
+that does not exist yet — and one of the three original dashboards is still
 the sample bundle rather than the signed-in person's data.
 
 ## Routes, and what is real
@@ -34,7 +34,7 @@ the sample bundle rather than the signed-in person's data.
 | `/dashboard/school/postings/new` | database | Real. The role form with the ordered criteria picker |
 | `/dashboard/teacher/profile` | database **and** bundle | Real when signed in as a candidate; `?view=` renders the bundle read-only for demos |
 | `/dashboard/school` | database **and** bundle | Real when signed in as a school user; `?view=` renders the bundle read-only for demos |
-| `/dashboard/teacher` | **bundle only** | Mockup. Same |
+| `/dashboard/teacher` | database **and** bundle | Real when signed in as a candidate; `?view=` renders the bundle read-only for demos |
 | `/dashboard/shortlists` | **bundle only** | Mockup, and the ranking showcase |
 | `/hero-lab` | — | Design scratchpad |
 
@@ -52,17 +52,27 @@ means signing in and out constantly, and the state it exists to make visible
 is the one that otherwise looks like success — an identity with no actor
 behind it, which is a signup that stopped half way.
 
-The two remaining mockups are the biggest trap in the repo. They are good
-mockups — they are what the product is supposed to feel like — and a signed-in
-candidate clicking "back to the dashboard" from a real page lands in one and
-sees somebody else's applications. Porting them is the largest piece of
-front-end work left.
+`/dashboard/shortlists` is the last mockup, and it is the biggest trap left in
+the repo. It is a good mockup — it is what the ranking is supposed to feel
+like — and nothing on it is the signed-in person's data.
 
-`/dashboard/school` was the third, and was ported on 2026-11-01 after a real
-school signup landed on it and read Melissa's pipeline as its own. The pattern
-it now follows is the one to copy for the other two: no `?view=` means the
-signed-in person's data, `?view=` means the bundle read-only, and the demo
-switch lives only on the demo path.
+The other two were the same trap and were fixed the same way. `/dashboard/school`
+went first, on 2026-11-01, after a real school signup landed on it and read
+Melissa's pipeline as its own. `/dashboard/teacher` went on 2026-11-02, after a
+real teacher signup landed on Daniel's — his offer, his passport, his name in
+the header. The pattern both now follow is the one to copy for the last one:
+no `?view=` means the signed-in person's data, `?view=` means the bundle
+read-only, and the demo switch lives only on the demo path.
+
+What the teacher dashboard reads is `src/lib/db/candidate-dashboard.ts`, and it
+feeds the same three components the demo uses — `Readiness`, `Blockers`,
+`MyApplications` — so the real screen is the designed screen rather than a
+plainer copy of it. Two zones have no real equivalent and say so in words
+instead of drawing an empty shelf: there are no interviews because nothing
+schedules one, and no recommendations because the matching job does not
+exist. A candidate with nothing yet — no application, nothing uploaded, nobody
+named — gets the first-day screen, which is the state every real account starts
+in.
 
 ## What the database refuses on its own
 
@@ -122,8 +132,10 @@ Roughly in the order it will hurt:
   settled; what is missing is the job that scores an application against the
   ten criteria and writes `criterion_scores`, `criterion_notes` and
   `ai_rank_score`. Until it exists every pipeline is in applied order.
-- **The two mockup dashboards**, above: `/dashboard/teacher` and
-  `/dashboard/shortlists`.
+- **The last mockup dashboard**, above: `/dashboard/shortlists`.
+- **Interviews.** The table exists from 0008 and nothing writes to it, so the
+  real teacher dashboard omits the zone the bundle draws rather than render an
+  empty one. Scheduling is what is missing, not the schema.
 - **Email.** `EMAIL_TRANSPORT=console` prints to the terminal and writes the
   link to `.next/last-email-link` (`npm run signin`). It refuses to start in
   production. A real transport needs a verified domain, not an address.
@@ -166,7 +178,8 @@ people. A staff address can never be a candidate.
 
 **Completeness no longer produces a "not yet rankable" group.** With decision
 11's definition every one of the bundle's 136 candidates passes the threshold,
-including `tch_0009`, whom the teacher dashboard shows as exactly that case.
+including `tch_0009`, whom the teacher dashboard's `?view=blocked` demo
+presents as exactly that case.
 That is the bundle's doing — its candidates all filled everything in — and
 keeping the demo honest means regenerating a few sparse profiles.
 

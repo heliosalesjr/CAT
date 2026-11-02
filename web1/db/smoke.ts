@@ -50,6 +50,12 @@ import {
   openPostings,
   whyCannotApply,
 } from "../src/lib/db/applications.ts";
+import {
+  candidateApplicationCards,
+  candidateDashboardSummary,
+  candidateHasNothingYet,
+  candidateOfferContext,
+} from "../src/lib/db/candidate-dashboard.ts";
 import { applyProfileSave } from "../src/lib/profile-save.ts";
 import {
   InvalidSignup,
@@ -965,6 +971,144 @@ check(
   }
 }
 
+/* ------------------------------------ what the teacher dashboard reads */
+
+/**
+ * The four reads behind `/dashboard/teacher`, which until now read the sample
+ * bundle and showed every signed-in teacher Daniel's offer. Each one is
+ * asserted against the rows underneath it rather than trusted, for the same
+ * reason the school's are: they aggregate, and the page states the results as
+ * fact to the person they are about.
+ *
+ * The case that mattered most is the last one — a candidate who has just
+ * finished signing up. That is the account the bug was found on, and the
+ * answer has to be "nothing yet", not somebody else's dashboard.
+ */
+{
+  const summary = await candidateDashboardSummary("tch_0001");
+  check(summary.teacherId === "tch_0001", "the summary is about the candidate asked for");
+  check(
+    summary.profileCompleteness >= 0 && summary.profileCompleteness <= 100,
+    "completeness is the stored 0-100, not recomputed here",
+  );
+
+  const r = summary.readiness;
+  check(
+    [r.profile, r.documents, r.references].every((n) => n >= 0 && n <= 100),
+    "each readiness arc is a percentage",
+  );
+  check(
+    r.overall === Math.round((r.profile + r.documents + r.references) / 3),
+    "... and the figure in the middle of the ring is the mean of the three arcs",
+  );
+  // Against the dials themselves, not against 6 and 2 written out here: moving
+  // `documents_expected()` is meant to move the ring, and a test that hard-codes
+  // the old value would keep passing while the page stopped agreeing with it.
+  const [dials] = await query<{
+    verified: number; expected: number; refs: number; refs_expected: number;
+  }>(
+    `SELECT c.documents_verified AS verified, documents_expected() AS expected,
+            c.verified_supervisor_references AS refs, references_expected() AS refs_expected
+     FROM   candidates c WHERE c.id = 'tch_0001'`,
+  );
+  check(
+    r.documents ===
+      Math.round((100 * Math.min(dials.verified, dials.expected)) / dials.expected),
+    "... the documents arc is the verified count over the dial in 0018",
+  );
+  check(
+    r.references ===
+      Math.round((100 * Math.min(dials.refs, dials.refsExpected)) / dials.refsExpected),
+    "... and the references arc counts only the supervisor ones",
+  );
+
+  const counts = await query<{ active: string; offers: string; owing: string }>(
+    `SELECT count(*) FILTER (WHERE stage IN ('applied','screening','interview','offer')) AS active,
+            count(*) FILTER (WHERE stage = 'offer') AS offers,
+            count(DISTINCT school_id) FILTER (WHERE school_owes_response) AS owing
+     FROM   applications WHERE candidate_id = 'tch_0001'`,
+  );
+  check(
+    summary.activeApplications === Number(counts[0].active) &&
+      summary.offersOpen === Number(counts[0].offers) &&
+      summary.schoolsOwingResponse === Number(counts[0].owing),
+    "the three figures the standing sentence reads match the applications themselves",
+  );
+
+  const cards = await candidateApplicationCards("tch_0001");
+  const inDb = await query<{ n: string }>(
+    `SELECT count(*) AS n FROM applications WHERE candidate_id = 'tch_0001'`,
+  );
+  check(cards.length === Number(inDb[0].n), "one card per application, none dropped by a join");
+  check(
+    cards.every((c) => c.daysSinceStageChange >= 0),
+    "... and days at this stage is derived from stage_changed_at, so it cannot be negative",
+  );
+  check(
+    cards.every((c, i) => i === 0 || c.stageIndex <= cards[i - 1].stageIndex),
+    "... furthest along first, so an open offer is never under a rejection",
+  );
+
+  const ctx = await candidateOfferContext("tch_0001");
+  check(typeof ctx.dependents === "number", "the offer context knows how many children travel");
+  check(
+    ctx.passport === null || typeof ctx.passport.status === "string",
+    "... and reads the passport the permit depends on, or says there is none",
+  );
+
+  // The account the bug was found on: signed up, and nothing done yet.
+  const freshId = await makeIdentity("firstday@example.test");
+  const firstDay = await createCandidate({
+    authUserId: freshId,
+    email: "firstday@example.test",
+    firstName: "First",
+    lastName: "Day",
+    timezone: "UTC",
+  });
+  made.candidates.push(firstDay.id);
+
+  check(
+    await candidateHasNothingYet(firstDay.id),
+    "a candidate who has just signed up gets the first-day screen",
+  );
+  check(
+    (await candidateApplicationCards(firstDay.id)).length === 0,
+    "... with no applications, and that empty is not an error",
+  );
+  const firstSummary = await candidateDashboardSummary(firstDay.id);
+  check(
+    firstSummary.blockers.some((b) => b.kind === "profile_incomplete") &&
+      firstSummary.blockers.some((b) => b.kind === "documents_missing") &&
+      firstSummary.blockers.some((b) => b.kind === "references_missing"),
+    "... and is told the three things actually in the way, from their own empty record",
+  );
+  check(
+    firstSummary.blockers[0].severity === "critical",
+    "... worst first: below the threshold nothing is ordered at all",
+  );
+  check(
+    firstSummary.recommendedJobs.length === 0,
+    "nothing is recommended, because the matching job does not exist yet",
+  );
+
+  // Uploading something has to stop the first-day screen immediately, even
+  // before anybody verifies it — otherwise a teacher sees their own upload
+  // sitting inside a screen that says they have not started.
+  await query(
+    `INSERT INTO documents (id, candidate_id, type, status, file_name, storage_key, uploaded_at)
+     VALUES ($1, $2, 'passport', 'uploaded', 'passport.pdf', $3, now())`,
+    // `sensitive/` is not decoration: 0007 refuses a storage key outside the
+    // restricted prefix, which is how the dedicated bucket stays the only
+    // place a document can live.
+    [`doc_smoke_${firstDay.id}`, firstDay.id, `sensitive/${firstDay.id}/passport.pdf`],
+  );
+  check(
+    !(await candidateHasNothingYet(firstDay.id)),
+    "... so an uploaded but unverified document ends the first day",
+  );
+  await query(`DELETE FROM documents WHERE id = $1`, [`doc_smoke_${firstDay.id}`]);
+}
+
 /* --------------------------------- where to land after signing in */
 
 /**
@@ -1014,6 +1158,10 @@ check(
 /* ----------------------------------------------------------------- cleanup */
 
 await query(`DELETE FROM applications WHERE candidate_id = ANY($1)`, [made.candidates]);
+// A document is the one thing a test candidate can own that blocks its own
+// deletion, so it goes before the candidate rather than being left for the FK
+// to complain about after a mid-way failure.
+await query(`DELETE FROM documents WHERE candidate_id = ANY($1)`, [made.candidates]);
 await query(`DELETE FROM job_postings WHERE id = ANY($1)`, [made.postings]);
 await query(`DELETE FROM candidate_role_families WHERE candidate_id = ANY($1)`, [made.candidates]);
 await query(`DELETE FROM candidates WHERE id = ANY($1)`, [made.candidates]);

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Contours } from "./Contours";
 import { Destination } from "./Destination";
 import { HeroTerrain } from "./HeroTerrain";
@@ -76,9 +77,9 @@ export function Hero() {
         </p>
 
         <div className="mt-8 flex flex-wrap items-center gap-3">
-          <a href="#teacher-signup" className="btn btn-gold">
+          <Link href="/signup" className="btn btn-gold">
             Join as a teacher
-          </a>
+          </Link>
           <a href="#schools" className="btn btn-outline">
             For schools
           </a>

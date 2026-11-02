@@ -28,12 +28,12 @@ export function Nav() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <a href="#login" className="btn btn-outline hidden !py-[12px] !px-[18px] sm:inline-flex">
+          <Link href="/signup" className="btn btn-outline hidden !py-[12px] !px-[18px] sm:inline-flex">
             Log in
-          </a>
-          <a href="#get-started" className="btn btn-gold !py-[13px] !px-[20px]">
-            Get started
-          </a>
+          </Link>
+          <Link href="/signup" className="btn btn-gold !py-[13px] !px-[20px]">
+            Sign up
+          </Link>
         </div>
       </div>
     </header>

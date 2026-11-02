@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Contours } from "./Contours";
 
 export function TwoPathCTA() {
@@ -26,9 +27,9 @@ export function TwoPathCTA() {
               Premium boosts optional — never gatekeeping.
             </p>
             <div className="mt-auto flex flex-wrap gap-3 pt-10">
-              <a href="#teacher-signup" className="btn btn-gold">
+              <Link href="/signup" className="btn btn-gold">
                 Start your profile
-              </a>
+              </Link>
               <a href="#teacher-tour" className="btn btn-outline">
                 See the tour
               </a>
